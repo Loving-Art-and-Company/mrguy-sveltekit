@@ -12,7 +12,8 @@
 <header class="header">
   <div class="header-content">
     <a href="/" class="logo">
-      {BUSINESS_INFO.name}
+      <img src="/logo/mrguylogo-header.png" alt="Mr. Guy Detail Logo" class="logo-img" />
+      <span class="logo-text">{BUSINESS_INFO.name}</span>
     </a>
 
     <nav class="nav">
@@ -30,11 +31,12 @@
 
 <style>
   .header {
-    background: #1a1a2e;
+    background: var(--color-primary-deep);
     padding: 0 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: var(--shadow-md);
   }
 
   .header-content {
@@ -47,14 +49,26 @@
   }
 
   .logo {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     text-decoration: none;
+    transition: opacity 0.2s;
   }
 
   .logo:hover {
-    color: #e94560;
+    opacity: 0.9;
+  }
+
+  .logo-img {
+    height: 48px;
+    width: auto;
+  }
+
+  .logo-text {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-inverse);
   }
 
   .nav {
@@ -64,7 +78,7 @@
   }
 
   .nav-link {
-    color: #9ca3af;
+    color: var(--text-muted);
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
@@ -72,17 +86,17 @@
   }
 
   .nav-link:hover {
-    color: white;
+    color: var(--text-inverse);
   }
 
   .login-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: #e94560;
-    color: white;
+    background: var(--color-primary);
+    color: var(--text-inverse);
     padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-md);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
@@ -90,13 +104,21 @@
   }
 
   .login-btn:hover {
-    background: #ff6b6b;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
   }
 
   @media (max-width: 640px) {
     .header-content {
       height: 56px;
+    }
+
+    .logo-img {
+      height: 40px;
+    }
+
+    .logo-text {
+      font-size: 1rem;
     }
 
     .nav {

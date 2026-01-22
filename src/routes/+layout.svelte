@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '../app.css';
   import Header from '$lib/components/Header.svelte';
 
   let { children } = $props();
@@ -6,30 +7,13 @@
 
 <svelte:head>
   <meta name="description" content="Mr. Guy Mobile Detail - Professional mobile car detailing in South Florida" />
+  <link rel="icon" type="image/x-icon" href="/favicons/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+  <link rel="manifest" href="/favicons/site.webmanifest" />
+  <meta name="theme-color" content="#0EA5E9" />
 </svelte:head>
 
 <Header />
 {@render children()}
-
-<style>
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-  :global(body) {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #ffffff;
-    color: #1a1a2e;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  :global(a) {
-    color: inherit;
-  }
-
-  :global(button) {
-    font-family: inherit;
-  }
-</style>

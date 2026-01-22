@@ -1,0 +1,111 @@
+/**
+ * MrGuyDetail Brand Color System
+ * Updated: 2026-01-22
+ * Launch: Jan 24, 2026
+ */
+
+:root {
+  /* Primary Brand Colors */
+  --color-primary: #0EA5E9;        /* Sky blue - primary actions */
+  --color-primary-hover: #0284C7;  /* Darker blue - hover states */
+  --color-primary-deep: #0C4A6E;   /* Deep blue - headings, dark text */
+  
+  /* Background Colors */
+  --color-bg-main: #F0F9FF;        /* Light sky blue - main bg */
+  --color-bg-lighter: #E0F2FE;     /* Sky 200 - cards, elevated surfaces (WCAG AA compliant) */
+  --color-bg-white: #FFFFFF;       /* Pure white - overlays, modals */
+  
+  /* Text Colors */
+  --text-primary: #0F172A;         /* Slate 900 - primary text */
+  --text-secondary: #475569;       /* Slate 600 - secondary text */
+  --text-muted: #94A3B8;           /* Slate 400 - muted text */
+  --text-inverse: #FFFFFF;         /* White text on dark backgrounds */
+  
+  /* Semantic Colors */
+  --color-success: #10B981;        /* Emerald 500 - success states */
+  --color-success-bg: #D1FAE5;     /* Emerald 100 - success backgrounds */
+  --color-error: #EF4444;          /* Red 500 - errors */
+  --color-error-bg: #FEE2E2;       /* Red 100 - error backgrounds */
+  --color-warning: #F59E0B;        /* Amber 500 - warnings */
+  --color-warning-bg: #FEF3C7;     /* Amber 100 - warning backgrounds */
+  
+  /* Borders & Dividers */
+  --border-light: #E2E8F0;         /* Slate 200 - light borders */
+  --border-medium: #CBD5E1;        /* Slate 300 - medium borders */
+  --border-dark: #64748B;          /* Slate 500 - dark borders */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Sparkle Accent */
+  --sparkle-color: #38BDF8;        /* Sky 400 - sparkle accents */
+  --sparkle-opacity: 0.2;          /* Default sparkle opacity */
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius-md: 0.5rem;   /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-full: 9999px; /* Full rounded */
+  
+  /* Typography */
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Global Reset & Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background-color: var(--color-bg-main);
+  line-height: 1.6;
+}
+
+/* Accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Utility Classes */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-inverse { color: var(--text-inverse); }
+
+.bg-main { background-color: var(--color-bg-main); }
+.bg-lighter { background-color: var(--color-bg-lighter); }
+.bg-white { background-color: var(--color-bg-white); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }

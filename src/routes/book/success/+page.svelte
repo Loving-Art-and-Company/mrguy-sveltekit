@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
   import { BUSINESS_INFO } from '$lib/data/services';
   import { CheckCircle, Calendar, Phone } from 'lucide-svelte';
+  import Sparkle from '$lib/components/Sparkle.svelte';
 
   const sessionId = $page.url.searchParams.get('session_id');
 </script>
@@ -12,6 +13,10 @@
 
 <main>
   <div class="success-card">
+    <Sparkle size={20} opacity={0.2} top="5%" left="5%" delay={0} />
+    <Sparkle size={16} opacity={0.15} top="10%" right="8%" delay={0.8} />
+    <Sparkle size={18} opacity={0.18} bottom="10%" left="10%" delay={0.4} />
+    
     <div class="icon">
       <CheckCircle size={64} />
     </div>
@@ -57,16 +62,18 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: var(--color-primary-deep);
   }
 
   .success-card {
+    position: relative;
     background: white;
     border-radius: 1.5rem;
     padding: 3rem 2rem;
     max-width: 500px;
     width: 100%;
     text-align: center;
+    overflow: hidden;
   }
 
   .icon {
@@ -77,11 +84,11 @@
   h1 {
     font-size: 2rem;
     margin: 0 0 0.5rem 0;
-    color: #1a1a2e;
+    color: var(--text-primary);
   }
 
   .tagline {
-    color: #e94560;
+    color: var(--color-primary);
     font-weight: 600;
     font-size: 1.1rem;
     margin: 0 0 1.5rem 0;
@@ -104,7 +111,7 @@
   .next-steps h2 {
     font-size: 1rem;
     margin: 0 0 1rem 0;
-    color: #1a1a2e;
+    color: var(--text-primary);
   }
 
   .next-steps ul {
@@ -123,7 +130,7 @@
   }
 
   .next-steps li :global(svg) {
-    color: #e94560;
+    color: var(--color-primary);
     flex-shrink: 0;
     margin-top: 0.1rem;
   }
@@ -145,12 +152,12 @@
   }
 
   .btn.primary {
-    background: #e94560;
-    color: white;
+    background: var(--color-primary);
+    color: var(--text-inverse);
   }
 
   .btn.primary:hover {
-    background: #d63850;
+    background: var(--color-primary-hover);
   }
 
   .btn.secondary {

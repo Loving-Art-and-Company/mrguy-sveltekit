@@ -1,7 +1,19 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { SERVICE_PACKAGES, getPromoPrice, BUSINESS_INFO } from '$lib/data/services';
+  import {
+    SERVICE_PACKAGES,
+    SUBSCRIPTION_TIERS,
+    ADD_ONS,
+    EXTRA_FEES,
+    getPromoPrice,
+    getAddOnsForTier,
+    BUSINESS_INFO,
+    type ServicePackage,
+    type SubscriptionTier,
+    type AddOn,
+    type ExtraFee
+  } from '$lib/data/services';
   import {
     BOOKING_STEPS,
     serviceStepSchema,
@@ -12,21 +24,26 @@
     type BookingData,
     type StepId,
   } from '$lib/types/booking';
-  import { ChevronLeft, ChevronRight, Check, Car, Calendar, MapPin, User, Sparkles } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, Check, Car, Calendar, MapPin, User, Sparkles, Crown, Star, Zap, Plus, AlertCircle } from 'lucide-svelte';
   import type { ZodError } from 'zod';
 
   // Get pre-selected package from URL
   const preselectedPackage = $page.url.searchParams.get('package');
+  const preselectedType = $page.url.searchParams.get('type') || 'one-time';
 
   // Step management
   let currentStep = $state(0);
   let errors = $state<Record<string, string>>({});
+
+  // Service type tracking
+  let serviceType = $state<'subscription' | 'one-time'>(preselectedType as 'subscription' | 'one-time');
 
   // Form data
   let formData = $state<BookingData>({
     service: {
       packageId: preselectedPackage || '',
       addons: [],
+      extraFees: [],
     },
     vehicle: {
       make: '',
@@ -56,8 +73,46 @@
 
   // Derived states
   let selectedPackage = $derived(SERVICE_PACKAGES.find((p) => p.id === formData.service.packageId));
+  let selectedSubscription = $derived(SUBSCRIPTION_TIERS.find((t) => t.id === formData.service.packageId));
+  let selectedItem = $derived(serviceType === 'subscription' ? selectedSubscription : selectedPackage);
   let isLastStep = $derived(currentStep === BOOKING_STEPS.length - 1);
   let canGoBack = $derived(currentStep > 0);
+
+  // Available add-ons for the selected subscription tier
+  let availableAddOns = $derived(
+    serviceType === 'subscription' && selectedSubscription
+      ? getAddOnsForTier(selectedSubscription.id)
+      : []
+  );
+
+  // Calculate add-ons total
+  let addOnsTotal = $derived(() => {
+    return formData.service.addons.reduce((sum, addonId) => {
+      const addon = ADD_ONS.find(a => a.id === addonId);
+      if (addon && typeof addon.price === 'number') {
+        return sum + addon.price;
+      }
+      return sum;
+    }, 0);
+  });
+
+  // Calculate extra fees total
+  let extraFeesTotal = $derived(() => {
+    return formData.service.extraFees.reduce((sum, feeId) => {
+      const fee = EXTRA_FEES.find(f => f.id === feeId);
+      return fee ? sum + fee.price : sum;
+    }, 0);
+  });
+
+  // Price calculation
+  let displayPrice = $derived(() => {
+    if (serviceType === 'subscription' && selectedSubscription) {
+      return { low: selectedSubscription.priceLow, high: selectedSubscription.priceHigh, avg: Math.round((selectedSubscription.priceLow + selectedSubscription.priceHigh) / 2) };
+    } else if (selectedPackage) {
+      return { low: selectedPackage.priceLow, high: selectedPackage.priceHigh, avg: selectedPackage.avgPrice };
+    }
+    return { low: 0, high: 0, avg: 0 };
+  });
 
   // Validation
   function validateCurrentStep(): boolean {
@@ -100,8 +155,27 @@
     }
   }
 
-  function selectPackage(packageId: string) {
+  function selectPackage(packageId: string, type: 'subscription' | 'one-time') {
     formData.service.packageId = packageId;
+    serviceType = type;
+    // Reset add-ons when changing service
+    formData.service.addons = [];
+  }
+
+  function toggleAddOn(addonId: string) {
+    if (formData.service.addons.includes(addonId)) {
+      formData.service.addons = formData.service.addons.filter(id => id !== addonId);
+    } else {
+      formData.service.addons = [...formData.service.addons, addonId];
+    }
+  }
+
+  function toggleExtraFee(feeId: string) {
+    if (formData.service.extraFees.includes(feeId)) {
+      formData.service.extraFees = formData.service.extraFees.filter(id => id !== feeId);
+    } else {
+      formData.service.extraFees = [...formData.service.extraFees, feeId];
+    }
   }
 
   let isSubmitting = $state(false);
@@ -118,6 +192,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           packageId: formData.service.packageId,
+          serviceType: serviceType,
           customerName: formData.contact.name,
           customerPhone: formData.contact.phone,
           customerEmail: formData.contact.email,
@@ -200,26 +275,114 @@
       <!-- Service Selection -->
       <h2>
         <Sparkles size={24} />
-        Choose Your Package
+        Choose Your Service
       </h2>
+
+      <!-- Subscription Tiers -->
+      <div class="section-label">
+        <Crown size={18} />
+        <span>Monthly Memberships</span>
+      </div>
+      <div class="package-grid subscriptions">
+        {#each SUBSCRIPTION_TIERS as tier (tier.id)}
+          <button
+            class="package-card subscription"
+            class:selected={formData.service.packageId === tier.id && serviceType === 'subscription'}
+            class:featured={tier.badge}
+            onclick={() => selectPackage(tier.id, 'subscription')}
+          >
+            {#if tier.badge}
+              <span class="badge">{tier.badge}</span>
+            {/if}
+            <h3>{tier.name}</h3>
+            <p class="price">${tier.priceLow}-${tier.priceHigh}<span class="freq">/mo</span></p>
+            <p class="desc">{tier.description}</p>
+          </button>
+        {/each}
+      </div>
+
+      <!-- One-Time Services -->
+      <div class="section-label">
+        <Star size={18} />
+        <span>One-Time Services</span>
+      </div>
       <div class="package-grid">
         {#each SERVICE_PACKAGES as pkg (pkg.id)}
           <button
             class="package-card"
-            class:selected={formData.service.packageId === pkg.id}
-            onclick={() => selectPackage(pkg.id)}
+            class:selected={formData.service.packageId === pkg.id && serviceType === 'one-time'}
+            class:featured={pkg.badge}
+            onclick={() => selectPackage(pkg.id, 'one-time')}
           >
             {#if pkg.badge}
               <span class="badge">{pkg.badge}</span>
             {/if}
             <h3>{pkg.name}</h3>
-            <p class="price">${pkg.priceLow} - ${pkg.priceHigh}</p>
+            <p class="price">${pkg.priceLow}-${pkg.priceHigh}</p>
             <p class="desc">{pkg.description}</p>
           </button>
         {/each}
       </div>
       {#if errors['packageId']}
         <p class="error">{errors['packageId']}</p>
+      {/if}
+
+      <!-- Add-ons for Subscriptions -->
+      {#if serviceType === 'subscription' && selectedSubscription && availableAddOns.length > 0}
+        <div class="section-label">
+          <Plus size={18} />
+          <span>Add-Ons for {selectedSubscription.name}</span>
+        </div>
+        <div class="addons-grid">
+          {#each availableAddOns as addon (addon.id)}
+            <button
+              class="addon-card"
+              class:selected={formData.service.addons.includes(addon.id)}
+              onclick={() => toggleAddOn(addon.id)}
+            >
+              <div class="addon-check">
+                {#if formData.service.addons.includes(addon.id)}
+                  <Check size={14} />
+                {/if}
+              </div>
+              <div class="addon-info">
+                <span class="addon-name">{addon.name}</span>
+                <span class="addon-price">
+                  {typeof addon.price === 'number' ? `+$${addon.price}` : addon.price}
+                </span>
+                {#if addon.notes}
+                  <span class="addon-note">{addon.notes}</span>
+                {/if}
+              </div>
+            </button>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Extra Fees (applies to all services) -->
+      {#if selectedItem}
+        <div class="section-label">
+          <AlertCircle size={18} />
+          <span>Situation Fees (if applicable)</span>
+        </div>
+        <div class="extras-grid">
+          {#each EXTRA_FEES as fee (fee.id)}
+            <button
+              class="extra-card"
+              class:selected={formData.service.extraFees.includes(fee.id)}
+              onclick={() => toggleExtraFee(fee.id)}
+            >
+              <div class="addon-check">
+                {#if formData.service.extraFees.includes(fee.id)}
+                  <Check size={14} />
+                {/if}
+              </div>
+              <span class="extra-name">{fee.name}</span>
+              <span class="extra-price">+${fee.price}</span>
+            </button>
+          {/each}
+        </div>
+        <p class="extras-note">Select any that apply. We'll confirm during service.</p>
       {/if}
     {:else if currentStep === 1}
       <!-- Vehicle Info -->
@@ -258,6 +421,9 @@
         <Calendar size={24} />
         Pick a Date & Time
       </h2>
+      {#if serviceType === 'subscription'}
+        <p class="info-note">Select your first appointment date. Monthly visits will be scheduled from this date.</p>
+      {/if}
       <div class="form-grid">
         <label>
           <span>Date *</span>
@@ -333,28 +499,74 @@
           <input type="email" bind:value={formData.contact.email} placeholder="you@email.com" />
           {#if errors['email']}<span class="error">{errors['email']}</span>{/if}
         </label>
-        <label class="full-width">
-          <span>Promo Code</span>
-          <input type="text" bind:value={formData.contact.promoCode} placeholder="Enter code" />
-        </label>
+        {#if serviceType === 'one-time'}
+          <label class="full-width">
+            <span>Promo Code</span>
+            <input type="text" bind:value={formData.contact.promoCode} placeholder="Enter code" />
+          </label>
+        {/if}
       </div>
 
       <!-- Order Summary -->
-      {#if selectedPackage}
+      {#if selectedItem}
         <div class="summary">
           <h3>Order Summary</h3>
           <div class="summary-row">
-            <span>{selectedPackage.name}</span>
-            <span>${selectedPackage.avgPrice}</span>
+            <span>
+              {selectedItem.name}
+              {#if serviceType === 'subscription'}
+                <span class="tag">Monthly</span>
+              {/if}
+            </span>
+            <span>${displayPrice().avg}{serviceType === 'subscription' ? '/mo' : ''}</span>
           </div>
-          <div class="summary-row promo">
-            <span>Fresh Start Discount (25%)</span>
-            <span>-${Math.round(selectedPackage.avgPrice * 0.25)}</span>
-          </div>
-          <div class="summary-row total">
-            <span>Total</span>
-            <span>${getPromoPrice(selectedPackage.avgPrice)}</span>
-          </div>
+
+          <!-- Selected Add-ons -->
+          {#each formData.service.addons as addonId}
+            {@const addon = ADD_ONS.find(a => a.id === addonId)}
+            {#if addon}
+              <div class="summary-row addon-row">
+                <span>+ {addon.name}</span>
+                <span>{typeof addon.price === 'number' ? `$${addon.price}` : addon.price}</span>
+              </div>
+            {/if}
+          {/each}
+
+          <!-- Selected Extra Fees -->
+          {#each formData.service.extraFees as feeId}
+            {@const fee = EXTRA_FEES.find(f => f.id === feeId)}
+            {#if fee}
+              <div class="summary-row fee-row">
+                <span>+ {fee.name}</span>
+                <span>${fee.price}</span>
+              </div>
+            {/if}
+          {/each}
+
+          {#if serviceType === 'one-time'}
+            {@const baseWithExtras = displayPrice().avg + extraFeesTotal()}
+            <div class="summary-row promo">
+              <span>Fresh Start Discount (25%)</span>
+              <span>-${Math.round(displayPrice().avg * 0.25)}</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>${getPromoPrice(displayPrice().avg) + extraFeesTotal()}</span>
+            </div>
+          {:else}
+            {@const monthlyTotal = displayPrice().avg + addOnsTotal()}
+            <div class="summary-row total">
+              <span>Monthly Total</span>
+              <span>${monthlyTotal}/mo</span>
+            </div>
+            {#if extraFeesTotal() > 0}
+              <div class="summary-row fee-total">
+                <span>One-time fees (first visit)</span>
+                <span>+${extraFeesTotal()}</span>
+              </div>
+            {/if}
+            <p class="subscription-note">Cancel anytime. First charge today.</p>
+          {/if}
         </div>
       {/if}
     {/if}
@@ -378,7 +590,7 @@
       {#if isSubmitting}
         Processing...
       {:else if isLastStep}
-        Continue to Payment
+        {serviceType === 'subscription' ? 'Start Subscription' : 'Continue to Payment'}
       {:else}
         Next
         <ChevronRight size={18} />
@@ -447,8 +659,8 @@
   }
 
   .step-indicator.active .step-number {
-    background: #1a1a2e;
-    color: white;
+    background: var(--color-primary-deep);
+    color: var(--text-inverse);
   }
 
   .step-indicator.completed .step-number {
@@ -463,7 +675,7 @@
   }
 
   .step-indicator.active .step-label {
-    color: #1a1a2e;
+    color: var(--text-primary);
     font-weight: 600;
   }
 
@@ -493,13 +705,36 @@
     gap: 0.5rem;
     font-size: 1.25rem;
     margin: 0 0 1.5rem 0;
-    color: #1a1a2e;
+    color: var(--text-primary);
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 1.5rem 0 0.75rem 0;
+    font-size: 0.9rem;
+  }
+
+  .section-label:first-of-type {
+    margin-top: 0;
+  }
+
+  .section-label :global(svg) {
+    color: var(--color-primary);
   }
 
   .package-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .package-grid.subscriptions {
+    grid-template-columns: repeat(3, 1fr);
+    margin-bottom: 1rem;
   }
 
   .package-card {
@@ -507,49 +742,75 @@
     background: #f9fafb;
     border: 2px solid #e5e7eb;
     border-radius: 0.75rem;
-    padding: 1rem;
+    padding: 0.875rem;
     text-align: left;
     cursor: pointer;
     transition: all 0.2s;
   }
 
   .package-card:hover {
-    border-color: #1a1a2e;
+    border-color: var(--color-primary-deep);
   }
 
   .package-card.selected {
-    border-color: #e94560;
-    background: #fef2f2;
+    border-color: var(--color-primary);
+    background: var(--color-bg-lighter);
+  }
+
+  .package-card.subscription {
+    background: var(--color-bg-lighter);
+    border-color: var(--border-medium);
+  }
+
+  .package-card.subscription.selected {
+    border-color: var(--color-primary);
+    background: var(--color-bg-lighter);
+  }
+
+  .package-card.featured {
+    border-color: var(--color-primary);
   }
 
   .package-card .badge {
     position: absolute;
     top: -0.5rem;
     right: 0.5rem;
-    background: #e94560;
-    color: white;
-    font-size: 0.6rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 1rem;
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    font-size: 0.55rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-full);
     font-weight: 600;
+    text-transform: uppercase;
   }
 
   .package-card h3 {
     margin: 0 0 0.25rem 0;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
   }
 
   .package-card .price {
-    color: #e94560;
+    color: var(--color-primary);
     font-weight: 700;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.35rem 0;
+    font-size: 0.9rem;
+  }
+
+  .package-card .price .freq {
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 500;
   }
 
   .package-card .desc {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #6b7280;
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .form-grid {
@@ -588,8 +849,8 @@
   select:focus,
   textarea:focus {
     outline: none;
-    border-color: #1a1a2e;
-    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
   }
 
   textarea {
@@ -607,6 +868,16 @@
     font-size: 0.85rem;
     color: #6b7280;
     margin-top: 1rem;
+  }
+
+  .info-note {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
   }
 
   .summary {
@@ -628,6 +899,17 @@
     font-size: 0.95rem;
   }
 
+  .summary-row .tag {
+    display: inline-block;
+    background: #6366f1;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
   .summary-row.promo {
     color: #10b981;
   }
@@ -638,6 +920,13 @@
     padding-top: 0.75rem;
     font-weight: 700;
     font-size: 1.1rem;
+  }
+
+  .subscription-note {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+    text-align: center;
   }
 
   .nav-buttons {
@@ -660,12 +949,12 @@
   }
 
   .btn.primary {
-    background: #e94560;
-    color: white;
+    background: var(--color-primary);
+    color: var(--text-inverse);
   }
 
   .btn.primary:hover {
-    background: #d63850;
+    background: var(--color-primary-hover);
   }
 
   .btn.secondary {
@@ -692,12 +981,158 @@
     cursor: not-allowed;
   }
 
+  /* Add-ons Grid */
+  .addons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .addon-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .addon-card:hover {
+    border-color: #6366f1;
+  }
+
+  .addon-card.selected {
+    border-color: #6366f1;
+    background: #eef2ff;
+  }
+
+  .addon-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .addon-card.selected .addon-check {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: white;
+  }
+
+  .addon-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .addon-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  .addon-price {
+    font-size: 0.8rem;
+    color: #6366f1;
+    font-weight: 600;
+  }
+
+  .addon-note {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    font-style: italic;
+  }
+
+  /* Extra Fees Grid */
+  .extras-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .extra-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fffbeb;
+    border: 2px solid #fde68a;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .extra-card:hover {
+    border-color: #f59e0b;
+  }
+
+  .extra-card.selected {
+    border-color: #f59e0b;
+    background: #fef3c7;
+  }
+
+  .extra-card.selected .addon-check {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+  }
+
+  .extra-name {
+    font-size: 0.8rem;
+    color: #374151;
+    flex: 1;
+  }
+
+  .extra-price {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #d97706;
+  }
+
+  .extras-note {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+
+  /* Summary add-on/fee rows */
+  .summary-row.addon-row {
+    font-size: 0.85rem;
+    color: #6366f1;
+  }
+
+  .summary-row.fee-row {
+    font-size: 0.85rem;
+    color: #d97706;
+  }
+
+  .summary-row.fee-total {
+    font-size: 0.85rem;
+    color: #d97706;
+    padding-top: 0.5rem;
+  }
+
   @media (max-width: 640px) {
     .form-grid {
       grid-template-columns: 1fr;
     }
 
     .package-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .package-grid.subscriptions {
       grid-template-columns: 1fr;
     }
 
