@@ -115,6 +115,9 @@
 		width: 100%;
 		height: auto;
 		display: block;
+		border-radius: 50%;
+		aspect-ratio: 1;
+		object-fit: cover;
 	}
 
 	.zip-hero-title {
