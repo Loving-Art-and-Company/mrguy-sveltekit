@@ -2,10 +2,48 @@
   import { PackageMenu, BUSINESS_INFO, type ServicePackage } from '$lib';
   import { goto } from '$app/navigation';
   import Sparkle from '$lib/components/Sparkle.svelte';
+  import OptimizedImage from '$lib/components/OptimizedImage.svelte';
+  import AnimatedSection from '$lib/components/AnimatedSection.svelte';
+  import BeforeAfterSlider from '$lib/components/BeforeAfterSlider.svelte';
+  import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
+  import { ripple } from '$lib/actions/ripple';
 
   function handlePackageSelect(pkg: ServicePackage) {
     goto(`/book?package=${pkg.id}`);
   }
+
+  const processSteps = [
+    {
+      title: 'Initial Inspection',
+      description: 'We thoroughly assess your vehicle\'s condition, identifying problem areas and customizing our approach to your specific needs.',
+      imageSrc: '/images/process/step-1-inspection',
+      imageAlt: 'Detailed vehicle inspection before detailing'
+    },
+    {
+      title: 'Deep Cleaning',
+      description: 'Using premium pH-balanced soaps and foam cannons, we safely remove dirt, grime, and contaminants from every surface.',
+      imageSrc: '/images/process/step-2-wash',
+      imageAlt: 'Professional car washing with foam cannon'
+    },
+    {
+      title: 'Paint Correction',
+      description: 'Advanced polishing techniques remove swirls, scratches, and oxidation, restoring your paint to showroom condition.',
+      imageSrc: '/images/process/step-3-polish',
+      imageAlt: 'Paint correction and polishing process'
+    },
+    {
+      title: 'Protection Application',
+      description: 'We apply ceramic coating or premium wax to protect your paint, providing months of UV and environmental resistance.',
+      imageSrc: '/images/process/step-4-protect',
+      imageAlt: 'Ceramic coating application'
+    },
+    {
+      title: 'Final Inspection',
+      description: 'Every detail is inspected under professional lighting to ensure perfect results before delivering your vehicle.',
+      imageSrc: '/images/process/step-5-final',
+      imageAlt: 'Final quality inspection of detailed vehicle'
+    }
+  ];
 </script>
 
 <svelte:head>
@@ -24,53 +62,96 @@
         <h1 class="hero-title">{BUSINESS_INFO.name}</h1>
         <p class="hero-tagline">{BUSINESS_INFO.tagline}</p>
         <p class="hero-sub">{BUSINESS_INFO.subTagline}</p>
-        <a href="/book" class="cta">Book Your Detail</a>
+        <a href="/book" class="btn cta cta-pulse" use:ripple>
+          Book Your Detail <span class="arrow-slide">→</span>
+        </a>
       </div>
       <div class="hero-image">
-        <img src="/images/hero-car-detail.jpg" alt="Professional car detailing" />
+        <OptimizedImage 
+          src="/images/hero-car-detail" 
+          alt="Professional car detailing" 
+          priority={true}
+        />
       </div>
     </div>
   </section>
+
+  <!-- Before/After Transformation -->
+  <AnimatedSection animation="fade-in-up" threshold={0.3}>
+    <section class="before-after-section">
+      <h2 class="section-title">See The Transformation</h2>
+      <p class="section-subtitle">Real results from our professional detailing services</p>
+      
+      <div class="before-after-container">
+        <BeforeAfterSlider 
+          beforeSrc="/images/before-after/exterior-before"
+          afterSrc="/images/before-after/exterior-after"
+          beforeAlt="Car exterior before professional detailing"
+          afterAlt="Car exterior after professional detailing showing mirror finish"
+        />
+      </div>
+    </section>
+  </AnimatedSection>
 
   <!-- Services Showcase - Visual Grid -->
-  <section class="services-showcase">
-    <h2 class="section-title">Premium Detailing Services</h2>
-    <p class="section-subtitle">Professional care for every part of your vehicle</p>
-    
-    <div class="services-grid">
-      <div class="service-card">
-        <div class="service-image">
-          <img src="/images/service-exterior.jpg" alt="Exterior detailing" />
-        </div>
-        <h3>Exterior Care</h3>
-        <p>Hand wash, wax, and paint correction for a showroom finish</p>
-      </div>
+  <AnimatedSection animation="fade-in-up" threshold={0.2}>
+    <section class="services-showcase">
+      <h2 class="section-title">Premium Detailing Services</h2>
+      <p class="section-subtitle">Professional care for every part of your vehicle</p>
+      
+      <div class="services-grid">
+        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={100}>
+          <div class="service-card card-hover">
+            <div class="service-image">
+              <OptimizedImage src="/images/service-exterior" alt="Exterior detailing" />
+            </div>
+            <h3>Exterior Care</h3>
+            <p>Hand wash, wax, and paint correction for a showroom finish</p>
+          </div>
+        </AnimatedSection>
 
-      <div class="service-card">
-        <div class="service-image">
-          <img src="/images/service-interior.jpg" alt="Interior detailing" />
-        </div>
-        <h3>Interior Perfection</h3>
-        <p>Deep cleaning, leather care, and odor elimination</p>
-      </div>
+        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={200}>
+          <div class="service-card card-hover">
+            <div class="service-image">
+              <OptimizedImage src="/images/service-interior" alt="Interior detailing" />
+            </div>
+            <h3>Interior Perfection</h3>
+            <p>Deep cleaning, leather care, and odor elimination</p>
+          </div>
+        </AnimatedSection>
 
-      <div class="service-card">
-        <div class="service-image">
-          <img src="/images/service-ceramic.jpg" alt="Ceramic coating" />
-        </div>
-        <h3>Ceramic Protection</h3>
-        <p>Multi-year coating for ultimate paint protection</p>
-      </div>
+        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={300}>
+          <div class="service-card card-hover">
+            <div class="service-image">
+              <OptimizedImage src="/images/service-ceramic" alt="Ceramic coating" />
+            </div>
+            <h3>Ceramic Protection</h3>
+            <p>Multi-year coating for ultimate paint protection</p>
+          </div>
+        </AnimatedSection>
 
-      <div class="service-card">
-        <div class="service-image">
-          <img src="/images/service-polish.jpg" alt="Paint correction" />
-        </div>
-        <h3>Paint Correction</h3>
-        <p>Remove swirls and scratches for a flawless finish</p>
+        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={400}>
+          <div class="service-card card-hover">
+            <div class="service-image">
+              <OptimizedImage src="/images/service-polish" alt="Paint correction" />
+            </div>
+            <h3>Paint Correction</h3>
+            <p>Remove swirls and scratches for a flawless finish</p>
+          </div>
+        </AnimatedSection>
       </div>
-    </div>
-  </section>
+    </section>
+  </AnimatedSection>
+
+  <!-- Our Process Timeline -->
+  <AnimatedSection animation="fade-in" threshold={0.2}>
+    <section class="process-section">
+      <h2 class="section-title">Our Detailing Process</h2>
+      <p class="section-subtitle">Five steps to automotive perfection</p>
+      
+      <ProcessTimeline steps={processSteps} />
+    </section>
+  </AnimatedSection>
 
   <!-- Packages Section -->
   <section class="packages-section">
@@ -237,8 +318,29 @@
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .service-card:hover .service-image img {
+  .service-card:hover .service-image :global(img) {
     transform: scale(1.05);
+  }
+
+  /* Before/After Section */
+  .before-after-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8rem 2rem;
+    background: var(--color-bg-lighter);
+  }
+
+  .before-after-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* Process Section */
+  .process-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8rem 2rem;
+    background: var(--color-bg-white);
   }
 
   .service-card h3 {
@@ -365,27 +467,18 @@
     }
   }
 
-  /* Smooth Scroll Animations */
-  @media (prefers-reduced-motion: no-preference) {
-    .service-card,
-    .feature {
-      animation: fadeInUp 0.6s ease-out backwards;
+  /* Responsive adjustments for new sections */
+  @media (max-width: 1024px) {
+    .before-after-section,
+    .process-section {
+      padding: 5rem 2rem;
     }
+  }
 
-    .service-card:nth-child(1) { animation-delay: 0.1s; }
-    .service-card:nth-child(2) { animation-delay: 0.2s; }
-    .service-card:nth-child(3) { animation-delay: 0.3s; }
-    .service-card:nth-child(4) { animation-delay: 0.4s; }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+  @media (max-width: 640px) {
+    .before-after-section,
+    .process-section {
+      padding: 3rem 1rem;
     }
   }
 </style>

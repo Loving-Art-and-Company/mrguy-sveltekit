@@ -4,11 +4,18 @@
  * Launch: Jan 24, 2026
  */
 
+/* Import animations and micro-interactions first */
+@import './styles/animations.css';
+@import './styles/micro-interactions.css';
+
 :root {
   /* Primary Brand Colors */
   --color-primary: #0EA5E9;        /* Sky blue - primary actions */
   --color-primary-hover: #0284C7;  /* Darker blue - hover states */
   --color-primary-deep: #0C4A6E;   /* Deep blue - headings, dark text */
+  --color-accent-blue: #7DD3FC;    /* Sky 300 - accents, highlights */
+  --color-deep-blue: #0C4A6E;      /* Sky 900 - deep contrast */
+  --color-sky-blue: #0EA5E9;       /* Sky 500 - primary */
   
   /* Background Colors */
   --color-bg-main: #F0F9FF;        /* Light sky blue - main bg */
