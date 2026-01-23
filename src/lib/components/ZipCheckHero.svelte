@@ -108,15 +108,15 @@
 
 	.zip-hero-logo {
 		margin: 0 auto 2rem;
-		max-width: 280px;
+		width: 200px;
+		height: 200px;
 	}
 
 	.zip-hero-logo img {
 		width: 100%;
-		height: auto;
+		height: 100%;
 		display: block;
 		border-radius: 50%;
-		aspect-ratio: 1;
 		object-fit: cover;
 	}
 
@@ -231,7 +231,8 @@
 		}
 
 		.zip-hero-logo {
-			max-width: 200px;
+			width: 150px;
+			height: 150px;
 			margin-bottom: 1.5rem;
 		}
 
