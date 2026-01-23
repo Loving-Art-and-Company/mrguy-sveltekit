@@ -6,6 +6,7 @@
   import AnimatedSection from '$lib/components/AnimatedSection.svelte';
   import BeforeAfterSlider from '$lib/components/BeforeAfterSlider.svelte';
   import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
+  import ZipCheckHero from '$lib/components/ZipCheckHero.svelte';
   import { ripple } from '$lib/actions/ripple';
 
   function handlePackageSelect(pkg: ServicePackage) {
@@ -52,29 +53,8 @@
 </svelte:head>
 
 <main>
-  <!-- Hero Section - Apple Style with Large Image -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="hero-text">
-        <Sparkle size={20} opacity={0.15} top="10%" left="5%" delay={0} />
-        <Sparkle size={16} opacity={0.12} top="20%" right="10%" delay={1} />
-        
-        <h1 class="hero-title">{BUSINESS_INFO.name}</h1>
-        <p class="hero-tagline">{BUSINESS_INFO.tagline}</p>
-        <p class="hero-sub">{BUSINESS_INFO.subTagline}</p>
-        <a href="/book" class="btn cta cta-pulse" use:ripple>
-          Book Your Detail <span class="arrow-slide">→</span>
-        </a>
-      </div>
-      <div class="hero-image">
-        <OptimizedImage 
-          src="/images/hero-car-detail" 
-          alt="Professional car detailing" 
-          priority={true}
-        />
-      </div>
-    </div>
-  </section>
+  <!-- ZIP-First Hero - PWA Optimized -->
+  <ZipCheckHero />
 
   <!-- Before/After Transformation -->
   <AnimatedSection animation="fade-in-up" threshold={0.3}>
@@ -178,85 +158,6 @@
 <style>
   main {
     background: var(--color-bg-white);
-  }
-
-  /* Hero Section - Apple Style */
-  .hero {
-    position: relative;
-    background: var(--color-bg-white);
-    overflow: hidden;
-  }
-
-  .hero-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
-    padding: 6rem 2rem;
-    min-height: 85vh;
-  }
-
-  .hero-text {
-    position: relative;
-    z-index: 1;
-  }
-
-  .hero-title {
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
-    font-weight: 700;
-    line-height: 1.1;
-    margin: 0 0 1rem 0;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-  }
-
-  .hero-tagline {
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
-    color: var(--color-primary);
-    margin: 0 0 1rem 0;
-    font-weight: 600;
-  }
-
-  .hero-sub {
-    font-size: clamp(1.1rem, 2vw, 1.5rem);
-    color: var(--text-secondary);
-    margin: 0 0 2.5rem 0;
-    line-height: 1.6;
-  }
-
-  .hero-image {
-    position: relative;
-    border-radius: 2rem;
-    overflow: hidden;
-    box-shadow: var(--shadow-xl);
-  }
-
-  .hero-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .cta {
-    display: inline-block;
-    background: var(--color-primary);
-    color: var(--text-inverse);
-    padding: 1.25rem 3rem;
-    border-radius: var(--radius-full);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.125rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-md);
-  }
-
-  .cta:hover {
-    background: var(--color-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
   }
 
   /* Services Showcase */
@@ -422,17 +323,6 @@
 
   /* Responsive Design */
   @media (max-width: 1024px) {
-    .hero-content {
-      grid-template-columns: 1fr;
-      gap: 3rem;
-      padding: 4rem 2rem;
-      text-align: center;
-    }
-
-    .hero-title {
-      font-size: clamp(2rem, 8vw, 3.5rem);
-    }
-
     .services-grid {
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1.5rem;
@@ -440,10 +330,6 @@
   }
 
   @media (max-width: 640px) {
-    .hero-content {
-      padding: 3rem 1rem;
-    }
-
     .services-showcase {
       padding: 4rem 1rem;
     }
