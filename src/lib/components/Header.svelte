@@ -62,7 +62,11 @@
 
   .logo-img {
     height: 48px;
-    width: auto;
+    width: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   .logo-text {
@@ -115,6 +119,7 @@
 
     .logo-img {
       height: 40px;
+      width: 40px;
     }
 
     .logo-text {

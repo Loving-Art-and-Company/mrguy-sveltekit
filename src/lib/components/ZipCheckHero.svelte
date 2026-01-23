@@ -49,6 +49,9 @@
 <section class="zip-hero">
 	<div class="zip-hero-content">
 		<div class="zip-hero-text">
+			<div class="zip-hero-logo">
+				<img src="/logo/mrguylogo-full.png" alt="MrGuy Detail Logo" />
+			</div>
 			<h1 class="zip-hero-title">Detailing at Your Driveway</h1>
 			<p class="zip-hero-subtitle">West Broward's #1 Mobile Detail • Same-Day Available</p>
 			
@@ -101,6 +104,17 @@
 		max-width: 900px;
 		margin: 0 auto;
 		text-align: center;
+	}
+
+	.zip-hero-logo {
+		margin: 0 auto 2rem;
+		max-width: 280px;
+	}
+
+	.zip-hero-logo img {
+		width: 100%;
+		height: auto;
+		display: block;
 	}
 
 	.zip-hero-title {
@@ -211,6 +225,11 @@
 	@media (max-width: 640px) {
 		.zip-hero {
 			padding: 3rem 1rem 4rem;
+		}
+
+		.zip-hero-logo {
+			max-width: 200px;
+			margin-bottom: 1.5rem;
 		}
 
 		.zip-input-wrapper {
