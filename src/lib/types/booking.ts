@@ -1,13 +1,14 @@
 import { z } from 'zod';
-import { SERVICE_PACKAGES } from '$lib/data/services';
+import { SERVICE_PACKAGES, SUBSCRIPTION_TIERS, ADD_ONS, EXTRA_FEES } from '$lib/data/services';
 
 // Step 1: Service selection
 export const serviceStepSchema = z.object({
   packageId: z.string().refine(
-    (id) => SERVICE_PACKAGES.some((p) => p.id === id),
-    { message: 'Please select a valid service package' }
+    (id) => SERVICE_PACKAGES.some((p) => p.id === id) || SUBSCRIPTION_TIERS.some((t) => t.id === id),
+    { message: 'Please select a valid service' }
   ),
   addons: z.array(z.string()).optional().default([]),
+  extraFees: z.array(z.string()).optional().default([]),
 });
 
 // Step 2: Vehicle info

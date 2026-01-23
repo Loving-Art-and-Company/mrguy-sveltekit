@@ -42,19 +42,19 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     case 'payment_intent.succeeded': {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      console.log('Payment succeeded:', paymentIntent.id);
+      // Payment succeeded - no action needed, checkout.session.completed handles booking creation
       break;
     }
 
     case 'payment_intent.payment_failed': {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      console.log('Payment failed:', paymentIntent.id, paymentIntent.last_payment_error?.message);
+      console.error('Payment failed:', paymentIntent.id, paymentIntent.last_payment_error?.message);
       break;
     }
 
     default:
-      console.log(`Unhandled event type: ${event.type}`);
+      // Ignore other event types silently
+      break;
   }
 
   return json({ received: true });
@@ -143,12 +143,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return;
   }
 
-  console.log('Booking created successfully:', {
-    bookingId,
-    clientPhone: phone,
-    serviceName: pkg?.name,
-  });
-
+  // Booking created successfully
   // TODO: Send confirmation SMS via Twilio
 }
 

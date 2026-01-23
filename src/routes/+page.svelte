@@ -14,26 +14,74 @@
 </svelte:head>
 
 <main>
+  <!-- Hero Section - Apple Style with Large Image -->
   <section class="hero">
-    <Sparkle size={24} opacity={0.2} top="10%" left="10%" delay={0} />
-    <Sparkle size={18} opacity={0.15} top="15%" right="15%" delay={1} />
-    <Sparkle size={20} opacity={0.18} bottom="20%" left="20%" delay={0.5} />
-    <Sparkle size={16} opacity={0.15} bottom="25%" right="25%" delay={1.5} />
-    
-    <h1>{BUSINESS_INFO.name}</h1>
-    <p class="tagline">{BUSINESS_INFO.tagline}</p>
-    <p class="sub">{BUSINESS_INFO.subTagline}</p>
-    <a href="/book" class="cta">Book Now</a>
+    <div class="hero-content">
+      <div class="hero-text">
+        <Sparkle size={20} opacity={0.15} top="10%" left="5%" delay={0} />
+        <Sparkle size={16} opacity={0.12} top="20%" right="10%" delay={1} />
+        
+        <h1 class="hero-title">{BUSINESS_INFO.name}</h1>
+        <p class="hero-tagline">{BUSINESS_INFO.tagline}</p>
+        <p class="hero-sub">{BUSINESS_INFO.subTagline}</p>
+        <a href="/book" class="cta">Book Your Detail</a>
+      </div>
+      <div class="hero-image">
+        <img src="/images/hero-car-detail.jpg" alt="Professional car detailing" />
+      </div>
+    </div>
   </section>
 
+  <!-- Services Showcase - Visual Grid -->
+  <section class="services-showcase">
+    <h2 class="section-title">Premium Detailing Services</h2>
+    <p class="section-subtitle">Professional care for every part of your vehicle</p>
+    
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-image">
+          <img src="/images/service-exterior.jpg" alt="Exterior detailing" />
+        </div>
+        <h3>Exterior Care</h3>
+        <p>Hand wash, wax, and paint correction for a showroom finish</p>
+      </div>
+
+      <div class="service-card">
+        <div class="service-image">
+          <img src="/images/service-interior.jpg" alt="Interior detailing" />
+        </div>
+        <h3>Interior Perfection</h3>
+        <p>Deep cleaning, leather care, and odor elimination</p>
+      </div>
+
+      <div class="service-card">
+        <div class="service-image">
+          <img src="/images/service-ceramic.jpg" alt="Ceramic coating" />
+        </div>
+        <h3>Ceramic Protection</h3>
+        <p>Multi-year coating for ultimate paint protection</p>
+      </div>
+
+      <div class="service-card">
+        <div class="service-image">
+          <img src="/images/service-polish.jpg" alt="Paint correction" />
+        </div>
+        <h3>Paint Correction</h3>
+        <p>Remove swirls and scratches for a flawless finish</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Packages Section -->
   <section class="packages-section">
-    <h2>Our Packages</h2>
-    <p class="section-sub">Mobile detailing that comes to you. {BUSINESS_INFO.priceRange}</p>
+    <h2 class="section-title">Choose Your Package</h2>
+    <p class="section-subtitle">Mobile detailing that comes to you. {BUSINESS_INFO.priceRange}</p>
     <PackageMenu onSelect={handlePackageSelect} />
   </section>
 
+  <!-- Why Choose Us -->
   <section class="why-us">
-    <h2>Why Choose Us</h2>
+    <h2>Why Choose Mr. Guy</h2>
     <div class="features">
       {#each BUSINESS_INFO.valueProps as prop}
         <div class="feature">
@@ -48,86 +96,187 @@
 
 <style>
   main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    background: var(--color-bg-white);
   }
 
+  /* Hero Section - Apple Style */
   .hero {
     position: relative;
-    text-align: center;
-    padding: 5rem 2rem;
-    background: var(--color-primary-deep);
-    color: var(--text-inverse);
-    border-radius: 0 0 2rem 2rem;
-    margin-bottom: 3rem;
+    background: var(--color-bg-white);
     overflow: hidden;
   }
 
-  .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    margin: 0 0 0.5rem 0;
-    font-weight: 800;
+  .hero-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    padding: 6rem 2rem;
+    min-height: 85vh;
   }
 
-  .tagline {
-    font-size: 1.5rem;
+  .hero-text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .hero-tagline {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
     color: var(--color-primary);
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 1rem 0;
     font-weight: 600;
   }
 
-  .sub {
-    color: var(--text-muted);
-    font-size: 1.1rem;
-    margin: 0 0 2rem 0;
+  .hero-sub {
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    color: var(--text-secondary);
+    margin: 0 0 2.5rem 0;
+    line-height: 1.6;
+  }
+
+  .hero-image {
+    position: relative;
+    border-radius: 2rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .cta {
     display: inline-block;
     background: var(--color-primary);
     color: var(--text-inverse);
-    padding: 1rem 2.5rem;
-    border-radius: var(--radius-md);
+    padding: 1.25rem 3rem;
+    border-radius: var(--radius-full);
     text-decoration: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    transition: background 0.2s, transform 0.2s;
+    font-weight: 600;
+    font-size: 1.125rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-md);
   }
 
   .cta:hover {
     background: var(--color-primary-hover);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
 
-  .packages-section {
-    padding: 3rem 1rem;
+  /* Services Showcase */
+  .services-showcase {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8rem 2rem;
   }
 
-  .packages-section h2 {
+  .section-title {
     text-align: center;
-    font-size: 2rem;
-    margin: 0 0 0.5rem 0;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .section-subtitle {
+    text-align: center;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--text-secondary);
+    margin: 0 0 4rem 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+
+  .service-card {
+    background: var(--color-bg-white);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-light);
+  }
+
+  .service-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .service-image {
+    width: 100%;
+    height: 240px;
+    overflow: hidden;
+  }
+
+  .service-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .service-card:hover .service-image img {
+    transform: scale(1.05);
+  }
+
+  .service-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.5rem 1.5rem 0.75rem;
     color: var(--text-primary);
   }
 
-  .section-sub {
-    text-align: center;
+  .service-card p {
     color: var(--text-secondary);
-    margin: 0 0 2rem 0;
+    margin: 0 1.5rem 1.5rem;
+    line-height: 1.6;
   }
 
+  /* Packages Section */
+  .packages-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8rem 2rem;
+    background: var(--color-bg-main);
+  }
+
+  /* Why Choose Us */
   .why-us {
+    max-width: 1200px;
+    margin: 0 auto;
     background: var(--color-bg-lighter);
-    padding: 3rem 2rem;
-    border-radius: var(--radius-xl);
-    margin: 2rem 0 4rem 0;
+    padding: 5rem 2rem;
+    border-radius: 2rem;
     text-align: center;
+    margin-bottom: 6rem;
   }
 
   .why-us h2 {
-    font-size: 1.75rem;
-    margin: 0 0 1.5rem 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    margin: 0 0 3rem 0;
     color: var(--text-primary);
   }
 
@@ -135,43 +284,108 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .feature {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     background: var(--color-bg-white);
-    padding: 0.75rem 1.25rem;
+    padding: 1rem 2rem;
     border-radius: var(--radius-full);
     font-weight: 500;
+    font-size: 1.125rem;
     box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .feature:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
 
   .check {
     color: var(--color-success);
     font-weight: bold;
+    font-size: 1.25rem;
   }
 
   .location {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin: 0;
   }
 
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .hero-content {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+    }
+
+    .services-grid {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+  }
+
   @media (max-width: 640px) {
-    .hero {
+    .hero-content {
       padding: 3rem 1rem;
     }
 
+    .services-showcase {
+      padding: 4rem 1rem;
+    }
+
     .packages-section {
-      padding: 2rem 0;
+      padding: 4rem 1rem;
     }
 
     .why-us {
-      padding: 2rem 1rem;
+      padding: 3rem 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .services-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .feature {
+      padding: 0.875rem 1.5rem;
+      font-size: 1rem;
+    }
+  }
+
+  /* Smooth Scroll Animations */
+  @media (prefers-reduced-motion: no-preference) {
+    .service-card,
+    .feature {
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .service-card:nth-child(1) { animation-delay: 0.1s; }
+    .service-card:nth-child(2) { animation-delay: 0.2s; }
+    .service-card:nth-child(3) { animation-delay: 0.3s; }
+    .service-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   }
 </style>
