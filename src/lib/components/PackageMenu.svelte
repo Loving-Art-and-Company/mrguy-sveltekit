@@ -340,10 +340,22 @@
 
   @media (max-width: 640px) {
     .grid {
-      grid-template-columns: 1fr;
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 1rem;
+      padding: 0 1rem 1rem 1rem;
+      margin: 0 -1rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .grid::-webkit-scrollbar {
+      display: none;
     }
 
     .card {
+      min-width: 280px;
+      scroll-snap-align: center;
       padding: 1.25rem;
     }
   }
