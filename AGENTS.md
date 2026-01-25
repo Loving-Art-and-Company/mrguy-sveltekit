@@ -1,52 +1,85 @@
-# Mr. Guy Mobile Detail - SvelteKit Port
+# Mr. Guy Mobile Detail - Project Guidance
+
+## Context System
+
+**Before starting work, AI should load:**
+1. `.claude/context.md` - Current project state and active work
+2. `.claude/decisions.md` - Architecture decisions and rationale  
+3. `CLAUDE.md` - Comprehensive architecture documentation
+4. `README.md` - Quick start and setup guide
+
+**At end of session:**
+- Update `.claude/context.md` with progress
+- Log any new architecture decisions in `.claude/decisions.md`
+
+## Project Overview
 
 Port from React version at `~/Projects/06_ARCHIVE/mrguy-react-archived-*`
 
-## Tasks
+Mobile detailing booking platform for West Broward, South Florida.
 
-### 1. Port PackageMenu Component
-- [ ] Create `src/lib/components/PackageMenu.svelte`
-- [ ] Display 5 service packages ($45-$2000)
-- [ ] Include "Fresh Start" 25% promo badge
-- [ ] Mobile-responsive grid layout
+**Stack:** SvelteKit + Supabase + Stripe + Twilio Verify
 
-**Acceptance**: Packages render on landing page with correct pricing
+## Quick Commands
 
-### 2. Build Booking Flow
-- [ ] Create `src/routes/book/+page.svelte`
-- [ ] Multi-step form: service → vehicle → date → address → payment
-- [ ] Use Svelte 5 runes for form state
-- [ ] Zod validation on each step
+```bash
+# Development
+npm run dev              # Start dev server (port 5173)
+npm run build            # Production build
+npm run preview          # Preview build
 
-**Acceptance**: Can navigate through all booking steps
-
-### 3. Stripe Checkout Integration
-- [ ] Create `src/routes/api/payments/create-checkout/+server.ts`
-- [ ] Create `src/routes/api/payments/webhook/+server.ts`
-- [ ] Redirect to Stripe Checkout (not embedded)
-- [ ] Handle success/cancel returns
-
-**Acceptance**: Test payment completes and booking is created
-
-### 4. Twilio OTP Reschedule Portal
-- [ ] Create `src/routes/reschedule/+page.svelte`
-- [ ] Phone number input → OTP verification
-- [ ] Show customer's bookings after auth
-- [ ] Allow date/time changes
-
-**Acceptance**: Customer can reschedule via SMS OTP
-
-### 5. Supabase Connection
-- [ ] Create `src/lib/server/supabase.ts` (server client)
-- [ ] Create `src/lib/supabase.ts` (browser client)
-- [ ] Connect to existing tables (bookings, client_profiles, etc.)
-- [ ] Test CRUD operations
-
-**Acceptance**: Can read/write to Supabase from app
-
-## Completion Promise
-
-When all tasks pass acceptance criteria:
+# Quality
+npm run check            # Type check + SvelteKit sync
+npm run check:watch      # Watch mode
 ```
-MRGUY SVELTEKIT READY
+
+## Key Patterns
+
+### Svelte 5 Runes (Required)
+```javascript
+// State
+let count = $state(0);
+
+// Effects
+$effect(() => {
+  console.log('Count changed:', count);
+});
+
+// Props
+let { name, age = 18 } = $props();
 ```
+
+### Server-Side Validation (Required)
+```javascript
+import { z } from 'zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  phone: z.string().regex(/^\d{10}$/)
+});
+
+const result = schema.safeParse(data);
+```
+
+### Supabase RLS (All Tables Protected)
+```javascript
+// Use service role server-side only
+import { supabase } from '$lib/server/supabase';
+
+// Browser client has RLS restrictions
+import { supabase } from '$lib/supabase';
+```
+
+## Security Rules
+
+- Never commit `.env.local` (already in .gitignore)
+- Supabase service role key = server-only
+- Validate all inputs server-side with Zod
+- All Supabase tables have RLS policies
+
+## Reference Docs
+
+- Architecture: `CLAUDE.md`
+- Security: `SECURITY.md`
+- Ralph Phases: `RALPH-PHASE*.md` (implementation history)
+- Global standards: `~/AGENTS.md`
