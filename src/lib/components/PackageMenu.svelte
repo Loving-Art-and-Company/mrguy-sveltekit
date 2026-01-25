@@ -234,6 +234,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
+    padding-top: 1rem;
   }
 
   .grid.subscriptions {
@@ -249,6 +250,7 @@
     display: flex;
     flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
+    overflow: visible;
   }
 
   .card:hover {
