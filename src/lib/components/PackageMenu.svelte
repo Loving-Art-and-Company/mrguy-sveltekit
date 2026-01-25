@@ -38,36 +38,42 @@
     </div>
   {/if}
 
-  <!-- Monthly Subscriptions -->
+  <!-- Top 3 One-Time Services -->
   <div class="section-header">
-    <Crown size={24} />
+    <Star size={24} />
     <div>
-      <h3>Monthly Memberships</h3>
-      <p>Subscribe & save with regular detailing</p>
+      <h3>Most Popular</h3>
+      <p>One-time services</p>
     </div>
   </div>
 
-  <div class="grid subscriptions">
-    {#each SUBSCRIPTION_TIERS as tier (tier.id)}
-      <article class="card subscription" class:featured={tier.badge}>
-        {#if tier.badge}
+  <div class="grid">
+    {#each SERVICE_PACKAGES.slice(0, 3) as pkg (pkg.id)}
+      <article class="card" class:featured={pkg.badge}>
+        {#if pkg.badge}
           <div class="badge">
             <Zap size={14} />
-            {tier.badge}
+            {pkg.badge}
           </div>
         {/if}
 
-        <h3>{tier.name}</h3>
+        <h3>{pkg.name}</h3>
 
         <div class="price">
-          <span class="amount">${tier.priceLow}-${tier.priceHigh}</span>
-          <span class="frequency">/month</span>
+          {#if showPromo}
+            <span class="original">${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span class="discounted">
+              ${getPromoPrice(pkg.priceLow)}-${getPromoPrice(pkg.priceHigh)}
+            </span>
+          {:else}
+            <span>${pkg.priceLow}-${pkg.priceHigh}</span>
+          {/if}
         </div>
 
-        <p class="description">{tier.description}</p>
+        <p class="description">{pkg.description}</p>
 
         <ul class="includes">
-          {#each tier.includes as item}
+          {#each pkg.includes as item}
             <li>
               <Check size={16} />
               {item}
@@ -75,19 +81,19 @@
           {/each}
         </ul>
 
-        <button class="select-btn" onclick={() => handleSelectSubscription(tier)}>
-          Subscribe
+        <button class="select-btn" onclick={() => handleSelect(pkg)}>
+          Select Package
         </button>
       </article>
     {/each}
   </div>
 
-  <!-- One-Time Services -->
+  <!-- All One-Time Services -->
   <div class="section-header">
     <Star size={24} />
     <div>
-      <h3>One-Time Services</h3>
-      <p>Individual detailing services</p>
+      <h3>All Services</h3>
+      <p>Everything we do</p>
     </div>
   </div>
 
@@ -127,6 +133,50 @@
 
         <button class="select-btn" onclick={() => handleSelect(pkg)}>
           Select Package
+        </button>
+      </article>
+    {/each}
+  </div>
+
+  <!-- Monthly Subscriptions -->
+  <div class="section-header">
+    <Crown size={24} />
+    <div>
+      <h3>Monthly Plans</h3>
+      <p>For people who actually use their car</p>
+    </div>
+  </div>
+
+  <div class="grid subscriptions">
+    {#each SUBSCRIPTION_TIERS as tier (tier.id)}
+      <article class="card subscription" class:featured={tier.badge}>
+        {#if tier.badge}
+          <div class="badge">
+            <Zap size={14} />
+            {tier.badge}
+          </div>
+        {/if}
+
+        <h3>{tier.name}</h3>
+
+        <div class="price">
+          <span class="amount">${tier.priceLow}-${tier.priceHigh}</span>
+          <span class="frequency">/month</span>
+        </div>
+
+        <p class="description">{tier.description}</p>
+
+        <ul class="includes">
+          {#each tier.includes as item}
+            <li>
+              <Check size={16} />
+              {item}
+            </li>
+          {/each}
+        </ul>
+
+        <button class="select-btn" onclick={() => handleSelectSubscription(tier)}>
+          Subscribe
         </button>
       </article>
     {/each}
