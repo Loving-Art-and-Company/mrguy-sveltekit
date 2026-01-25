@@ -47,10 +47,10 @@ export const dateStepSchema = z.object({
 
 // Step 4: Address
 export const addressStepSchema = z.object({
-  street: z.string().min(5, 'Street address is required'),
-  city: z.string().min(2, 'City is required'),
-  state: z.string().length(2, 'Use 2-letter state code').default('FL'),
-  zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  street: z.string().trim().min(5, 'Street address is required'),
+  city: z.string().trim().min(2, 'City is required'),
+  state: z.string().trim().length(2, 'Use 2-letter state code').default('FL'),
+  zip: z.string().trim().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
   instructions: z.string().max(300).optional(),
 });
 
@@ -102,10 +102,10 @@ export const serviceLocationStepSchema = z.object({
     { message: 'Please select a valid service' }
   ),
   // Location
-  street: z.string().min(5, 'Street address is required'),
-  city: z.string().min(2, 'City is required'),
-  state: z.string().length(2, 'Use 2-letter state code').default('FL'),
-  zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  street: z.string().trim().min(5, 'Street address is required'),
+  city: z.string().trim().min(2, 'City is required'),
+  state: z.string().trim().length(2, 'Use 2-letter state code').default('FL'),
+  zip: z.string().trim().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
   placeId: z.string().optional(), // From Google Places API
 });
 
