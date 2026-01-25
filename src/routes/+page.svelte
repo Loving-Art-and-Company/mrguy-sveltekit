@@ -15,34 +15,22 @@
 
   const processSteps = [
     {
-      title: 'Initial Inspection',
-      description: 'We thoroughly assess your vehicle\'s condition, identifying problem areas and customizing our approach to your specific needs.',
-      imageSrc: '/images/process/step-1-inspection',
-      imageAlt: 'Detailed vehicle inspection before detailing'
-    },
-    {
-      title: 'Deep Cleaning',
-      description: 'Using premium pH-balanced soaps and foam cannons, we safely remove dirt, grime, and contaminants from every surface.',
+      title: '1. We Show Up',
+      description: 'Book online, pick your time. We pull up with everything.',
       imageSrc: '/images/process/step-2-wash',
-      imageAlt: 'Professional car washing with foam cannon'
+      imageAlt: 'Mobile detailing van arrives at your location'
     },
     {
-      title: 'Paint Correction',
-      description: 'Advanced polishing techniques remove swirls, scratches, and oxidation, restoring your paint to showroom condition.',
+      title: '2. We Detail',
+      description: 'Wash, polish, protect. Whatever you picked.',
       imageSrc: '/images/process/step-3-polish',
-      imageAlt: 'Paint correction and polishing process'
+      imageAlt: 'Professional detailing in progress'
     },
     {
-      title: 'Protection Application',
-      description: 'We apply ceramic coating or premium wax to protect your paint, providing months of UV and environmental resistance.',
-      imageSrc: '/images/process/step-4-protect',
-      imageAlt: 'Ceramic coating application'
-    },
-    {
-      title: 'Final Inspection',
-      description: 'Every detail is inspected under professional lighting to ensure perfect results before delivering your vehicle.',
+      title: '3. You\'re Done',
+      description: 'Car looks good. You didn\'t have to go anywhere.',
       imageSrc: '/images/process/step-5-final',
-      imageAlt: 'Final quality inspection of detailed vehicle'
+      imageAlt: 'Clean detailed car ready to go'
     }
   ];
 </script>
@@ -76,8 +64,8 @@
   <!-- Services Showcase - Visual Grid -->
   <AnimatedSection animation="fade-in-up" threshold={0.2}>
     <section class="services-showcase">
-      <h2 class="section-title">Premium Detailing Services</h2>
-      <p class="section-subtitle">Professional care for every part of your vehicle</p>
+      <h2 class="section-title">What We Do</h2>
+      <p class="section-subtitle">Exterior, interior, or both</p>
       
       <div class="services-grid">
         <AnimatedSection animation="fade-in-up" threshold={0.15} delay={100}>
@@ -85,8 +73,8 @@
             <div class="service-image">
               <OptimizedImage src="/images/service-exterior" alt="Exterior detailing" />
             </div>
-            <h3>Exterior Care</h3>
-            <p>Hand wash, wax, and paint correction for a showroom finish</p>
+            <h3>Exterior</h3>
+            <p>Wash, wax, polish</p>
           </div>
         </AnimatedSection>
 
@@ -95,8 +83,8 @@
             <div class="service-image">
               <OptimizedImage src="/images/service-interior" alt="Interior detailing" />
             </div>
-            <h3>Interior Perfection</h3>
-            <p>Deep cleaning, leather care, and odor elimination</p>
+            <h3>Interior</h3>
+            <p>Vacuum, clean, condition</p>
           </div>
         </AnimatedSection>
 
@@ -105,8 +93,8 @@
             <div class="service-image">
               <OptimizedImage src="/images/service-ceramic" alt="Ceramic coating" />
             </div>
-            <h3>Ceramic Protection</h3>
-            <p>Multi-year coating for ultimate paint protection</p>
+            <h3>Protection</h3>
+            <p>Ceramic or wax coating</p>
           </div>
         </AnimatedSection>
 
@@ -115,8 +103,8 @@
             <div class="service-image">
               <OptimizedImage src="/images/service-polish" alt="Paint correction" />
             </div>
-            <h3>Paint Correction</h3>
-            <p>Remove swirls and scratches for a flawless finish</p>
+            <h3>Paint Fix</h3>
+            <p>Remove swirls and scratches</p>
           </div>
         </AnimatedSection>
       </div>
@@ -126,8 +114,8 @@
   <!-- Our Process Timeline -->
   <AnimatedSection animation="fade-in" threshold={0.2}>
     <section class="process-section">
-      <h2 class="section-title">Our Detailing Process</h2>
-      <p class="section-subtitle">Five steps to automotive perfection</p>
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Like a car wash, but we come to you</p>
       
       <ProcessTimeline steps={processSteps} />
     </section>
