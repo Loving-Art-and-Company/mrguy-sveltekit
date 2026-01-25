@@ -15,7 +15,7 @@
     onSelectSubscription?: (tier: SubscriptionTier) => void;
   }
 
-  let { showPromo = true, onSelect, onSelectSubscription }: Props = $props();
+  let { showPromo = false, onSelect, onSelectSubscription }: Props = $props();
 
   function handleSelect(pkg: ServicePackage) {
     if (onSelect) {
