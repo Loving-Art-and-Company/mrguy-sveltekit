@@ -88,56 +88,6 @@
     {/each}
   </div>
 
-  <!-- All One-Time Services -->
-  <div class="section-header">
-    <Star size={24} />
-    <div>
-      <h3>All Services</h3>
-      <p>Everything we do</p>
-    </div>
-  </div>
-
-  <div class="grid">
-    {#each SERVICE_PACKAGES as pkg (pkg.id)}
-      <article class="card" class:featured={pkg.badge}>
-        {#if pkg.badge}
-          <div class="badge">
-            <Zap size={14} />
-            {pkg.badge}
-          </div>
-        {/if}
-
-        <h3>{pkg.name}</h3>
-
-        <div class="price">
-          {#if showPromo}
-            <span class="original">${pkg.priceLow}-${pkg.priceHigh}</span>
-            <span class="discounted">
-              ${getPromoPrice(pkg.priceLow)}-${getPromoPrice(pkg.priceHigh)}
-            </span>
-          {:else}
-            <span>${pkg.priceLow}-${pkg.priceHigh}</span>
-          {/if}
-        </div>
-
-        <p class="description">{pkg.description}</p>
-
-        <ul class="includes">
-          {#each pkg.includes as item}
-            <li>
-              <Check size={16} />
-              {item}
-            </li>
-          {/each}
-        </ul>
-
-        <button class="select-btn" onclick={() => handleSelect(pkg)}>
-          Select Package
-        </button>
-      </article>
-    {/each}
-  </div>
-
   <!-- Monthly Subscriptions -->
   <div class="section-header">
     <Crown size={24} />
@@ -177,6 +127,56 @@
 
         <button class="select-btn" onclick={() => handleSelectSubscription(tier)}>
           Subscribe
+        </button>
+      </article>
+    {/each}
+  </div>
+
+  <!-- Remaining One-Time Services -->
+  <div class="section-header">
+    <Star size={24} />
+    <div>
+      <h3>More Services</h3>
+      <p>Everything else we do</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    {#each SERVICE_PACKAGES.slice(3) as pkg (pkg.id)}
+      <article class="card" class:featured={pkg.badge}>
+        {#if pkg.badge}
+          <div class="badge">
+            <Zap size={14} />
+            {pkg.badge}
+          </div>
+        {/if}
+
+        <h3>{pkg.name}</h3>
+
+        <div class="price">
+          {#if showPromo}
+            <span class="original">${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span class="discounted">
+              ${getPromoPrice(pkg.priceLow)}-${getPromoPrice(pkg.priceHigh)}
+            </span>
+          {:else}
+            <span>${pkg.priceLow}-${pkg.priceHigh}</span>
+          {/if}
+        </div>
+
+        <p class="description">{pkg.description}</p>
+
+        <ul class="includes">
+          {#each pkg.includes as item}
+            <li>
+              <Check size={16} />
+              {item}
+            </li>
+          {/each}
+        </ul>
+
+        <button class="select-btn" onclick={() => handleSelect(pkg)}>
+          Select Package
         </button>
       </article>
     {/each}
