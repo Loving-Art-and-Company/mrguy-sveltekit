@@ -56,8 +56,8 @@
   <!-- ZIP-First Hero - PWA Optimized -->
   <ZipCheckHero />
 
-  <!-- Before/After Transformation -->
-  <AnimatedSection animation="fade-in-up" threshold={0.3}>
+  <!-- Before/After Transformation - Hidden until real photos available -->
+  <!-- <AnimatedSection animation="fade-in-up" threshold={0.3}>
     <section class="before-after-section">
       <h2 class="section-title">See The Transformation</h2>
       <p class="section-subtitle">Real results from our professional detailing services</p>
@@ -71,7 +71,7 @@
         />
       </div>
     </section>
-  </AnimatedSection>
+  </AnimatedSection> -->
 
   <!-- Services Showcase - Visual Grid -->
   <AnimatedSection animation="fade-in-up" threshold={0.2}>
