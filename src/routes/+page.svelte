@@ -61,56 +61,6 @@
     </section>
   </AnimatedSection> -->
 
-  <!-- Services Showcase - Visual Grid -->
-  <AnimatedSection animation="fade-in-up" threshold={0.2}>
-    <section class="services-showcase">
-      <h2 class="section-title">What We Do</h2>
-      <p class="section-subtitle">Exterior, interior, or both</p>
-      
-      <div class="services-grid">
-        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={100}>
-          <div class="service-card card-hover">
-            <div class="service-image">
-              <OptimizedImage src="/images/service-exterior" alt="Exterior detailing" />
-            </div>
-            <h3>Exterior</h3>
-            <p>Wash, wax, polish</p>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={200}>
-          <div class="service-card card-hover">
-            <div class="service-image">
-              <OptimizedImage src="/images/service-interior" alt="Interior detailing" />
-            </div>
-            <h3>Interior</h3>
-            <p>Vacuum, clean, condition</p>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={300}>
-          <div class="service-card card-hover">
-            <div class="service-image">
-              <OptimizedImage src="/images/service-ceramic" alt="Ceramic coating" />
-            </div>
-            <h3>Protection</h3>
-            <p>Ceramic or wax coating</p>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection animation="fade-in-up" threshold={0.15} delay={400}>
-          <div class="service-card card-hover">
-            <div class="service-image">
-              <OptimizedImage src="/images/service-polish" alt="Paint correction" />
-            </div>
-            <h3>Paint Fix</h3>
-            <p>Remove swirls and scratches</p>
-          </div>
-        </AnimatedSection>
-      </div>
-    </section>
-  </AnimatedSection>
-
   <!-- Our Process Timeline -->
   <AnimatedSection animation="fade-in" threshold={0.2}>
     <section class="process-section">
