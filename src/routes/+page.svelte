@@ -135,14 +135,14 @@
 
   <!-- Packages Section -->
   <section class="packages-section">
-    <h2 class="section-title">Choose Your Package</h2>
-    <p class="section-subtitle">Mobile detailing that comes to you. {BUSINESS_INFO.priceRange}</p>
+    <h2 class="section-title">Pick What Works</h2>
+    <p class="section-subtitle">We pull up. You stay busy. {BUSINESS_INFO.priceRange}</p>
     <PackageMenu onSelect={handlePackageSelect} />
   </section>
 
   <!-- Why Choose Us -->
   <section class="why-us">
-    <h2>Why Choose Mr. Guy</h2>
+    <h2>Why People Use Us</h2>
     <div class="features">
       {#each BUSINESS_INFO.valueProps as prop}
         <div class="feature">
