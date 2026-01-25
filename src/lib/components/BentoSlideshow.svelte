@@ -9,36 +9,31 @@
       title: "Ceramic Protection",
       subtitle: "Long-lasting shine",
       description: "Multi-year protection that keeps your paint looking showroom fresh",
-      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      icon: "✨"
+      image: "/images/service-ceramic.webp"
     },
     {
       title: "Paint Correction",
       subtitle: "Flawless finish",
       description: "Remove swirls, scratches, and oxidation for a mirror-like surface",
-      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-      icon: "🎨"
+      image: "/images/service-polish.webp"
     },
     {
       title: "Interior Deep Clean",
       subtitle: "Fresh & pristine",
       description: "Every surface cleaned, conditioned, and protected",
-      gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-      icon: "🚗"
+      image: "/images/service-interior.webp"
+    },
+    {
+      title: "Exterior Detailing",
+      subtitle: "Showroom finish",
+      description: "Professional wash, wax, and paint care",
+      image: "/images/hero-car-detail.webp"
     },
     {
       title: "Mobile Service",
       subtitle: "We come to you",
       description: "Professional detailing at your home or office",
-      gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-      icon: "📍"
-    },
-    {
-      title: "Same-Day Available",
-      subtitle: "Book today, clean today",
-      description: "Quick turnaround without compromising quality",
-      gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-      icon: "⚡"
+      image: "/images/process/step-2-wash.webp"
     }
   ];
 
@@ -70,10 +65,10 @@
       <div 
         class="slide" 
         class:active={currentSlide === i}
-        style="background: {slide.gradient}"
       >
+        <img src={slide.image} alt={slide.title} class="slide-image" />
+        <div class="slide-overlay"></div>
         <div class="slide-content">
-          <div class="icon">{slide.icon}</div>
           <h3>{slide.title}</h3>
           <p class="subtitle">{slide.subtitle}</p>
           <p class="description">{slide.description}</p>
@@ -123,6 +118,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
   }
 
   .slide.active {
@@ -131,26 +127,37 @@
     z-index: 1;
   }
 
+  .slide-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .slide.active .slide-image {
+    transform: scale(1.05);
+  }
+
+  .slide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    z-index: 1;
+  }
+
   .slide-content {
+    position: relative;
+    z-index: 2;
     text-align: center;
     color: white;
     padding: 2rem;
     max-width: 600px;
-  }
-
-  .icon {
-    font-size: 5rem;
-    margin-bottom: 1rem;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
   }
 
   .slide-content h3 {
