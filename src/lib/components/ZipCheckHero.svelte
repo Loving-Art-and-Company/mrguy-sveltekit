@@ -50,7 +50,7 @@
 	<div class="zip-hero-content">
 		<div class="zip-hero-text">
 			<div class="zip-hero-logo">
-				<img src="/logo/mrguylogo-full.png" alt="MrGuy Detail Logo" />
+				<img src="/logo/mrguylogo-full-square.png" alt="MrGuy Detail Logo" />
 			</div>
 			<h1 class="zip-hero-title">Detailing at Your Driveway</h1>
 			<p class="zip-hero-subtitle">West Broward's #1 Mobile Detail • Same-Day Available</p>
