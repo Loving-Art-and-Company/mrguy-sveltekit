@@ -7,6 +7,7 @@
   import BeforeAfterSlider from '$lib/components/BeforeAfterSlider.svelte';
   import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
   import ZipCheckHero from '$lib/components/ZipCheckHero.svelte';
+  import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import { ripple } from '$lib/actions/ripple';
 
   function handlePackageSelect(pkg: ServicePackage) {
@@ -44,22 +45,8 @@
   <!-- ZIP-First Hero - PWA Optimized -->
   <ZipCheckHero />
 
-  <!-- Before/After Transformation - Hidden until real photos available -->
-  <!-- <AnimatedSection animation="fade-in-up" threshold={0.3}>
-    <section class="before-after-section">
-      <h2 class="section-title">See The Transformation</h2>
-      <p class="section-subtitle">Real results from our professional detailing services</p>
-      
-      <div class="before-after-container">
-        <BeforeAfterSlider 
-          beforeSrc="/images/before-after/exterior-before"
-          afterSrc="/images/before-after/exterior-after"
-          beforeAlt="Car exterior before professional detailing"
-          afterAlt="Car exterior after professional detailing showing mirror finish"
-        />
-      </div>
-    </section>
-  </AnimatedSection> -->
+  <!-- Bento Slideshow -->
+  <BentoSlideshow />
 
   <!-- Packages Section -->
   <section class="packages-section">
