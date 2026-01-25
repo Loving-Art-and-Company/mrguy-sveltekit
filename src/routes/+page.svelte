@@ -61,16 +61,6 @@
     </section>
   </AnimatedSection> -->
 
-  <!-- Our Process Timeline -->
-  <AnimatedSection animation="fade-in" threshold={0.2}>
-    <section class="process-section">
-      <h2 class="section-title">How It Works</h2>
-      <p class="section-subtitle">Like a car wash, but we come to you</p>
-      
-      <ProcessTimeline steps={processSteps} />
-    </section>
-  </AnimatedSection>
-
   <!-- Packages Section -->
   <section class="packages-section">
     <h2 class="section-title">Pick What Works</h2>
