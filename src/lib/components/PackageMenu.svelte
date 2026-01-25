@@ -61,12 +61,12 @@
 
         <div class="price">
           {#if showPromo}
-            <span class="original">${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span class="original">${pkg.priceHigh}</span>
             <span class="discounted">
-              ${getPromoPrice(pkg.priceLow)}-${getPromoPrice(pkg.priceHigh)}
+              ${getPromoPrice(pkg.priceHigh)}
             </span>
           {:else}
-            <span>${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span>${pkg.priceHigh}</span>
           {/if}
         </div>
 
@@ -110,7 +110,7 @@
         <h3>{tier.name}</h3>
 
         <div class="price">
-          <span class="amount">${tier.priceLow}-${tier.priceHigh}</span>
+          <span class="amount">${tier.priceHigh}</span>
           <span class="frequency">/month</span>
         </div>
 
@@ -155,12 +155,12 @@
 
         <div class="price">
           {#if showPromo}
-            <span class="original">${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span class="original">${pkg.priceHigh}</span>
             <span class="discounted">
-              ${getPromoPrice(pkg.priceLow)}-${getPromoPrice(pkg.priceHigh)}
+              ${getPromoPrice(pkg.priceHigh)}
             </span>
           {:else}
-            <span>${pkg.priceLow}-${pkg.priceHigh}</span>
+            <span>${pkg.priceHigh}</span>
           {/if}
         </div>
 
