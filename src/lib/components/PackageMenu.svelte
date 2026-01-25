@@ -82,7 +82,7 @@
         </ul>
 
         <button class="select-btn" onclick={() => handleSelect(pkg)}>
-          Select Package
+          Book Now →
         </button>
       </article>
     {/each}
@@ -125,8 +125,8 @@
           {/each}
         </ul>
 
-        <button class="select-btn" onclick={() => handleSelectSubscription(tier)}>
-          Subscribe
+        <button class="select-btn subscription-btn" onclick={() => handleSelectSubscription(tier)}>
+          Start Saving →
         </button>
       </article>
     {/each}
@@ -176,7 +176,7 @@
         </ul>
 
         <button class="select-btn" onclick={() => handleSelect(pkg)}>
-          Select Package
+          Book Now →
         </button>
       </article>
     {/each}
@@ -193,12 +193,25 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background: var(--color-primary);
-    color: var(--text-inverse);
-    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    padding: 1rem 1.5rem;
     border-radius: var(--radius-md);
     margin-bottom: 2rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    border: 2px solid #fca5a5;
+    animation: urgencyPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes urgencyPulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
   }
 
   .section-header {
@@ -357,37 +370,59 @@
   .select-btn {
     width: 100%;
     padding: 0.875rem 1.5rem;
-    background: var(--color-primary-deep);
-    color: var(--text-inverse);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
     border: none;
     border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
   }
 
   .select-btn:hover {
-    background: var(--color-primary-hover);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
   }
 
   .card.featured .select-btn {
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    animation: pulse 2s ease-in-out infinite;
   }
 
   .card.featured .select-btn:hover {
-    background: var(--color-primary-hover);
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
   }
 
-  .card.subscription .select-btn {
-    background: var(--color-primary);
+  .subscription-btn {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
   }
 
-  .card.subscription .select-btn:hover {
-    background: var(--color-primary-hover);
+  .subscription-btn:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
   }
 
   .card.subscription.featured .select-btn {
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+    50% {
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+    }
   }
 
   @media (max-width: 640px) {

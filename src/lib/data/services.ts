@@ -70,8 +70,8 @@ export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
   {
     id: "silver",
     name: "Silver",
-    priceLow: 40,
-    priceHigh: 85,
+    priceLow: 39,
+    priceHigh: 84,
     frequency: "monthly",
     description: "Keep your ride looking good without thinking about it.",
     includes: [
@@ -85,8 +85,8 @@ export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
   {
     id: "gold",
     name: "Gold",
-    priceLow: 100,
-    priceHigh: 180,
+    priceLow: 99,
+    priceHigh: 179,
     frequency: "monthly",
     description: "The works. Your car stays fresh while you stay busy.",
     includes: [
@@ -101,8 +101,8 @@ export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
   {
     id: "platinum",
     name: "Platinum",
-    priceLow: 250,
-    priceHigh: 400,
+    priceLow: 249,
+    priceHigh: 399,
     frequency: "monthly",
     description: "Showroom shine every month. For people who actually use their car.",
     includes: [
@@ -122,9 +122,9 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
   {
     id: "exterior_wash",
     name: "Exterior Wash",
-    priceLow: 30,
-    priceHigh: 50,
-    avgPrice: 40,
+    priceLow: 29,
+    priceHigh: 49,
+    avgPrice: 39,
     description: "Quick wash. We come to you, you stay doing whatever.",
     includes: ["Foam cannon bath", "Spot-free rinse", "Tire shine", "Window cleaning"],
     category: 'one-time',
@@ -132,9 +132,9 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
   {
     id: "interior_wash",
     name: "Interior Wash",
-    priceLow: 30,
-    priceHigh: 50,
-    avgPrice: 40,
+    priceLow: 29,
+    priceHigh: 49,
+    avgPrice: 39,
     description: "Get rid of the crumbs, coffee stains, and mystery smells.",
     includes: ["Full vacuum", "Dashboard wipe", "Door panels", "Console cleaning"],
     category: 'one-time',
@@ -142,9 +142,9 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
   {
     id: "full_wax",
     name: "Full Wax",
-    priceLow: 150,
-    priceHigh: 150,
-    avgPrice: 150,
+    priceLow: 149,
+    priceHigh: 149,
+    avgPrice: 149,
     description: "Makes your car look like you actually care about it.",
     includes: ["Hand wax application", "Buff and polish", "UV protection", "Water beading"],
     category: 'one-time',
