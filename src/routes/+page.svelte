@@ -1,6 +1,5 @@
 <script lang="ts">
   import { PackageMenu, BUSINESS_INFO, type ServicePackage } from '$lib';
-  import { goto } from '$app/navigation';
   import Sparkle from '$lib/components/Sparkle.svelte';
   import OptimizedImage from '$lib/components/OptimizedImage.svelte';
   import AnimatedSection from '$lib/components/AnimatedSection.svelte';
@@ -8,10 +7,26 @@
   import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
   import ZipCheckHero from '$lib/components/ZipCheckHero.svelte';
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
+  import BookingModal from '$lib/components/BookingModal.svelte';
   import { ripple } from '$lib/actions/ripple';
 
+  // Booking modal state
+  let showBookingModal = $state(false);
+  let selectedService = $state<ServicePackage | null>(null);
+
   function handlePackageSelect(pkg: ServicePackage) {
-    goto(`/book?package=${pkg.id}`);
+    selectedService = pkg;
+    showBookingModal = true;
+  }
+
+  function closeBookingModal() {
+    showBookingModal = false;
+  }
+
+  function handleEditService() {
+    showBookingModal = false;
+    // Scroll to services section
+    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   const processSteps = [
@@ -49,7 +64,7 @@
   <BentoSlideshow />
 
   <!-- Packages Section -->
-  <section class="packages-section">
+  <section id="services" class="packages-section">
     <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
     <PackageMenu onSelect={handlePackageSelect} />
@@ -69,6 +84,16 @@
     <p class="location">Serving {BUSINESS_INFO.location}</p>
   </section>
 </main>
+
+<!-- Booking Modal -->
+{#if showBookingModal && selectedService}
+  <BookingModal 
+    service={selectedService}
+    isOpen={showBookingModal}
+    onClose={closeBookingModal}
+    onEditService={handleEditService}
+  />
+{/if}
 
 <style>
   main {

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { ripple } from '$lib/actions/ripple';
 
 	let zipCode = '';
@@ -29,9 +28,9 @@
 		// Simulate API check (replace with actual check if needed)
 		setTimeout(() => {
 			if (SERVICED_ZIPS.includes(cleanZip)) {
-				// Store ZIP for booking flow
+				// Store ZIP for booking flow and scroll to services
 				sessionStorage.setItem('serviceZip', cleanZip);
-				goto('/book?zip=' + cleanZip);
+				document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
 			} else {
 				errorMessage = "Sorry, we don't service this area yet. We serve West Broward only.";
 			}
