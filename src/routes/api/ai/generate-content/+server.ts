@@ -1,13 +1,13 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '$env/dynamic/private';
 
-const getAnthropicClient = () => {
-	if (!env.ANTHROPIC_API_KEY) {
+const getGeminiClient = () => {
+	if (!env.GEMINI_API_KEY) {
 		return null;
 	}
-	return new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+	return new GoogleGenerativeAI(env.GEMINI_API_KEY);
 };
 
 const BUSINESS_CONTEXT = `
@@ -69,29 +69,18 @@ Requirements:
 
 Provide ONLY the social media post content, ready to copy and paste. No explanations or preamble.`;
 
-	const anthropic = getAnthropicClient();
-	if (!anthropic) {
-		throw error(503, 'AI service not configured. Please add ANTHROPIC_API_KEY.');
+	const genAI = getGeminiClient();
+	if (!genAI) {
+		throw error(503, 'AI service not configured. Please add GEMINI_API_KEY.');
 	}
 
 	try {
-		const message = await anthropic.messages.create({
-			model: 'claude-sonnet-4-20250514',
-			max_tokens: 500,
-			messages: [
-				{
-					role: 'user',
-					content: prompt
-				}
-			]
-		});
+		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+		const result = await model.generateContent(prompt);
+		const response = result.response;
+		const text = response.text();
 
-		const content = message.content[0];
-		if (content.type !== 'text') {
-			throw error(500, 'Unexpected response format');
-		}
-
-		return json({ content: content.text });
+		return json({ content: text });
 	} catch (e) {
 		console.error('AI generation error:', e);
 		throw error(500, 'Failed to generate content');
