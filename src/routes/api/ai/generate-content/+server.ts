@@ -1,11 +1,14 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Anthropic from '@anthropic-ai/sdk';
-import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
-const anthropic = new Anthropic({
-	apiKey: ANTHROPIC_API_KEY
-});
+const getAnthropicClient = () => {
+	if (!env.ANTHROPIC_API_KEY) {
+		return null;
+	}
+	return new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+};
 
 const BUSINESS_CONTEXT = `
 You are a social media content creator for "Mr. Guy Mobile Detail", a professional mobile car detailing service in South Florida (West Broward area). 
@@ -65,6 +68,11 @@ Requirements:
 - Do NOT use emojis excessively (1-3 max)
 
 Provide ONLY the social media post content, ready to copy and paste. No explanations or preamble.`;
+
+	const anthropic = getAnthropicClient();
+	if (!anthropic) {
+		throw error(503, 'AI service not configured. Please add ANTHROPIC_API_KEY.');
+	}
 
 	try {
 		const message = await anthropic.messages.create({
