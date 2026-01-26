@@ -12,7 +12,7 @@
 <header class="header">
   <div class="header-content">
     <a href="/" class="logo">
-      <img src="/logo/mrguylogo-full.png" alt="Mr. Guy Detail Logo" class="logo-img" />
+      <img src="/logo/mrguylogo-full-square.png" alt="Mr. Guy Detail Logo" class="logo-img" />
       <span class="logo-text">{BUSINESS_INFO.name}</span>
     </a>
 
@@ -61,12 +61,9 @@
   }
 
   .logo-img {
-    height: 48px;
-    width: 48px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 56px;
+    width: auto;
+    object-fit: contain;
   }
 
   .logo-text {
