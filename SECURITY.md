@@ -125,7 +125,6 @@
 | `TWILIO_ACCOUNT_SID` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
 | `TWILIO_AUTH_TOKEN` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
 | `TWILIO_VERIFY_SERVICE_SID` | OTP service | ✗ **SERVER-ONLY** | Vercel secrets | Twilio Verify service |
-| `GEMINI_API_KEY` | AI features | ✗ **SERVER-ONLY** | Vercel secrets | Google AI Studio |
 
 ### Variable Naming Conventions
 
