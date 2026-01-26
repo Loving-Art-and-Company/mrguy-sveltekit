@@ -123,7 +123,7 @@
         <p class="error-message">{error}</p>
       {/if}
 
-      <button class="generate-btn" onclick={generateContent} disabled={loading}>
+      <button class="generate-btn" type="button" onclick={() => generateContent()} disabled={loading}>
         {#if loading}
           <RefreshCw size={20} class="spinning" />
           Generating...
