@@ -5,14 +5,12 @@
     SERVICE_PACKAGES,
     SUBSCRIPTION_TIERS,
     ADD_ONS,
-    EXTRA_FEES,
     getPromoPrice,
     getAddOnsForTier,
     BUSINESS_INFO,
     type ServicePackage,
     type SubscriptionTier,
-    type AddOn,
-    type ExtraFee
+    type AddOn
   } from '$lib/data/services';
   import {
     BOOKING_STEPS,
@@ -24,7 +22,7 @@
     type BookingData,
     type StepId,
   } from '$lib/types/booking';
-  import { ChevronLeft, ChevronRight, Check, Car, Calendar, MapPin, User, Sparkles, Crown, Star, Zap, Plus, AlertCircle } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, Check, Car, Calendar, MapPin, User, Sparkles, Crown, Star, Zap, Plus } from 'lucide-svelte';
   import type { ZodError } from 'zod';
 
   // Get pre-selected package from URL
@@ -96,14 +94,6 @@
     }, 0);
   });
 
-  // Calculate extra fees total
-  let extraFeesTotal = $derived(() => {
-    return formData.service.extraFees.reduce((sum, feeId) => {
-      const fee = EXTRA_FEES.find(f => f.id === feeId);
-      return fee ? sum + fee.price : sum;
-    }, 0);
-  });
-
   // Price calculation
   let displayPrice = $derived(() => {
     if (serviceType === 'subscription' && selectedSubscription) {
@@ -156,10 +146,16 @@
   }
 
   function selectPackage(packageId: string, type: 'subscription' | 'one-time') {
-    formData.service.packageId = packageId;
+    formData = {
+      ...formData,
+      service: {
+        ...formData.service,
+        packageId,
+        addons: [],
+        extraFees: []
+      }
+    };
     serviceType = type;
-    // Reset add-ons when changing service
-    formData.service.addons = [];
   }
 
   function toggleAddOn(addonId: string) {
@@ -167,14 +163,6 @@
       formData.service.addons = formData.service.addons.filter(id => id !== addonId);
     } else {
       formData.service.addons = [...formData.service.addons, addonId];
-    }
-  }
-
-  function toggleExtraFee(feeId: string) {
-    if (formData.service.extraFees.includes(feeId)) {
-      formData.service.extraFees = formData.service.extraFees.filter(id => id !== feeId);
-    } else {
-      formData.service.extraFees = [...formData.service.extraFees, feeId];
     }
   }
 
@@ -360,30 +348,7 @@
       {/if}
 
       <!-- Extra Fees (applies to all services) -->
-      {#if selectedItem}
-        <div class="section-label">
-          <AlertCircle size={18} />
-          <span>Situation Fees (if applicable)</span>
-        </div>
-        <div class="extras-grid">
-          {#each EXTRA_FEES as fee (fee.id)}
-            <button
-              class="extra-card"
-              class:selected={formData.service.extraFees.includes(fee.id)}
-              onclick={() => toggleExtraFee(fee.id)}
-            >
-              <div class="addon-check">
-                {#if formData.service.extraFees.includes(fee.id)}
-                  <Check size={14} />
-                {/if}
-              </div>
-              <span class="extra-name">{fee.name}</span>
-              <span class="extra-price">+${fee.price}</span>
-            </button>
-          {/each}
-        </div>
-        <p class="extras-note">Select any that apply. We'll confirm during service.</p>
-      {/if}
+
     {:else if currentStep === 1}
       <!-- Vehicle Info -->
       <h2>
@@ -532,26 +497,14 @@
             {/if}
           {/each}
 
-          <!-- Selected Extra Fees -->
-          {#each formData.service.extraFees as feeId}
-            {@const fee = EXTRA_FEES.find(f => f.id === feeId)}
-            {#if fee}
-              <div class="summary-row fee-row">
-                <span>+ {fee.name}</span>
-                <span>${fee.price}</span>
-              </div>
-            {/if}
-          {/each}
-
           {#if serviceType === 'one-time'}
-            {@const baseWithExtras = displayPrice().avg + extraFeesTotal()}
             <div class="summary-row promo">
               <span>Fresh Start Discount (25%)</span>
               <span>-${Math.round(displayPrice().avg * 0.25)}</span>
             </div>
             <div class="summary-row total">
               <span>Total</span>
-              <span>${getPromoPrice(displayPrice().avg) + extraFeesTotal()}</span>
+              <span>${getPromoPrice(displayPrice().avg)}</span>
             </div>
           {:else}
             {@const monthlyTotal = displayPrice().avg + addOnsTotal()}
@@ -559,12 +512,6 @@
               <span>Monthly Total</span>
               <span>${monthlyTotal}/mo</span>
             </div>
-            {#if extraFeesTotal() > 0}
-              <div class="summary-row fee-total">
-                <span>One-time fees (first visit)</span>
-                <span>+${extraFeesTotal()}</span>
-              </div>
-            {/if}
             <p class="subscription-note">Cancel anytime. First charge today.</p>
           {/if}
         </div>
