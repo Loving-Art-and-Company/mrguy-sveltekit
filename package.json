@@ -27,6 +27,7 @@
     "vitest": "^4.0.17"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@stripe/stripe-js": "^4.0.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
