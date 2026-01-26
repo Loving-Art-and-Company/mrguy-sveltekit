@@ -49,7 +49,7 @@
   <BentoSlideshow />
 
   <!-- Packages Section -->
-  <section class="packages-section">
+  <section id="services" class="packages-section">
     <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
     <PackageMenu onSelect={handlePackageSelect} />

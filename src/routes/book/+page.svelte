@@ -27,10 +27,12 @@
   const selectedSubscription = SUBSCRIPTION_TIERS.find((t) => t.id === preselectedPackage);
   const selectedItem = preselectedType === 'subscription' ? selectedSubscription : selectedPackage;
 
-  // If no package selected, redirect to homepage
-  if (!selectedItem && typeof window !== 'undefined') {
-    goto('/');
-  }
+  // If no package selected, redirect to services section
+  $effect(() => {
+    if (!selectedItem && typeof window !== 'undefined') {
+      goto('/#services');
+    }
+  });
 
   // Step management (0-3 for 4 steps: Vehicle, Date, Location, Contact)
   let currentStep = $state(0);

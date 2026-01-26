@@ -17,7 +17,7 @@
     </a>
 
     <nav class="nav">
-      <a href="/book" class="nav-link">Book Now</a>
+      <a href="/#services" class="nav-link">Book Now</a>
       <a href="/reschedule" class="nav-link">My Booking</a>
       {#if showLogin}
         <a href="/admin/login" class="login-btn">
