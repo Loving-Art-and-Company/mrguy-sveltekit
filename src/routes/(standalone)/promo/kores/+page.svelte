@@ -300,13 +300,13 @@
   }
 
   .logo {
-    height: 60px;
+    height: 120px;
     width: auto;
     object-fit: contain;
   }
 
   .mrguy-logo {
-    height: 70px;
+    height: 140px;
   }
 
   /* Hero Image */
