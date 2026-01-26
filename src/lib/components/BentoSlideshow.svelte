@@ -8,32 +8,20 @@
     {
       title: "We Come To You",
       subtitle: "Mobile detailing",
-      description: "Professional detailing right in your driveway - no drop-off needed",
-      image: "/images/slide-driveway.jpg"
+      description: "Professional detailing right in your driveway",
+      image: "/images/slide-1.jpg"
     },
     {
       title: "Showroom Shine",
       subtitle: "Exterior detailing",
       description: "Your car looking brand new, wherever you park it",
-      image: "/images/slide-clean-car.jpg"
+      image: "/images/slide-2.jpg"
     },
     {
-      title: "Interior Deep Clean",
-      subtitle: "Fresh & pristine",
-      description: "Every surface cleaned, conditioned, and protected",
-      image: "/images/slide-interior2.jpg"
-    },
-    {
-      title: "At Your Home",
-      subtitle: "Convenience first",
-      description: "We detail while you work, relax, or handle life",
-      image: "/images/slide-suv-home.jpg"
-    },
-    {
-      title: "Mirror Finish",
-      subtitle: "Paint protection",
-      description: "Ceramic coating and wax for long-lasting shine",
-      image: "/images/slide-shine.jpg"
+      title: "Detail Obsessed",
+      subtitle: "Every surface",
+      description: "We don't miss a spot",
+      image: "/images/slide-3.jpg"
     }
   ];
 
