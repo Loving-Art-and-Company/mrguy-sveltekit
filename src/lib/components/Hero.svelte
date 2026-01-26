@@ -81,6 +81,19 @@
 		align-items: center;
 		gap: 0.5rem;
 		margin-bottom: 2rem;
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		border-radius: var(--radius-full);
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.hero-cta:hover {
+		background: var(--color-primary-deep);
+		transform: translateY(-2px);
+		box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
 	}
 
 	.trust-line {
