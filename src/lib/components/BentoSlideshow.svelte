@@ -89,9 +89,12 @@
     position: relative;
     width: 100%;
     height: 500px;
-    border-radius: 2rem;
+    border-radius: 2.5rem;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      0 25px 80px rgba(0, 0, 0, 0.25),
+      0 10px 30px rgba(0, 0, 0, 0.15),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 
   .slide {
@@ -101,8 +104,10 @@
     width: 100%;
     height: 100%;
     opacity: 0;
-    transform: scale(0.95);
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1.1);
+    transition: 
+      opacity 1s cubic-bezier(0.23, 1, 0.32, 1),
+      transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -122,11 +127,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 8s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .slide.active .slide-image {
-    transform: scale(1.05);
+    transform: scale(1.1);
   }
 
   .slide-overlay {
@@ -135,7 +140,12 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    background: linear-gradient(
+      180deg, 
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
     z-index: 1;
   }
 
@@ -145,28 +155,42 @@
     text-align: center;
     color: white;
     padding: 2rem;
-    max-width: 600px;
+    max-width: 700px;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: 
+      transform 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.3s,
+      opacity 0.8s ease 0.3s;
+  }
+
+  .slide.active .slide-content {
+    transform: translateY(0);
+    opacity: 1;
   }
 
   .slide-content h3 {
-    font-size: 3rem;
+    font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 700;
     margin: 0 0 0.5rem 0;
-    line-height: 1.2;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
 
   .subtitle {
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
     font-weight: 500;
     margin: 0 0 1rem 0;
     opacity: 0.9;
+    letter-spacing: -0.01em;
   }
 
   .description {
-    font-size: 1.1rem;
-    opacity: 0.8;
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    opacity: 0.85;
     line-height: 1.6;
     margin: 0;
+    font-weight: 400;
   }
 
   .dots {
@@ -177,43 +201,60 @@
   }
 
   .dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(14, 165, 233, 0.2);
     border: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     padding: 0;
+    position: relative;
+  }
+
+  .dot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--color-primary);
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .dot:hover {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(14, 165, 233, 0.4);
     transform: scale(1.2);
   }
 
   .dot.active {
-    background: rgba(0, 0, 0, 0.8);
-    width: 30px;
-    border-radius: 5px;
+    background: transparent;
+    width: 32px;
+    border-radius: 6px;
+  }
+
+  .dot.active::after {
+    transform: translate(-50%, -50%) scale(1);
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
   }
 
   @media (max-width: 768px) {
     .slides-container {
-      height: 400px;
-      border-radius: 1.5rem;
-    }
-
-    .icon {
-      font-size: 3.5rem;
+      height: 450px;
+      border-radius: 2rem;
     }
 
     .slide-content h3 {
-      font-size: 2rem;
+      font-size: 2.25rem;
     }
 
     .subtitle {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
     }
 
     .description {
@@ -223,11 +264,16 @@
 
   @media (max-width: 480px) {
     .slides-container {
-      height: 350px;
+      height: 380px;
+      border-radius: 1.5rem;
     }
 
     .slide-content h3 {
-      font-size: 1.75rem;
+      font-size: 1.875rem;
+    }
+
+    .slide-content {
+      padding: 1.5rem;
     }
   }
 </style>

@@ -256,34 +256,55 @@
 
   .card {
     position: relative;
-    background: var(--color-bg-white);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 1.25rem;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: 
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     overflow: visible;
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
 
   .card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.1),
+      0 8px 16px rgba(0, 0, 0, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
 
   .card.featured {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+    border-color: rgba(14, 165, 233, 0.3);
+    box-shadow: 
+      0 8px 32px rgba(14, 165, 233, 0.15),
+      0 0 0 2px rgba(14, 165, 233, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
 
   .card.subscription {
-    background: var(--color-bg-lighter);
-    border-color: var(--border-medium);
+    background: linear-gradient(
+      135deg,
+      rgba(224, 242, 254, 0.7) 0%,
+      rgba(240, 249, 255, 0.8) 100%
+    );
+    border-color: rgba(14, 165, 233, 0.15);
   }
 
   .card.subscription.featured {
-    border-color: var(--color-primary);
-    background: var(--color-bg-lighter);
+    border-color: rgba(14, 165, 233, 0.3);
+    background: linear-gradient(
+      135deg,
+      rgba(224, 242, 254, 0.8) 0%,
+      rgba(240, 249, 255, 0.9) 100%
+    );
   }
 
   .badge {
@@ -373,20 +394,51 @@
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 
+      0 4px 16px rgba(16, 185, 129, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.9rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .select-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transition: left 0.6s ease;
+  }
+
+  .select-btn:hover::before {
+    left: 100%;
   }
 
   .select-btn:hover {
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+      0 8px 24px rgba(16, 185, 129, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .select-btn:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
   }
 
   .card.featured .select-btn {

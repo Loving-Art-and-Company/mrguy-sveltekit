@@ -88,7 +88,16 @@
     font-weight: 700;
     margin: 0 0 1rem 0;
     color: var(--text-primary);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    background: linear-gradient(
+      135deg,
+      var(--text-primary) 0%,
+      var(--color-primary-deep) 50%,
+      var(--text-primary) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .section-subtitle {
@@ -99,6 +108,7 @@
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
+    opacity: 0.9;
   }
 
   .services-grid {
@@ -172,23 +182,65 @@
     line-height: 1.6;
   }
 
-  /* Packages Section */
+  /* Packages Section - Liquid Gradient */
   .packages-section {
     max-width: 1400px;
     margin: 0 auto;
     padding: 8rem 2rem;
-    background: var(--color-bg-main);
+    background: linear-gradient(
+      180deg,
+      var(--color-bg-white) 0%,
+      var(--color-bg-main) 30%,
+      var(--color-bg-lighter) 70%,
+      var(--color-bg-main) 100%
+    );
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Why Choose Us */
+  .packages-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at 30% 20%,
+      rgba(14, 165, 233, 0.08) 0%,
+      transparent 50%
+    );
+    animation: float 20s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(2%, 2%) rotate(1deg); }
+    66% { transform: translate(-1%, 1%) rotate(-1deg); }
+  }
+
+  /* Why Choose Us - Apple Glass Style */
   .why-us {
     max-width: 1200px;
     margin: 0 auto;
-    background: var(--color-bg-lighter);
+    background: linear-gradient(
+      135deg,
+      rgba(224, 242, 254, 0.8) 0%,
+      rgba(240, 249, 255, 0.9) 50%,
+      rgba(224, 242, 254, 0.8) 100%
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     padding: 5rem 2rem;
-    border-radius: 2rem;
+    border-radius: 2.5rem;
     text-align: center;
     margin-bottom: 6rem;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      0 20px 60px rgba(14, 165, 233, 0.1),
+      0 8px 24px rgba(0, 0, 0, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
 
   .why-us h2 {
@@ -196,6 +248,7 @@
     font-weight: 700;
     margin: 0 0 3rem 0;
     color: var(--text-primary);
+    letter-spacing: -0.03em;
   }
 
   .features {
@@ -210,18 +263,27 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: var(--color-bg-white);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 1rem 2rem;
     border-radius: var(--radius-full);
     font-weight: 500;
     font-size: 1.125rem;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .feature:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 12px 32px rgba(14, 165, 233, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.95);
   }
 
   .check {
