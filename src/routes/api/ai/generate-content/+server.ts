@@ -1,14 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '$env/dynamic/private';
-
-const getGeminiClient = () => {
-	if (!env.GEMINI_API_KEY) {
-		return null;
-	}
-	return new GoogleGenerativeAI(env.GEMINI_API_KEY);
-};
 
 const BUSINESS_CONTEXT = `
 You are a social media content creator for "Mr. Guy Mobile Detail", a professional mobile car detailing service in South Florida (West Broward area). 
@@ -69,20 +61,42 @@ Requirements:
 
 Provide ONLY the social media post content, ready to copy and paste. No explanations or preamble.`;
 
-	const genAI = getGeminiClient();
-	if (!genAI) {
-		throw error(503, 'AI service not configured. Please add GEMINI_API_KEY.');
+	// Use Groq API (generous free tier)
+	const GROQ_API_KEY = env.GROQ_API_KEY;
+	if (!GROQ_API_KEY) {
+		throw error(503, 'AI service not configured. Please add GROQ_API_KEY.');
 	}
 
 	try {
-		const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-		const result = await model.generateContent(prompt);
-		const response = result.response;
-		const text = response.text();
+		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+			method: 'POST',
+			headers: {
+				'Authorization': `Bearer ${GROQ_API_KEY}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				model: 'llama-3.3-70b-versatile',
+				messages: [
+					{ role: 'user', content: prompt }
+				],
+				max_tokens: 500,
+				temperature: 0.7
+			})
+		});
+
+		if (!response.ok) {
+			const err = await response.json().catch(() => ({}));
+			console.error('Groq API error:', err);
+			throw error(500, err.error?.message || 'AI request failed');
+		}
+
+		const data = await response.json();
+		const text = data.choices?.[0]?.message?.content || '';
 
 		return json({ content: text });
 	} catch (e) {
 		console.error('AI generation error:', e);
+		if (e && typeof e === 'object' && 'status' in e) throw e;
 		throw error(500, 'Failed to generate content');
 	}
 };
