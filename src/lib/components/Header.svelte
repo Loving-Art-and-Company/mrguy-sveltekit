@@ -65,8 +65,9 @@
     width: 48px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    filter: brightness(1.2) saturate(1.1);
   }
 
   .logo-text {
