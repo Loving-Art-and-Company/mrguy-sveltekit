@@ -50,8 +50,8 @@
 
   <!-- Packages Section -->
   <section class="packages-section">
-    <h2 class="section-title">Pick What Works</h2>
-    <p class="section-subtitle">We pull up. You stay busy. {BUSINESS_INFO.priceRange}</p>
+    <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
+    <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
     <PackageMenu onSelect={handlePackageSelect} />
   </section>
 
