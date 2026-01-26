@@ -81,12 +81,13 @@
   </header>
 
   <div class="generator-container">
-    <div class="input-section">
+    <form class="input-section" onsubmit={(e) => { e.preventDefault(); generateContent(); }}>
       <div class="form-group">
         <label>Post Type</label>
         <div class="post-types">
           {#each postTypes as type}
             <button
+              type="button"
               class="type-btn"
               class:active={postType === type.id}
               onclick={() => postType = type.id}
@@ -103,6 +104,7 @@
         <div class="tone-options">
           {#each tones as t}
             <button
+              type="button"
               class="tone-btn"
               class:active={tone === t.id}
               onclick={() => tone = t.id}
@@ -117,8 +119,7 @@
         <label for="topic">Topic or Idea</label>
         <textarea
           id="topic"
-          value={topic}
-          oninput={(e) => topic = e.currentTarget.value}
+          bind:value={topic}
           placeholder="E.g., 'Spring cleaning special', 'Why ceramic coating is worth it', 'Weekend availability'"
           rows="3"
         ></textarea>
@@ -130,9 +131,8 @@
 
       <button 
         class="generate-btn" 
-        type="button" 
+        type="submit" 
         disabled={loading}
-        onclick={generateContent}
       >
         {#if loading}
           <RefreshCw size={20} class="spinning" />
@@ -142,7 +142,7 @@
           Generate Content
         {/if}
       </button>
-    </div>
+    </form>
 
     <div class="output-section">
       <div class="output-header">
