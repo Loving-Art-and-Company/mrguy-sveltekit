@@ -190,6 +190,105 @@ export type Database = {
         };
         Relationships: [];
       };
+      subscription_packages: {
+        Row: {
+          id: string;
+          brand_id: string | null;
+          name: string;
+          description: string | null;
+          service_type: string;
+          credits: number;
+          price_cents: number;
+          stripe_price_id: string | null;
+          is_active: boolean | null;
+          sort_order: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id?: string | null;
+          name: string;
+          description?: string | null;
+          service_type: string;
+          credits: number;
+          price_cents: number;
+          stripe_price_id?: string | null;
+          is_active?: boolean | null;
+          sort_order?: number | null;
+        };
+        Update: {
+          brand_id?: string | null;
+          name?: string;
+          description?: string | null;
+          service_type?: string;
+          credits?: number;
+          price_cents?: number;
+          stripe_price_id?: string | null;
+          is_active?: boolean | null;
+          sort_order?: number | null;
+        };
+        Relationships: [];
+      };
+      client_subscriptions: {
+        Row: {
+          id: string;
+          brand_id: string | null;
+          client_id: string;
+          package_id: string;
+          stripe_payment_intent_id: string | null;
+          credits_total: number;
+          credits_remaining: number;
+          status: string | null;
+          purchased_at: string;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id?: string | null;
+          client_id: string;
+          package_id: string;
+          stripe_payment_intent_id?: string | null;
+          credits_total: number;
+          credits_remaining: number;
+          status?: string | null;
+          expires_at?: string | null;
+        };
+        Update: {
+          brand_id?: string | null;
+          client_id?: string;
+          package_id?: string;
+          stripe_payment_intent_id?: string | null;
+          credits_total?: number;
+          credits_remaining?: number;
+          status?: string | null;
+          expires_at?: string | null;
+        };
+        Relationships: [];
+      };
+      credit_usage: {
+        Row: {
+          id: string;
+          subscription_id: string;
+          booking_id: string | null;
+          credits_used: number;
+          used_at: string;
+          notes: string | null;
+        };
+        Insert: {
+          subscription_id: string;
+          booking_id?: string | null;
+          credits_used?: number;
+          notes?: string | null;
+        };
+        Update: {
+          subscription_id?: string;
+          booking_id?: string | null;
+          credits_used?: number;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -207,3 +306,13 @@ export type ClientProfileInsert = Database['public']['Tables']['client_profiles'
 export type AdminUser = Database['public']['Tables']['admin_users']['Row'];
 export type Brand = Database['public']['Tables']['brands']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
+
+export type SubscriptionPackage = Database['public']['Tables']['subscription_packages']['Row'];
+export type SubscriptionPackageInsert = Database['public']['Tables']['subscription_packages']['Insert'];
+
+export type ClientSubscription = Database['public']['Tables']['client_subscriptions']['Row'];
+export type ClientSubscriptionInsert = Database['public']['Tables']['client_subscriptions']['Insert'];
+export type ClientSubscriptionUpdate = Database['public']['Tables']['client_subscriptions']['Update'];
+
+export type CreditUsage = Database['public']['Tables']['credit_usage']['Row'];
+export type CreditUsageInsert = Database['public']['Tables']['credit_usage']['Insert'];
