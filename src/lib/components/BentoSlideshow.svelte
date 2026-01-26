@@ -6,34 +6,34 @@
 
   const slides = [
     {
-      title: "Ceramic Protection",
-      subtitle: "Long-lasting shine",
-      description: "Multi-year protection that keeps your paint looking showroom fresh",
-      image: "/images/slide-ceramic.jpg"
+      title: "We Come To You",
+      subtitle: "Mobile detailing",
+      description: "Professional detailing right in your driveway - no drop-off needed",
+      image: "/images/slide-driveway.jpg"
     },
     {
-      title: "Paint Correction",
-      subtitle: "Flawless finish",
-      description: "Remove swirls, scratches, and oxidation for a mirror-like surface",
-      image: "/images/slide-polish.jpg"
+      title: "Showroom Shine",
+      subtitle: "Exterior detailing",
+      description: "Your car looking brand new, wherever you park it",
+      image: "/images/slide-clean-car.jpg"
     },
     {
       title: "Interior Deep Clean",
       subtitle: "Fresh & pristine",
       description: "Every surface cleaned, conditioned, and protected",
-      image: "/images/slide-interior.jpg"
+      image: "/images/slide-interior2.jpg"
     },
     {
-      title: "Exterior Detailing",
-      subtitle: "Showroom finish",
-      description: "Professional wash, wax, and paint care",
-      image: "/images/slide-exterior.jpg"
+      title: "At Your Home",
+      subtitle: "Convenience first",
+      description: "We detail while you work, relax, or handle life",
+      image: "/images/slide-suv-home.jpg"
     },
     {
-      title: "Mobile Service",
-      subtitle: "We come to you",
-      description: "Professional detailing at your home or office",
-      image: "/images/slide-mobile.jpg"
+      title: "Mirror Finish",
+      subtitle: "Paint protection",
+      description: "Ceramic coating and wax for long-lasting shine",
+      image: "/images/slide-shine.jpg"
     }
   ];
 
