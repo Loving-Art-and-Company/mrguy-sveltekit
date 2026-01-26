@@ -10,8 +10,8 @@
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import { ripple } from '$lib/actions/ripple';
 
-  function handlePackageSelect(pkg: ServicePackage, type: 'one-time' | 'subscription' = 'one-time') {
-    goto(`/book?package=${pkg.id}&type=${type}`);
+  function handlePackageSelect(pkg: ServicePackage) {
+    goto(`/book?package=${pkg.id}`);
   }
 
   const processSteps = [
@@ -49,7 +49,7 @@
   <BentoSlideshow />
 
   <!-- Packages Section -->
-  <section id="services" class="packages-section">
+  <section class="packages-section">
     <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
     <PackageMenu onSelect={handlePackageSelect} />
