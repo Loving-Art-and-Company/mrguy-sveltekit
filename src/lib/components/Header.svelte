@@ -20,7 +20,7 @@
       <a href="/book" class="nav-link">Book Now</a>
       <a href="/reschedule" class="nav-link">My Booking</a>
       {#if showLogin}
-        <a href="/login" class="login-btn">
+        <a href="/admin/login" class="login-btn">
           <LogIn size={18} />
           <span>Login</span>
         </a>
