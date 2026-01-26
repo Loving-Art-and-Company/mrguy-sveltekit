@@ -23,10 +23,7 @@
 			<span class="arrow-slide">→</span>
 		</button>
 
-		<div class="trust-line">
-			<span class="trust-stars">★★★★★</span>
-			<span class="trust-text">500+ 5-star reviews • Fully insured</span>
-		</div>
+
 	</div>
 </section>
 
@@ -96,25 +93,7 @@
 		box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
 	}
 
-	.trust-line {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		color: var(--text-secondary);
-		font-size: 0.875rem;
-	}
 
-	.trust-stars {
-		color: #f59e0b;
-		font-size: 1rem;
-		letter-spacing: 0.1em;
-	}
-
-	.trust-text {
-		font-weight: 500;
-	}
 
 	/* Mobile responsive */
 	@media (max-width: 640px) {
@@ -133,9 +112,6 @@
 			justify-content: center;
 		}
 
-		.trust-line {
-			flex-direction: column;
-			gap: 0.25rem;
-		}
+
 	}
 </style>
