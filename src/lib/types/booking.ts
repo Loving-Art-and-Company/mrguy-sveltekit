@@ -79,9 +79,8 @@ export type AddressStep = z.infer<typeof addressStepSchema>;
 export type PaymentStep = z.infer<typeof paymentStepSchema>;
 export type BookingData = z.infer<typeof bookingSchema>;
 
-// Booking steps (original 5-step flow - backward compatible)
+// Booking steps - 4 step flow (service pre-selected from homepage)
 export const BOOKING_STEPS = [
-  { id: 'service', label: 'Service', schema: serviceStepSchema },
   { id: 'vehicle', label: 'Vehicle', schema: vehicleStepSchema },
   { id: 'schedule', label: 'Date & Time', schema: dateStepSchema },
   { id: 'address', label: 'Location', schema: addressStepSchema },

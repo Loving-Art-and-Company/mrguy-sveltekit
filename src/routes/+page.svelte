@@ -10,8 +10,8 @@
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import { ripple } from '$lib/actions/ripple';
 
-  function handlePackageSelect(pkg: ServicePackage) {
-    goto(`/book?package=${pkg.id}`);
+  function handlePackageSelect(pkg: ServicePackage, type: 'one-time' | 'subscription' = 'one-time') {
+    goto(`/book?package=${pkg.id}&type=${type}`);
   }
 
   const processSteps = [
