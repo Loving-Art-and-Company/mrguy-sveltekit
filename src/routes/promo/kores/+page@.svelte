@@ -68,6 +68,14 @@
 <svelte:head>
   <title>Free Car Wash | KoRes Realty x Mr. Guy Mobile Detail</title>
   <meta name="description" content="Wishing you a wonderful New Year! Enjoy a complimentary car wash from Mr. Guy Mobile Detail." />
+  <meta name="theme-color" content="#ffffff" />
+  <style>
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+    }
+  </style>
 </svelte:head>
 
 <main class="promo-page">
@@ -83,8 +91,13 @@
 
   <!-- Logos -->
   <section class="logos">
-    <img src="/logo/kores-realty.png" alt="KoRes Realty" class="logo kores-logo" />
+    <img src="/logo/kores-realty.jpg" alt="KoRes Realty" class="logo kores-logo" />
     <img src="/logo/mrguylogo-header.png" alt="Mr. Guy Mobile Detail" class="logo mrguy-logo" />
+  </section>
+
+  <!-- Hero Image -->
+  <section class="hero-image">
+    <img src="/images/slide-1.jpg" alt="Professional car detailing in progress" />
   </section>
 
   <!-- What's Included -->
@@ -294,6 +307,20 @@
 
   .mrguy-logo {
     height: 70px;
+  }
+
+  /* Hero Image */
+  .hero-image {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
 
   /* Included Section */
