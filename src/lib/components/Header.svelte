@@ -31,12 +31,12 @@
 
 <style>
   .header {
-    background: var(--color-primary-deep);
+    background: #ffffff;
     padding: 0 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .header-content {
@@ -65,15 +65,14 @@
     width: 48px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    filter: brightness(1.2) saturate(1.1);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .logo-text {
     font-weight: 700;
     font-size: 1.25rem;
-    color: var(--text-inverse);
+    color: #1a1a1a;
   }
 
   .nav {
@@ -83,7 +82,7 @@
   }
 
   .nav-link {
-    color: var(--text-muted);
+    color: #666;
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
@@ -91,7 +90,7 @@
   }
 
   .nav-link:hover {
-    color: var(--text-inverse);
+    color: #1a1a1a;
   }
 
   .login-btn {
