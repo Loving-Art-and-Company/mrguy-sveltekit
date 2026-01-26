@@ -25,6 +25,7 @@
   ];
 
   async function generateContent() {
+    console.log('Generate clicked, topic:', topic);
     if (!topic.trim()) {
       error = 'Please enter a topic or idea';
       return;
@@ -32,6 +33,7 @@
     
     loading = true;
     error = '';
+    generatedContent = '';
     
     try {
       const response = await fetch('/api/ai/generate-content', {
@@ -113,7 +115,8 @@
         <label for="topic">Topic or Idea</label>
         <textarea
           id="topic"
-          bind:value={topic}
+          value={topic}
+          oninput={(e) => topic = e.currentTarget.value}
           placeholder="E.g., 'Spring cleaning special', 'Why ceramic coating is worth it', 'Weekend availability'"
           rows="3"
         ></textarea>
