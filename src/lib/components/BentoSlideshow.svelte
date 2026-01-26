@@ -9,31 +9,31 @@
       title: "Ceramic Protection",
       subtitle: "Long-lasting shine",
       description: "Multi-year protection that keeps your paint looking showroom fresh",
-      image: "/images/service-ceramic-new.jpg"
+      image: "/images/slide-ceramic.jpg"
     },
     {
       title: "Paint Correction",
       subtitle: "Flawless finish",
       description: "Remove swirls, scratches, and oxidation for a mirror-like surface",
-      image: "/images/service-polish-new.jpg"
+      image: "/images/slide-polish.jpg"
     },
     {
       title: "Interior Deep Clean",
       subtitle: "Fresh & pristine",
       description: "Every surface cleaned, conditioned, and protected",
-      image: "/images/service-interior-new.jpg"
+      image: "/images/slide-interior.jpg"
     },
     {
       title: "Exterior Detailing",
       subtitle: "Showroom finish",
       description: "Professional wash, wax, and paint care",
-      image: "/images/service-exterior-new.jpg"
+      image: "/images/slide-exterior.jpg"
     },
     {
       title: "Mobile Service",
       subtitle: "We come to you",
       description: "Professional detailing at your home or office",
-      image: "/images/service-mobile-new.jpg"
+      image: "/images/slide-mobile.jpg"
     }
   ];
 
