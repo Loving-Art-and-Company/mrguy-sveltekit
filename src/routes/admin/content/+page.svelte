@@ -25,8 +25,9 @@
   ];
 
   async function generateContent() {
-    console.log('Generate clicked, topic:', topic);
-    if (!topic.trim()) {
+    alert('Button clicked! Topic: ' + topic);
+    
+    if (!topic || topic.trim() === '') {
       error = 'Please enter a topic or idea';
       return;
     }
@@ -43,14 +44,15 @@
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate content');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to generate content');
       }
       
       const data = await response.json();
       generatedContent = data.content;
-    } catch (e) {
-      error = 'Failed to generate content. Please try again.';
-      console.error(e);
+    } catch (e: any) {
+      error = e.message || 'Failed to generate content. Please try again.';
+      console.error('Generation error:', e);
     } finally {
       loading = false;
     }
@@ -126,7 +128,12 @@
         <p class="error-message">{error}</p>
       {/if}
 
-      <button class="generate-btn" type="button" onclick={() => generateContent()} disabled={loading}>
+      <button 
+        class="generate-btn" 
+        type="button" 
+        disabled={loading}
+        onclick={generateContent}
+      >
         {#if loading}
           <RefreshCw size={20} class="spinning" />
           Generating...
