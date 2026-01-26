@@ -5,7 +5,7 @@
   import AnimatedSection from '$lib/components/AnimatedSection.svelte';
   import BeforeAfterSlider from '$lib/components/BeforeAfterSlider.svelte';
   import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
-  import ZipCheckHero from '$lib/components/ZipCheckHero.svelte';
+  import Hero from '$lib/components/Hero.svelte';
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import BookingModal from '$lib/components/BookingModal.svelte';
   import { ripple } from '$lib/actions/ripple';
@@ -57,8 +57,8 @@
 </svelte:head>
 
 <main>
-  <!-- ZIP-First Hero - PWA Optimized -->
-  <ZipCheckHero />
+  <!-- Hero -->
+  <Hero />
 
   <!-- Bento Slideshow -->
   <BentoSlideshow />
