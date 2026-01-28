@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import Stripe from 'stripe';
-import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { supabaseAdmin } from '$lib/server/supabase';
 import type { RequestHandler } from './$types';
 import type { BookingData } from '$lib/types/booking';
@@ -10,8 +10,8 @@ import type { Database } from '$lib/types/database';
 let _stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (!_stripe) {
-    if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
-    _stripe = new Stripe(STRIPE_SECRET_KEY);
+    if (!env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY);
   }
   return _stripe;
 }
@@ -27,7 +27,8 @@ export const POST: RequestHandler = async ({ request }) => {
   let event: Stripe.Event;
 
   try {
-    event = getStripe().webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+    if (!env.STRIPE_WEBHOOK_SECRET) throw new Error('STRIPE_WEBHOOK_SECRET is required');
+    event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
     throw error(400, 'Invalid signature');
