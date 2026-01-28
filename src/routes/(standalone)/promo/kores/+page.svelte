@@ -82,22 +82,16 @@
   <!-- Hero Section -->
   <section class="hero">
     <p class="greeting">Wishing you a wonderful New Year!</p>
-    <p class="offer-text">Enjoy a complimentary car wash from</p>
-    <h1>Mr. Guy Mobile Detail</h1>
+    <p class="offer-text">Enjoy a complimentary car wash</p>
     <p class="thank-you">Just a small thank you from us to you</p>
     <p class="appreciation">With appreciation,</p>
     <p class="signatures">Carilin + Monica</p>
-  </section>
-
-  <!-- Logos -->
-  <section class="logos">
-    <img src="/logo/kores-realty.jpg" alt="KoRes Realty" class="logo kores-logo" />
-    <img src="/logo/mrguylogo-header.png" alt="Mr. Guy Mobile Detail" class="logo mrguy-logo" />
+    <img src="/logo/kores-realty.jpg" alt="KoRes Realty" class="hero-logo" />
   </section>
 
   <!-- Hero Image -->
   <section class="hero-image">
-    <img src="/images/slide-1.jpg" alt="Professional car detailing in progress" />
+    <img src="/images/process/step-2-wash.webp" alt="Professional car detailing in progress" />
   </section>
 
   <!-- What's Included -->
@@ -250,6 +244,14 @@
     margin: 0 auto;
   }
 
+  .hero-logo {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    margin-top: 2rem;
+  }
+
   .greeting {
     font-size: 1.5rem;
     font-style: italic;
@@ -259,15 +261,8 @@
 
   .offer-text {
     font-size: 1.25rem;
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.5rem;
     color: #333;
-  }
-
-  .hero h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 1rem;
-    color: #000;
   }
 
   .thank-you {
@@ -287,26 +282,6 @@
     font-size: 2.5rem;
     color: #000;
     margin: 0;
-  }
-
-  /* Logos */
-  .logos {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 2rem;
-    padding: 1.5rem 2rem 2rem;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    height: 120px;
-    width: auto;
-    object-fit: contain;
-  }
-
-  .mrguy-logo {
-    height: 140px;
   }
 
   /* Hero Image */
@@ -653,6 +628,11 @@
       padding: 2rem 1.5rem 1.5rem;
     }
 
+    .hero-logo {
+      max-width: 220px;
+      margin-top: 1.5rem;
+    }
+
     .greeting {
       font-size: 1.25rem;
     }
@@ -667,18 +647,6 @@
 
     .form-group.full-width {
       grid-column: 1;
-    }
-
-    .logos {
-      gap: 1.5rem;
-    }
-
-    .logo {
-      height: 50px;
-    }
-
-    .mrguy-logo {
-      height: 60px;
     }
   }
 </style>

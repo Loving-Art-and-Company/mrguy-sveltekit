@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -10,17 +10,21 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       throw error(400, 'Phone and verification code are required');
     }
 
+    if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_VERIFY_SERVICE_SID) {
+      throw error(503, 'OTP service not configured');
+    }
+
     // Normalize phone number to E.164 format
     const normalizedPhone = normalizePhone(phone);
 
     // Verify OTP via Twilio Verify
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
+    const twilioUrl = `https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
 
     const response = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
+        Authorization: `Basic ${btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`)}`,
       },
       body: new URLSearchParams({
         To: normalizedPhone,

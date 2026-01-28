@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
-import { STRIPE_SECRET_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { PUBLIC_BASE_URL } from '$env/static/public';
 import type { RequestHandler } from './$types';
 
@@ -9,8 +9,8 @@ import type { RequestHandler } from './$types';
 let _stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (!_stripe) {
-    if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
-    _stripe = new Stripe(STRIPE_SECRET_KEY);
+    if (!env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY);
   }
   return _stripe;
 }

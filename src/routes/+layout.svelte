@@ -1,11 +1,15 @@
 <script lang="ts">
   import '../app.css';
+  import { page } from '$app/state';
   import Header from '$lib/components/Header.svelte';
   import PWAInstaller from '$lib/components/PWAInstaller.svelte';
   import Agentation from '$lib/components/Agentation.svelte';
   import { dev } from '$app/environment';
 
   let { children } = $props();
+
+  // Hide header/footer for standalone promo pages
+  const isStandalone = $derived(page.url.pathname.startsWith('/promo'));
 </script>
 
 <svelte:head>
@@ -18,9 +22,13 @@
   <meta name="theme-color" content="#0EA5E9" />
 </svelte:head>
 
-<Header />
+{#if !isStandalone}
+  <Header />
+{/if}
 {@render children()}
-<PWAInstaller />
+{#if !isStandalone}
+  <PWAInstaller />
+{/if}
 
 {#if dev}
   <Agentation />
