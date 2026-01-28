@@ -2,6 +2,8 @@
   import '../app.css';
   import Header from '$lib/components/Header.svelte';
   import PWAInstaller from '$lib/components/PWAInstaller.svelte';
+  import Agentation from '$lib/components/Agentation.svelte';
+  import { dev } from '$app/environment';
 
   let { children } = $props();
 </script>
@@ -19,3 +21,7 @@
 <Header />
 {@render children()}
 <PWAInstaller />
+
+{#if dev}
+  <Agentation />
+{/if}

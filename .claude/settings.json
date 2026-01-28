@@ -1,0 +1,28 @@
+{
+  "env": {
+    "CLAUDE_CODE_TASK_LIST_ID": "mrguy-sveltekit"
+  },
+  "description": "Mr. Guy Mobile Detail - SvelteKit booking platform for mobile car detailing",
+  "project_type": "sveltekit",
+  "version": {
+    "current": "1.0.0"
+  },
+  "deployment": {
+    "platform": "vercel",
+    "url": "https://mrguydetail.com",
+    "auto_deploy": true,
+    "branch": "main"
+  },
+  "database": {
+    "provider": "supabase",
+    "project_id": "qtskudtsfbwdahjhpphh"
+  },
+  "payments": {
+    "provider": "stripe",
+    "mode": "live"
+  },
+  "auth": {
+    "client": "twilio_verify",
+    "admin": "supabase_auth"
+  }
+}
