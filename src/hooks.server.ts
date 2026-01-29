@@ -1,9 +1,18 @@
+import * as Sentry from '@sentry/sveltekit';
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { sequence } from '@sveltejs/kit/hooks';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SENTRY_DSN } from '$env/static/public';
 import type { Database } from '$lib/types/database';
 
-export const handle: Handle = async ({ event, resolve }) => {
+if (PUBLIC_SENTRY_DSN) {
+	Sentry.init({
+		dsn: PUBLIC_SENTRY_DSN,
+		tracesSampleRate: 1.0
+	});
+}
+
+const customHandle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createServerClient<Database>(
 		PUBLIC_SUPABASE_URL,
 		PUBLIC_SUPABASE_ANON_KEY,
@@ -65,3 +74,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		},
 	});
 };
+
+export const handle = PUBLIC_SENTRY_DSN
+	? sequence(Sentry.sentryHandle(), customHandle)
+	: customHandle;
+
+export const handleError = Sentry.handleErrorWithSentry();
