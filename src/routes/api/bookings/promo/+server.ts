@@ -80,27 +80,32 @@ export const POST: RequestHandler = async ({ request }) => {
     const zip = addressParts[2]?.match(/\d{5}/)?.[0] || '33326';
 
     // Create booking in database
+    const bookingData: any = {
+      service_id: promoService.id,
+      service_name: serviceName,
+      service_price: totalPrice,
+      scheduled_date: null, // Promo bookings - we'll contact to schedule
+      scheduled_time: null,
+      address_street: street,
+      address_city: city,
+      address_state: state,
+      address_zip: zip,
+      address_instructions: `Promo: ${data.promo_code}`,
+      customer_name: data.name,
+      customer_phone: cleanPhone,
+      customer_email: data.email,
+      status: 'pending',
+      vehicle_info_pending: true,
+      created_at: new Date().toISOString()
+    };
+
+    // Only add promo_code if column exists (for backward compatibility)
+    // This will be added once migration runs
+    // bookingData.promo_code = data.promo_code;
+
     const { data: newBooking, error: dbError } = await supabaseAdmin
       .from('bookings')
-      .insert({
-        service_id: promoService.id,
-        service_name: serviceName,
-        service_price: totalPrice,
-        scheduled_date: null, // Promo bookings - we'll contact to schedule
-        scheduled_time: null,
-        address_street: street,
-        address_city: city,
-        address_state: state,
-        address_zip: zip,
-        address_instructions: `Promo: ${data.promo_code}`,
-        customer_name: data.name,
-        customer_phone: cleanPhone,
-        customer_email: data.email,
-        status: 'pending',
-        vehicle_info_pending: true,
-        promo_code: data.promo_code,
-        created_at: new Date().toISOString()
-      })
+      .insert(bookingData)
       .select()
       .single();
 
