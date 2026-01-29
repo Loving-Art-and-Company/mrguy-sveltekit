@@ -51,7 +51,7 @@ export async function notifyOwnerOfBooking(booking: {
   address: { street: string; city: string; state: string; zip: string };
   contact: { name: string; phone: string; email?: string };
 }): Promise<boolean> {
-  const OWNER_EMAIL = 'abdias@lovingartandcompany.com';
+  const OWNER_EMAIL = 'info@lovingartandcompany.com';
   
   const html = `
     <h2>New Booking Received!</h2>
