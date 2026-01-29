@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { Check, Gift, MapPin, Car, ArrowRight } from 'lucide-svelte';
+  import { Check, Gift, MapPin, Car, ArrowRight, CheckCircle } from 'lucide-svelte';
 
   const freeService = {
     name: "Exterior Wash",
@@ -36,6 +35,9 @@
     phone: '',
     address: ''
   });
+  let submitting = $state(false);
+  let success = $state(false);
+  let error = $state('');
 
   function toggleUpgrade(id: string) {
     if (selectedUpgrades.includes(id)) {
@@ -52,16 +54,36 @@
     }, 0);
   }
 
-  function handleSubmit() {
-    const params = new URLSearchParams({
-      promo: 'kores',
-      package: 'exterior_wash',
-      upgrades: selectedUpgrades.join(','),
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone
-    });
-    goto(`/book?${params.toString()}`);
+  async function handleSubmit() {
+    submitting = true;
+    error = '';
+
+    try {
+      const response = await fetch('/api/bookings/promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promo_code: 'kores',
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          upgrades: selectedUpgrades
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+
+      success = true;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+    } finally {
+      submitting = false;
+    }
   }
 </script>
 
@@ -146,71 +168,104 @@
 
   <!-- Redemption Form -->
   <section class="redemption-section">
-    <h2>Redeem Your Free Wash</h2>
-    
-    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="name">Full Name</label>
-          <input 
-            type="text" 
-            id="name" 
-            bind:value={formData.name}
-            placeholder="John Smith"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            bind:value={formData.email}
-            placeholder="john@email.com"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Phone</label>
-          <input 
-            type="tel" 
-            id="phone" 
-            bind:value={formData.phone}
-            placeholder="(954) 555-1234"
-            required
-          />
-        </div>
-
-        <div class="form-group full-width">
-          <label for="address">Service Address (West Broward)</label>
-          <input 
-            type="text" 
-            id="address" 
-            bind:value={formData.address}
-            placeholder="123 Main St, Weston, FL"
-            required
-          />
+    {#if success}
+      <!-- Success State -->
+      <div class="success-message">
+        <CheckCircle size={64} />
+        <h2>You're All Set!</h2>
+        <p class="success-text">
+          We've received your request and will contact you within <strong>24 hours</strong> to schedule your free wash.
+        </p>
+        <p class="success-subtext">
+          Check your email (<strong>{formData.email}</strong>) for confirmation details.
+        </p>
+        <div class="success-contact">
+          <p>Questions? Call or text us:</p>
+          <a href="tel:9548044747" class="phone-link">954-804-4747</a>
         </div>
       </div>
+    {:else}
+      <!-- Form -->
+      <h2>Redeem Your Free Wash</h2>
+      
+      {#if error}
+        <div class="error-message">
+          <p>{error}</p>
+        </div>
+      {/if}
+      
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input 
+              type="text" 
+              id="name" 
+              bind:value={formData.name}
+              placeholder="John Smith"
+              disabled={submitting}
+              required
+            />
+          </div>
 
-      <div class="form-footer">
-        <div class="total">
-          {#if getTotal() > 0}
-            <span class="total-label">Upgrades Total:</span>
-            <span class="total-amount">${getTotal()}</span>
-          {:else}
-            <span class="total-free">100% Free — No Card Required</span>
-          {/if}
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input 
+              type="email" 
+              id="email" 
+              bind:value={formData.email}
+              placeholder="john@email.com"
+              disabled={submitting}
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              bind:value={formData.phone}
+              placeholder="(954) 555-1234"
+              disabled={submitting}
+              required
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="address">Service Address (West Broward)</label>
+            <input 
+              type="text" 
+              id="address" 
+              bind:value={formData.address}
+              placeholder="123 Main St, Weston, FL"
+              disabled={submitting}
+              required
+            />
+          </div>
         </div>
 
-        <button type="submit" class="submit-btn">
-          <span>Claim My Free Wash</span>
-          <ArrowRight size={20} />
-        </button>
-      </div>
-    </form>
+        <div class="form-footer">
+          <div class="total">
+            {#if getTotal() > 0}
+              <span class="total-label">Upgrades Total:</span>
+              <span class="total-amount">${getTotal()}</span>
+            {:else}
+              <span class="total-free">100% Free — No Card Required</span>
+            {/if}
+          </div>
+
+          <button type="submit" class="submit-btn" disabled={submitting}>
+            {#if submitting}
+              <span>Processing...</span>
+            {:else}
+              <span>Claim My Free Wash</span>
+              <ArrowRight size={20} />
+            {/if}
+          </button>
+        </div>
+      </form>
+    {/if}
   </section>
 
   <!-- Terms -->
@@ -569,8 +624,91 @@
     transition: background 0.2s ease;
   }
 
-  .submit-btn:hover {
+  .submit-btn:hover:not(:disabled) {
     background: #a01830;
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .form-group input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Success Message */
+  .success-message {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .success-message :global(svg) {
+    color: #10b981;
+    margin-bottom: 1.5rem;
+  }
+
+  .success-message h2 {
+    font-size: 2rem;
+    margin: 0 0 1rem;
+    color: #000;
+  }
+
+  .success-text {
+    font-size: 1.125rem;
+    color: #333;
+    margin: 0 0 0.5rem;
+    line-height: 1.6;
+  }
+
+  .success-subtext {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 0 0 2rem;
+  }
+
+  .success-contact {
+    background: #f8f8f8;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .success-contact p {
+    margin: 0 0 0.5rem;
+    color: #666;
+    font-size: 0.95rem;
+  }
+
+  .phone-link {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #c41e3a;
+    text-decoration: none;
+  }
+
+  .phone-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Error Message */
+  .error-message {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .error-message p {
+    margin: 0;
+    color: #c00;
+    font-weight: 500;
   }
 
   /* Terms */
