@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { supabaseAdmin } from '$lib/server/supabase';
-import { notifyPabloOfBooking, sendCustomerConfirmation } from '$lib/server/sms';
+import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 
 // Validation schema for modal booking
 const bookingSchema = z.object({
@@ -76,20 +76,20 @@ export const POST: RequestHandler = async ({ request }) => {
       // Don't expose DB errors to client, but still try to send notifications
     }
 
-    // Send SMS notifications (don't block on these)
-    const smsPromises = [
-      notifyPabloOfBooking(booking),
+    // Send email notifications (don't block on these)
+    const emailPromises = [
+      notifyOwnerOfBooking(booking),
       sendCustomerConfirmation(booking)
     ];
 
-    // Fire and forget - don't wait for SMS to complete
-    Promise.allSettled(smsPromises).then(results => {
-      const [pabloResult, customerResult] = results;
-      if (pabloResult.status === 'rejected' || !pabloResult.value) {
-        console.warn('Failed to notify Pablo of booking');
+    // Fire and forget - don't wait for emails to complete
+    Promise.allSettled(emailPromises).then(results => {
+      const [ownerResult, customerResult] = results;
+      if (ownerResult.status === 'rejected' || !ownerResult.value) {
+        console.warn('Failed to notify owner of booking');
       }
       if (customerResult.status === 'rejected' || !customerResult.value) {
-        console.warn('Failed to send customer confirmation SMS');
+        console.warn('Failed to send customer confirmation email');
       }
     });
 
