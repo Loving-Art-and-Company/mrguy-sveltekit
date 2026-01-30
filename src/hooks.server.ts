@@ -1,18 +1,10 @@
-import * as Sentry from '@sentry/sveltekit';
+// Sentry removed from server hooks - causes module init errors in Vercel
+// If needed, configure Sentry via vercel.json or Sentry Vercel integration
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import { env } from '$env/dynamic/public';
 import type { Database } from '$lib/types/database';
-
-// Optional Sentry integration - only if DSN is configured
-if (env.PUBLIC_SENTRY_DSN) {
-	Sentry.init({
-		dsn: env.PUBLIC_SENTRY_DSN,
-		tracesSampleRate: 1.0
-	});
-}
 
 const customHandle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createServerClient<Database>(
@@ -77,8 +69,4 @@ const customHandle: Handle = async ({ event, resolve }) => {
 	});
 };
 
-export const handle = PUBLIC_SENTRY_DSN
-	? sequence(Sentry.sentryHandle(), customHandle)
-	: customHandle;
-
-export const handleError = Sentry.handleErrorWithSentry();
+export const handle = customHandle;
