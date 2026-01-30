@@ -2,12 +2,14 @@ import * as Sentry from '@sentry/sveltekit';
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SENTRY_DSN } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import type { Database } from '$lib/types/database';
 
-if (PUBLIC_SENTRY_DSN) {
+// Optional Sentry integration - only if DSN is configured
+if (env.PUBLIC_SENTRY_DSN) {
 	Sentry.init({
-		dsn: PUBLIC_SENTRY_DSN,
+		dsn: env.PUBLIC_SENTRY_DSN,
 		tracesSampleRate: 1.0
 	});
 }

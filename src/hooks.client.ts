@@ -1,9 +1,10 @@
 import * as Sentry from '@sentry/sveltekit';
-import { PUBLIC_SENTRY_DSN } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
-if (PUBLIC_SENTRY_DSN) {
+// Optional Sentry integration - only if DSN is configured
+if (env.PUBLIC_SENTRY_DSN) {
 	Sentry.init({
-		dsn: PUBLIC_SENTRY_DSN,
+		dsn: env.PUBLIC_SENTRY_DSN,
 		tracesSampleRate: 1.0,
 		replaysSessionSampleRate: 0.1,
 		replaysOnErrorSampleRate: 1.0,
