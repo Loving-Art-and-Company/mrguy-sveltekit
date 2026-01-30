@@ -1,7 +1,6 @@
 /**
- * Mr. Guy Mobile Detail - Service Packages, Subscriptions & Add-Ons
+ * Mr. Guy Mobile Detail - Service Packages & Memberships
  * Source of truth for pricing and service data
- * Updated from Mr.Guy menu .xlsx
  */
 
 export interface ServicePackage {
@@ -13,32 +12,16 @@ export interface ServicePackage {
   description: string;
   includes: string[];
   badge?: string;
-  category: 'one-time' | 'subscription';
 }
 
-export interface SubscriptionTier {
-  id: string;
-  name: string;
-  priceLow: number;
-  priceHigh: number;
-  frequency: 'monthly';
-  description: string;
-  includes: string[];
-  badge?: string;
-}
-
-export interface AddOn {
-  id: string;
-  name: string;
-  price: number | string; // string for variable pricing like "$350 for gold"
-  notes?: string;
-  availableFor: ('silver' | 'gold' | 'platinum' | 'all')[];
-}
-
-export interface ExtraFee {
+export interface MembershipTier {
   id: string;
   name: string;
   price: number;
+  frequency: string;
+  description: string;
+  features: string[];
+  recommendedFor: string;
 }
 
 export const BUSINESS_INFO = {
@@ -49,7 +32,7 @@ export const BUSINESS_INFO = {
   location: "West Broward, South Florida",
   serviceArea: ["West Broward", "Broward County", "South Florida"],
   hours: "Mon-Sat 8AM-6PM (By appointment - We come to you!)",
-  priceRange: "$30 - $750",
+  priceRange: "$45 - $2,000",
   promo: {
     name: "Fresh Start",
     discount: 25,
@@ -57,263 +40,115 @@ export const BUSINESS_INFO = {
   },
   valueProps: [
     "We come to you",
-    "You don't like it, we fix it",
-    "Won't mess up your driveway",
-    "Insured (just in case)"
+    "Satisfaction guaranteed",
+    "Eco-friendly products",
+    "Insured & professional"
   ]
 } as const;
 
-// ============================================
-// SUBSCRIPTION TIERS (Monthly Packages)
-// ============================================
-export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
+export const SERVICE_PACKAGES: ServicePackage[] = [
+  {
+    id: "basic",
+    name: 'The "Quick Refresh"',
+    priceLow: 45,
+    priceHigh: 75,
+    avgPrice: 60,
+    description: "Maintain a professional image without lifting a finger. Premium pH-neutral soaps preserve your paint's integrity.",
+    includes: ["Foam Cannon Bath", "Spot-Free Rinse", "Tire Shine", "Interior Vacuum"],
+  },
   {
     id: "silver",
-    name: "Silver",
-    priceLow: 37,
-    priceHigh: 79,
-    frequency: "monthly",
-    description: "Keep your ride looking good without thinking about it.",
-    includes: [
-      "Interior & exterior wash",
-      "Tire shine",
-      "14-day wax",
-      "Windows",
-      "Trim/chrome care"
-    ],
+    name: 'The "Family Hauler"',
+    priceLow: 130,
+    priceHigh: 220,
+    avgPrice: 175,
+    description: "Reclaim your sanity. We eliminate the evidence of road trips and school runs—deep cleaning carpets and sanitizing surfaces.",
+    includes: ["Deep Interior Scrub", "Carpet Shampoo", "Leather Wipe Down", "Spray Wax Protection"],
+  },
+  {
+    id: "ev_special",
+    name: 'The "Electric"',
+    priceLow: 150,
+    priceHigh: 250,
+    avgPrice: 200,
+    description: "Specialized care for your high-tech investment. Sensor-safe techniques and EV-specific cleaners.",
+    includes: ["Vegan Leather Care", "Frunk Cleaning", "Charge Port Detail", "Scratch-Free Wash"],
+    badge: "TESLA FRIENDLY",
+  },
+  {
+    id: "tesla_3y_special",
+    name: 'The "Model 3/Y" Kit',
+    priceLow: 150,
+    priceHigh: 250,
+    avgPrice: 200,
+    description: "Expert maintenance targeting common Model 3/Y wear points—keeping white seats stain-free and glass roof crystal clear.",
+    includes: ["Vegan Leather Conditioning", "Glass Roof Clarity", "Frunk & Sub-Trunk", "Screen Fingerprint Removal"],
+    badge: "OWNER FAVORITE",
   },
   {
     id: "gold",
-    name: "Gold",
-    priceLow: 97,
-    priceHigh: 177,
-    frequency: "monthly",
-    description: "The works. Your car stays fresh while you stay busy.",
-    includes: [
-      "All Silver options",
-      "Clay bar treatment",
-      "Leather shampoo & wash",
-      "Window ceramic coat",
-      "Air freshener of choice"
-    ],
-    badge: "POPULAR",
+    name: 'The "Showroom"',
+    priceLow: 220,
+    priceHigh: 350,
+    avgPrice: 285,
+    description: "Turn heads at the office or the valet. Comprehensive detail that restores that 'just drove off the lot' feeling.",
+    includes: ["Clay Bar Treatment", "Iron Decon", "6-Month Sealant", "Engine Bay Rinse"],
   },
   {
-    id: "platinum",
-    name: "Platinum",
-    priceLow: 247,
-    priceHigh: 397,
-    frequency: "monthly",
-    description: "Showroom shine every month. For people who actually use their car.",
-    includes: [
-      "All Gold options",
-      "2-step paint correction",
-      "Window ceramic coat",
-      "Exclusive discounts on special services"
-    ],
-    badge: "BEST VALUE",
+    id: "advanced",
+    name: "Ceramic Coating",
+    priceLow: 450,
+    priceHigh: 2000,
+    avgPrice: 1000,
+    description: "Ultimate protection. A hardened shield that repels dirt and UV rays, making future washes effortless for years.",
+    includes: ["Multi-Year Protection", "Paint Correction", "Hydrophobic Layer", "Carfax Report Update"],
   },
 ];
 
-// ============================================
-// ONE-TIME SERVICES
-// ============================================
-export const SERVICE_PACKAGES: ServicePackage[] = [
+export const MEMBERSHIP_TIERS: MembershipTier[] = [
   {
-    id: "exterior_wash",
-    name: "Exterior Wash",
-    priceLow: 27,
-    priceHigh: 47,
-    avgPrice: 47,
-    description: "Quick wash. We come to you, you stay doing whatever.",
-    includes: ["Foam cannon bath", "Spot-free rinse", "Tire shine", "Window cleaning"],
-    category: 'one-time',
+    id: "basic_membership",
+    name: "The Regular",
+    price: 69,
+    frequency: "Monthly",
+    description: "Set it and forget it. We come by once a month to keep it fresh.",
+    features: ["1 Premium Wash / Month", "Vacuum & Wipe Down", "10% OFF other services", "Cancel anytime"],
+    recommendedFor: "Leased Cars",
   },
   {
-    id: "interior_wash",
-    name: "Interior Wash",
-    priceLow: 27,
-    priceHigh: 47,
-    avgPrice: 47,
-    description: "Get rid of the crumbs, coffee stains, and mystery smells.",
-    includes: ["Full vacuum", "Dashboard wipe", "Door panels", "Console cleaning"],
-    category: 'one-time',
+    id: "premium_membership",
+    name: 'The "Always Clean"',
+    price: 179,
+    frequency: "Bi-Weekly",
+    description: "We stop by every two weeks. Your car never looks dirty.",
+    features: ["2 Visits Per Month", "1 Full Interior Deep Clean", "1 Maintenance Wash", "Priority Scheduling"],
+    recommendedFor: "School Drop-off Line",
   },
   {
-    id: "full_wax",
-    name: "Full Wax",
-    priceLow: 147,
-    priceHigh: 147,
-    avgPrice: 147,
-    description: "Makes your car look like you actually care about it.",
-    includes: ["Hand wax application", "Buff and polish", "UV protection", "Water beading"],
-    category: 'one-time',
-  },
-  {
-    id: "clay_bar",
-    name: "Clay Bar Treatment",
-    priceLow: 67,
-    priceHigh: 67,
-    avgPrice: 67,
-    description: "Smooths out all the gunk you can't see but definitely feel.",
-    includes: ["Full clay bar treatment", "Surface decontamination", "Prep for wax/ceramic"],
-    category: 'one-time',
-  },
-  {
-    id: "paint_correction_clay",
-    name: "Paint Correction + Clay Bar",
-    priceLow: 167,
-    priceHigh: 167,
-    avgPrice: 167,
-    description: "Fix the swirls and scratches from that automatic car wash.",
-    includes: ["Clay bar treatment", "Paint correction", "Swirl removal", "Scratch reduction"],
-    category: 'one-time',
-  },
-  {
-    id: "two_step_correction",
-    name: "2-Step Paint Correction",
-    priceLow: 267,
-    priceHigh: 267,
-    avgPrice: 267,
-    description: "The real deal. Removes years of wear and bad washes.",
-    includes: ["Compound stage", "Polish stage", "Swirl elimination", "Deep scratch removal"],
-    category: 'one-time',
-    badge: "PRO",
-  },
-  {
-    id: "window_ceramic",
-    name: "Window Ceramic Coat",
-    priceLow: 97,
-    priceHigh: 97,
-    avgPrice: 97,
-    description: "Rain literally slides off. No more squinting through streaks.",
-    includes: ["All windows treated", "Rain repellent", "Easy cleaning", "UV protection"],
-    category: 'one-time',
-  },
-  {
-    id: "tire_ceramic",
-    name: "Tire Ceramic Coat",
-    priceLow: 97,
-    priceHigh: 97,
-    avgPrice: 97,
-    description: "Tires stay black and clean way longer than normal.",
-    includes: ["All tires treated", "UV protection", "Long-lasting shine", "Dirt repellent"],
-    category: 'one-time',
-  },
-  {
-    id: "full_ceramic",
-    name: "Full Body Ceramic Coat",
-    priceLow: 397,
-    priceHigh: 747,
-    avgPrice: 747,
-    description: "Years of protection. Worth it if you keep your car more than 2 years.",
-    includes: ["Full paint prep", "Ceramic application", "Hydrophobic finish", "Multi-year protection"],
-    category: 'one-time',
-    badge: "ULTIMATE",
+    id: "elite_membership",
+    name: "The Enthusiast",
+    price: 349,
+    frequency: "Custom",
+    description: "For the weekend toy or the baby of the garage.",
+    features: ["Quarterly Detail + Ceramic Boost", "Engine Bay Included", "Annual Polish", "Direct line to the owners"],
+    recommendedFor: "Sports Cars",
   },
 ];
 
-// ============================================
-// ADD-ONS (Available with subscriptions)
-// ============================================
-export const ADD_ONS: AddOn[] = [
-  {
-    id: "headlight_restoration",
-    name: "Headlight Restoration",
-    price: 60,
-    availableFor: ['all'],
-  },
-  {
-    id: "addon_wax",
-    name: "Wax",
-    price: 50,
-    availableFor: ['silver'],
-  },
-  {
-    id: "addon_paint_correction",
-    name: "Paint Correction/Polish",
-    price: 100,
-    availableFor: ['silver'],
-  },
-  {
-    id: "addon_tire_ceramic",
-    name: "Tire Ceramic Coat",
-    price: 75,
-    availableFor: ['silver'],
-  },
-  {
-    id: "addon_window_ceramic",
-    name: "Window Ceramic Coat",
-    price: 75,
-    availableFor: ['silver', 'gold'],
-  },
-  {
-    id: "addon_clay_bar",
-    name: "Clay Bar",
-    price: 100,
-    availableFor: ['silver'],
-  },
-  {
-    id: "addon_full_2step",
-    name: "Full 2-Step Correction",
-    price: 200,
-    notes: "Requires clay bar",
-    availableFor: ['gold'],
-  },
-  {
-    id: "addon_ceramic_coat",
-    name: "Ceramic Coat",
-    price: "$350 (Gold) / $100 (Platinum)",
-    notes: "Requires 2-step correction",
-    availableFor: ['gold', 'platinum'],
-  },
-];
+// Alias for backward compatibility
+export const SUBSCRIPTION_TIERS = MEMBERSHIP_TIERS;
 
-// ============================================
-// EXTRA FEES
-// ============================================
-export const EXTRA_FEES: ExtraFee[] = [
-  {
-    id: "pet_hair",
-    name: "Pet Hair Removal",
-    price: 10,
-  },
-  {
-    id: "vomit_feces",
-    name: "Vomit / Feces Cleaning",
-    price: 50,
-  },
-  {
-    id: "blood_stains",
-    name: "Blood Stain Removal",
-    price: 25,
-  },
-];
+// Add-ons and extra fees (empty for now, to be implemented)
+export const ADD_ONS: any[] = [];
+export const EXTRA_FEES: any[] = [];
 
-// Legacy export for backward compatibility
-export const MEMBERSHIP_TIERS = SUBSCRIPTION_TIERS.map(tier => ({
-  id: tier.id + '_membership',
-  name: tier.name,
-  price: tier.priceLow,
-  frequency: 'Monthly',
-  description: tier.description,
-  features: tier.includes,
-  recommendedFor: tier.badge || '',
-}));
+export function getAddOnsForTier(tierId: string): any[] {
+  return [];
+}
 
 /**
  * Calculate discounted price for Fresh Start promo
  */
 export function getPromoPrice(price: number): number {
   return Math.round(price * (1 - BUSINESS_INFO.promo.discount / 100));
-}
-
-/**
- * Get add-ons available for a subscription tier
- */
-export function getAddOnsForTier(tierId: string): AddOn[] {
-  return ADD_ONS.filter(addon =>
-    addon.availableFor.includes('all') ||
-    addon.availableFor.includes(tierId as 'silver' | 'gold' | 'platinum')
-  );
 }
