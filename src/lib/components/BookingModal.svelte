@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X, Calendar, MapPin, User, Check, ChevronRight } from 'lucide-svelte';
   import type { ServicePackage } from '$lib/data/services';
+  import { track } from '$lib/analytics';
 
   interface Props {
     service: ServicePackage;
@@ -89,6 +90,11 @@
     contact.phone = formatPhone(input.value);
   }
 
+  function handleEditServiceClick() {
+    track('booking_edit_service', { service: service.name });
+    onEditService();
+  }
+
   // Validation
   function validateStep(step: number): boolean {
     errors = {};
@@ -116,6 +122,7 @@
     if (!validateStep(currentStep)) return;
     
     if (currentStep < 2) {
+      track('booking_step_completed', { step: currentStep + 1, service: service.name });
       currentStep++;
     } else {
       submitBooking();
@@ -133,6 +140,7 @@
     
     isSubmitting = true;
     errors = {};
+    track('booking_submit', { service: service.name, price: service.priceHigh });
 
     try {
       const response = await fetch('/api/bookings/create', {
@@ -158,6 +166,7 @@
       // Show success message
       showSuccess = true;
       successCountdown = 3;
+      track('booking_success', { service: service.name, price: service.priceHigh });
       
       // Countdown and auto-close
       const interval = setInterval(() => {
@@ -170,12 +179,14 @@
 
     } catch (err) {
       errors.submit = err instanceof Error ? err.message : 'Booking failed. Please try again or call 954-804-4747.';
+      track('booking_error', { service: service.name });
     } finally {
       isSubmitting = false;
     }
   }
 
   function handleClose() {
+    track('booking_modal_closed', { step: currentStep + 1, success: showSuccess });
     // Reset state
     currentStep = 0;
     showSuccess = false;
@@ -202,6 +213,7 @@
   $effect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      track('booking_modal_opened', { service: service.name });
     } else {
       document.body.style.overflow = '';
     }
@@ -248,7 +260,7 @@
               <li>{item}</li>
             {/each}
           </ul>
-          <button class="edit-service-btn" onclick={onEditService}>
+          <button class="edit-service-btn" onclick={handleEditServiceClick}>
             Change Service
           </button>
         </div>

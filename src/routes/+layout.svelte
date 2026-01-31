@@ -10,6 +10,7 @@
 
   // Hide header/footer for standalone promo pages
   const isStandalone = $derived(page.url.pathname.startsWith('/promo'));
+
 </script>
 
 <svelte:head>

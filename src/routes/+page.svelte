@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { PackageMenu, BUSINESS_INFO, type ServicePackage } from '$lib';
   import Sparkle from '$lib/components/Sparkle.svelte';
   import OptimizedImage from '$lib/components/OptimizedImage.svelte';
@@ -9,15 +10,33 @@
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import BookingModal from '$lib/components/BookingModal.svelte';
   import { ripple } from '$lib/actions/ripple';
+  import { track, isFeatureEnabled, onFeatureFlags } from '$lib/analytics';
 
   // Booking modal state
   let showBookingModal = $state(false);
   let selectedService = $state<ServicePackage | null>(null);
+  let showPromoBanner = $state(false);
 
   function handlePackageSelect(pkg: ServicePackage) {
     selectedService = pkg;
     showBookingModal = true;
+    track('package_selected', { service: pkg.name, price: pkg.priceHigh });
   }
+
+  onMount(() => {
+    showPromoBanner = isFeatureEnabled('promo_banner');
+    if (showPromoBanner) {
+      track('promo_banner_viewed');
+    }
+
+    onFeatureFlags(() => {
+      const enabled = isFeatureEnabled('promo_banner');
+      if (enabled && !showPromoBanner) {
+        track('promo_banner_viewed');
+      }
+      showPromoBanner = enabled;
+    });
+  });
 
   function closeBookingModal() {
     showBookingModal = false;
@@ -66,6 +85,11 @@
   <section id="services" class="packages-section">
     <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
+    {#if showPromoBanner}
+      <div class="promo-banner" role="status" aria-live="polite">
+        <strong>Limited Promo:</strong> Fresh Start 25% off — today only.
+      </div>
+    {/if}
     <PackageMenu onSelect={handlePackageSelect} />
   </section>
 
@@ -220,6 +244,18 @@
     );
     position: relative;
     overflow: hidden;
+  }
+
+  .promo-banner {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+    padding: 0.9rem 1.25rem;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--text-primary);
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid rgba(14, 165, 233, 0.25);
   }
 
   .packages-section::before {
