@@ -1,5 +1,9 @@
 # Mr. Guy Mobile Detail - SvelteKit
 
+## Development Setup
+
+When setting up dev environments or projects, always verify the setup is fully working before moving on - run the dev server, test login flows, and confirm database connections are active.
+
 ## Overview
 
 Mobile detailing booking platform. White-label SaaS architecture, first tenant: Mr. Guy Mobile Detail (South Florida).
@@ -63,6 +67,9 @@ src/
 ### Auth
 - Client: Twilio Verify SMS OTP
 - Admin: Supabase Auth email/password
+- Google OAuth: Drive, Sheets, Docs integration for team access
+
+After any auth-related changes, test the full login flow including redirects before considering the task complete.
 
 ### Payments
 - Stripe Checkout (redirect, not embedded)
@@ -71,6 +78,10 @@ src/
 ### Validation
 - Zod schemas for all inputs
 - Server-side validation required
+
+## Debugging
+
+When troubleshooting or debugging, state the current hypothesis and what evidence would confirm/reject it before making changes.
 
 ## Business Context
 

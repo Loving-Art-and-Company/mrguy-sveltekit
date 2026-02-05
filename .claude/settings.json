@@ -1,4 +1,10 @@
 {
+  "hooks": {
+    "post-edit": {
+      "command": "npx tsc --noEmit",
+      "pattern": "*.ts,*.tsx"
+    }
+  },
   "env": {
     "CLAUDE_CODE_TASK_LIST_ID": "mrguy-sveltekit"
   },

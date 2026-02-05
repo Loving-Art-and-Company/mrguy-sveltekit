@@ -10,6 +10,9 @@
     { href: '/admin/bookings', label: 'Bookings', icon: '📅', exact: false },
     { href: '/admin/calendar', label: 'Calendar', icon: '🗓️', exact: false },
     { href: '/admin/revenue', label: 'Revenue', icon: '💰', exact: false },
+    { href: '/admin/drive', label: 'Drive', icon: '📁', exact: false },
+    { href: '/admin/sheets', label: 'Sheets', icon: '📗', exact: false },
+    { href: '/admin/docs', label: 'Docs', icon: '📄', exact: false },
   ];
 
   // Check if nav item is active (exact match for dashboard, prefix match for others)
