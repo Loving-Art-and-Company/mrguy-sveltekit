@@ -2,12 +2,14 @@
 	import OptimizedImage from './OptimizedImage.svelte';
 	import AnimatedSection from './AnimatedSection.svelte';
 
-	export let steps: Array<{
-		title: string;
-		description: string;
-		imageSrc: string;
-		imageAlt: string;
-	}>;
+	let { steps }: {
+		steps: Array<{
+			title: string;
+			description: string;
+			imageSrc: string;
+			imageAlt: string;
+		}>;
+	} = $props();
 </script>
 
 <div class="process-timeline">

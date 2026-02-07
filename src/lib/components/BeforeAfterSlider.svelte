@@ -1,13 +1,15 @@
 <script lang="ts">
 	import OptimizedImage from './OptimizedImage.svelte';
 
-	export let beforeSrc: string;
-	export let afterSrc: string;
-	export let beforeAlt = 'Before detailing';
-	export let afterAlt = 'After detailing';
+	let { beforeSrc, afterSrc, beforeAlt = 'Before detailing', afterAlt = 'After detailing' }: {
+		beforeSrc: string;
+		afterSrc: string;
+		beforeAlt?: string;
+		afterAlt?: string;
+	} = $props();
 
-	let sliderPosition = 50; // percentage
-	let isDragging = false;
+	let sliderPosition = $state(50);
+	let isDragging = $state(false);
 	let containerElement: HTMLElement;
 
 	function handleMove(clientX: number) {
@@ -49,12 +51,12 @@
 	}
 </script>
 
-<svelte:window on:mousemove={handleMouseMove} on:mouseup={stopDrag} on:touchend={stopDrag} />
+<svelte:window onmousemove={handleMouseMove} onmouseup={stopDrag} ontouchend={stopDrag} />
 
 <div
 	class="before-after-slider"
 	bind:this={containerElement}
-	on:touchmove={handleTouchMove}
+	ontouchmove={handleTouchMove}
 	role="region"
 	aria-label="Before and after comparison slider"
 >
@@ -77,9 +79,9 @@
 	<div
 		class="before-after-slider__handle"
 		style="left: {sliderPosition}%"
-		on:mousedown={startDrag}
-		on:touchstart={startDrag}
-		on:keydown={handleKeydown}
+		onmousedown={startDrag}
+		ontouchstart={startDrag}
+		onkeydown={handleKeydown}
 		role="slider"
 		aria-valuenow={Math.round(sliderPosition)}
 		aria-valuemin={0}
