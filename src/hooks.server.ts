@@ -2,9 +2,9 @@
 // If needed, configure Sentry via vercel.json or Sentry Vercel integration
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import type { Database } from '$lib/types/database';
+import { supabaseAdmin } from '$lib/server/supabase';
 
 const customHandle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createServerClient<Database>(
@@ -58,6 +58,19 @@ const customHandle: Handle = async ({ event, resolve }) => {
 
 		// All other admin routes require auth
 		if (!session) {
+			throw redirect(303, '/admin/login');
+		}
+
+		// Verify user is in admin_users table (not just any authenticated user)
+		const { data: adminUser } = await supabaseAdmin
+			.from('admin_users')
+			.select('id')
+			.eq('user_id', session.user.id)
+			.single();
+
+		if (!adminUser) {
+			// Authenticated but not an admin — sign out and redirect
+			await event.locals.supabase.auth.signOut();
 			throw redirect(303, '/admin/login');
 		}
 	}

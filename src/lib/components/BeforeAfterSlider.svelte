@@ -61,7 +61,7 @@
 	<div class="before-after-slider__image-container">
 		<!-- Before Image (full width) -->
 		<div class="before-after-slider__image before-image">
-			<OptimizedImage src={beforeSrc} alt={beforeAlt} lazy={false} />
+			<OptimizedImage src={beforeSrc} alt={beforeAlt} priority={true} />
 		</div>
 
 		<!-- After Image (clipped by slider position) -->
@@ -69,7 +69,7 @@
 			class="before-after-slider__image after-image"
 			style="clip-path: inset(0 0 0 {sliderPosition}%)"
 		>
-			<OptimizedImage src={afterSrc} alt={afterAlt} lazy={false} />
+			<OptimizedImage src={afterSrc} alt={afterAlt} priority={true} />
 		</div>
 	</div>
 
