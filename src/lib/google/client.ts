@@ -1,4 +1,10 @@
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+
+function getEnv(key: string): string {
+	const value = env[key];
+	if (!value) throw new Error(`Missing required env var: ${key}`);
+	return value;
+}
 
 /**
  * Google OAuth scopes - minimal set for Drive, Sheets, and Docs access
@@ -18,8 +24,8 @@ export const GOOGLE_SCOPES = [
  */
 export function getGoogleAuthUrl(state?: string): string {
 	const params = new URLSearchParams({
-		client_id: GOOGLE_CLIENT_ID,
-		redirect_uri: GOOGLE_REDIRECT_URI,
+		client_id: getEnv('GOOGLE_CLIENT_ID'),
+		redirect_uri: getEnv('GOOGLE_REDIRECT_URI'),
 		response_type: 'code',
 		scope: GOOGLE_SCOPES,
 		access_type: 'offline', // Required to get refresh token
@@ -40,9 +46,9 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleTokenRe
 			'Content-Type': 'application/x-www-form-urlencoded'
 		},
 		body: new URLSearchParams({
-			client_id: GOOGLE_CLIENT_ID,
-			client_secret: GOOGLE_CLIENT_SECRET,
-			redirect_uri: GOOGLE_REDIRECT_URI,
+			client_id: getEnv('GOOGLE_CLIENT_ID'),
+			client_secret: getEnv('GOOGLE_CLIENT_SECRET'),
+			redirect_uri: getEnv('GOOGLE_REDIRECT_URI'),
 			grant_type: 'authorization_code',
 			code
 		})
@@ -66,8 +72,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<GoogleTo
 			'Content-Type': 'application/x-www-form-urlencoded'
 		},
 		body: new URLSearchParams({
-			client_id: GOOGLE_CLIENT_ID,
-			client_secret: GOOGLE_CLIENT_SECRET,
+			client_id: getEnv('GOOGLE_CLIENT_ID'),
+			client_secret: getEnv('GOOGLE_CLIENT_SECRET'),
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken
 		})
