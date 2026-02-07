@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { setGoogleTokens } from '$lib/stores/google';
 
-	export let data;
+	let { data } = $props();
 
-	onMount(() => {
+	$effect(() => {
 		if (data.tokens) {
 			// Store tokens in the client-side store (persisted to localStorage)
 			setGoogleTokens(data.tokens);

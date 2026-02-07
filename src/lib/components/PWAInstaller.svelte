@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
-	let deferredPrompt: any = null;
-	let showInstallBanner = false;
-	let isInstalled = false;
-	let visitCount = 0;
+	let deferredPrompt: any = $state(null);
+	let showInstallBanner = $state(false);
+	let isInstalled = $state(false);
+	let visitCount = $state(0);
 
-	onMount(() => {
+	$effect(() => {
 		if (!browser) return;
 
 		// Register service worker
@@ -89,8 +88,8 @@
 				<p class="install-description">Book 50% faster with our app</p>
 			</div>
 			<div class="install-actions">
-				<button class="install-btn" on:click={handleInstall}>Install</button>
-				<button class="dismiss-btn" on:click={dismissBanner} aria-label="Dismiss install prompt">
+			<button class="install-btn" onclick={handleInstall}>Install</button>
+			<button class="dismiss-btn" onclick={dismissBanner} aria-label="Dismiss install prompt">
 					✕
 				</button>
 			</div>

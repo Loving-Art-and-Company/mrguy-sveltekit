@@ -7,20 +7,17 @@
    * Ported to Svelte by Abdias @ Loving Art & Company
    */
   
-  import { onMount } from 'svelte';
   import { browser } from '$app/environment';
 
   // Props
-  export let onAnnotationAdd = undefined;
-  export let copyToClipboard = true;
-  export let enabled = true;
+  let { onAnnotationAdd = undefined, copyToClipboard = true, enabled = true } = $props();
 
   // State
-  let isActive = false;
-  let overlay = null;
-  let highlightBox = null;
-  let currentElement = null;
-  let annotations = [];
+  let isActive = $state(false);
+  let overlay = $state(null);
+  let highlightBox = $state(null);
+  let currentElement = $state(null);
+  let annotations = $state([]);
 
   // Annotation type
   /**
@@ -38,7 +35,7 @@
    * @property {string} timestamp - ISO timestamp
    */
 
-  onMount(() => {
+  $effect(() => {
     if (!browser || !enabled) return;
 
     // Keyboard shortcut (Cmd/Ctrl + Shift + A)
@@ -238,7 +235,7 @@ Timestamp: ${annotation.timestamp}`;
 {#if browser && enabled}
   <div class="agentation-indicator" class:active={isActive}>
     <button
-      on:click={toggleActive}
+      onclick={toggleActive}
       title="Toggle annotation mode (Cmd/Ctrl + Shift + A)"
       class="agentation-toggle"
     >
