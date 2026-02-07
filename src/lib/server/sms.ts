@@ -46,7 +46,6 @@ export async function sendSMS({ to, message }: SMSParams): Promise<boolean> {
       return false;
     }
 
-    console.log(`SMS sent successfully to ${formattedTo}`);
     return true;
   } catch (error) {
     console.error('SMS send error:', error);

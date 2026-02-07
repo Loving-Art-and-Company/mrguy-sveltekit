@@ -182,9 +182,7 @@
     // Copy to clipboard if enabled
     if (copyToClipboard) {
       const formatted = formatAnnotation(annotation);
-      navigator.clipboard.writeText(formatted).then(() => {
-        console.log('✓ Annotation copied to clipboard');
-      }).catch(err => {
+      navigator.clipboard.writeText(formatted).catch(err => {
         console.error('Failed to copy annotation:', err);
       });
     }

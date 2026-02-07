@@ -14,9 +14,6 @@
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker
 				.register('/sw.js')
-				.then((registration) => {
-					console.log('[PWA] Service Worker registered:', registration.scope);
-				})
 				.catch((error) => {
 					console.error('[PWA] Service Worker registration failed:', error);
 				});
@@ -25,7 +22,6 @@
 		// Check if already installed
 		if (window.matchMedia('(display-mode: standalone)').matches) {
 			isInstalled = true;
-			console.log('[PWA] App is installed');
 			return;
 		}
 
@@ -53,7 +49,6 @@
 
 		// Listen for app installed event
 		window.addEventListener('appinstalled', () => {
-			console.log('[PWA] App installed successfully');
 			isInstalled = true;
 			showInstallBanner = false;
 			deferredPrompt = null;
@@ -70,7 +65,6 @@
 
 		// Wait for user choice
 		const { outcome } = await deferredPrompt.userChoice;
-		console.log('[PWA] User choice:', outcome);
 
 		if (outcome === 'accepted') {
 			showInstallBanner = false;

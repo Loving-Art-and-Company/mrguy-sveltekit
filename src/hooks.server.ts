@@ -6,6 +6,19 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 import type { Database } from '$lib/types/database';
 import { supabaseAdmin } from '$lib/server/supabase';
 
+/** Verify request origin for state-changing API requests (CSRF protection) */
+function isValidOrigin(request: Request, url: URL): boolean {
+	if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
+	const origin = request.headers.get('origin');
+	// Allow if no origin header (same-origin requests from some clients)
+	if (!origin) return true;
+	try {
+		return new URL(origin).origin === url.origin;
+	} catch {
+		return false;
+	}
+}
+
 const customHandle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createServerClient<Database>(
 		PUBLIC_SUPABASE_URL,
@@ -21,6 +34,18 @@ const customHandle: Handle = async ({ event, resolve }) => {
 			},
 		}
 	);
+
+	// CSRF: reject cross-origin state-changing requests to /api/* endpoints
+	// (SvelteKit's built-in checkOrigin only covers form actions, not +server.ts)
+	if (event.url.pathname.startsWith('/api/') && !isValidOrigin(event.request, event.url)) {
+		// Allow Stripe webhooks (verified by signature, not origin)
+		if (!event.url.pathname.includes('/webhook')) {
+			return new Response(JSON.stringify({ error: 'Forbidden' }), {
+				status: 403,
+				headers: { 'Content-Type': 'application/json' },
+			});
+		}
+	}
 
 	event.locals.safeGetSession = async () => {
 		const {

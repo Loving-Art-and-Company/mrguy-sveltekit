@@ -34,7 +34,6 @@ export async function sendEmail({ to, subject, html }: EmailParams): Promise<boo
       return false;
     }
 
-    console.log(`Email sent successfully to ${to}:`, data?.id);
     return true;
   } catch (error) {
     console.error('Email send error:', error);
@@ -94,7 +93,6 @@ export async function sendCustomerConfirmation(booking: {
   contact: { email?: string };
 }): Promise<boolean> {
   if (!booking.contact.email) {
-    console.log('No customer email provided - skipping confirmation email');
     return false;
   }
 
