@@ -110,14 +110,14 @@
         <h3>{tier.name}</h3>
 
         <div class="price">
-          <span class="amount">${tier.priceHigh}</span>
-          <span class="frequency">/month</span>
+          <span class="amount">${tier.price}</span>
+          <span class="frequency">/{tier.frequency.toLowerCase()}</span>
         </div>
 
         <p class="description">{tier.description}</p>
 
         <ul class="includes">
-          {#each tier.includes as item}
+          {#each tier.features as item}
             <li>
               <Check size={16} />
               {item}
