@@ -1,110 +1,119 @@
-// Sentry removed from server hooks - causes module init errors in Vercel
-// If needed, configure Sentry via vercel.json or Sentry Vercel integration
-import { createServerClient } from '@supabase/ssr';
-import { type Handle, redirect } from '@sveltejs/kit';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import type { Database } from '$lib/types/database';
-import { supabaseAdmin } from '$lib/server/supabase';
+// src/hooks.server.ts
+// Custom auth, CSRF, CSP, rate limiting — replaces Supabase SSR client
+// Adapted from FPP/Carolina pattern for MrGuy admin auth
 
-/** Verify request origin for state-changing API requests (CSRF protection) */
+import { type Handle, redirect } from '@sveltejs/kit';
+import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/server/auth';
+import { issueToken, requireCsrf } from '$lib/server/csrf';
+import { checkRateLimit } from '$lib/server/rateLimit';
+import crypto from 'node:crypto';
+
+/** CSRF: origin-based validation for API routes */
 function isValidOrigin(request: Request, url: URL): boolean {
-	if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
-	const origin = request.headers.get('origin');
-	// Allow if no origin header (same-origin requests from some clients)
-	if (!origin) return true;
-	try {
-		return new URL(origin).origin === url.origin;
-	} catch {
-		return false;
-	}
+  if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
+  const origin = request.headers.get('origin');
+  if (!origin) return true;
+  try {
+    return new URL(origin).origin === url.origin;
+  } catch {
+    return false;
+  }
 }
 
-const customHandle: Handle = async ({ event, resolve }) => {
-	event.locals.supabase = createServerClient<Database>(
-		PUBLIC_SUPABASE_URL,
-		PUBLIC_SUPABASE_ANON_KEY,
-		{
-			cookies: {
-				getAll: () => event.cookies.getAll(),
-				setAll: (cookiesToSet) => {
-					cookiesToSet.forEach(({ name, value, options }) => {
-						event.cookies.set(name, value, { ...options, path: '/' });
-					});
-				},
-			},
-		}
-	);
+const handle: Handle = async ({ event, resolve }) => {
+  // ── CSP nonce ───────────────────────────────────────────
+  const nonce = crypto.randomBytes(16).toString('base64');
+  event.locals.nonce = nonce;
 
-	// CSRF: reject cross-origin state-changing requests to /api/* endpoints
-	// (SvelteKit's built-in checkOrigin only covers form actions, not +server.ts)
-	if (event.url.pathname.startsWith('/api/') && !isValidOrigin(event.request, event.url)) {
-		// Allow Stripe webhooks (verified by signature, not origin)
-		if (!event.url.pathname.includes('/webhook')) {
-			return new Response(JSON.stringify({ error: 'Forbidden' }), {
-				status: 403,
-				headers: { 'Content-Type': 'application/json' },
-			});
-		}
-	}
+  // ── CSRF: double-submit cookie token ────────────────────
+  // Issue a CSRF token cookie on every request (clients read it for headers)
+  issueToken(event.cookies);
 
-	event.locals.safeGetSession = async () => {
-		const {
-			data: { session },
-		} = await event.locals.supabase.auth.getSession();
+  // ── CSRF: reject cross-origin state-changing API requests ──
+  if (event.url.pathname.startsWith('/api/') && !isValidOrigin(event.request, event.url)) {
+    // Allow Stripe webhooks (verified by signature, not origin)
+    if (!event.url.pathname.includes('/webhook')) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
-		if (!session) {
-			return { session: null, user: null };
-		}
+  // ── CSRF: validate double-submit token on admin API mutations ──
+  if (
+    event.url.pathname.startsWith('/api/auth/') &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(event.request.method) &&
+    !event.url.pathname.includes('/webhook')
+  ) {
+    try {
+      requireCsrf(event.cookies, event.request);
+    } catch {
+      return new Response(JSON.stringify({ error: 'CSRF validation failed' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
-		const {
-			data: { user },
-			error,
-		} = await event.locals.supabase.auth.getUser();
+  // ── Session resolution ──────────────────────────────────
+  const sessionToken = event.cookies.get(SESSION_COOKIE);
+  if (sessionToken) {
+    const user = await verifySession(sessionToken);
+    event.locals.user = user;
+  } else {
+    event.locals.user = null;
+  }
 
-		if (error) {
-			return { session: null, user: null };
-		}
+  // ── Admin route protection ──────────────────────────────
+  if (event.url.pathname.startsWith('/admin')) {
+    // Allow access to login page without auth
+    if (event.url.pathname === '/admin/login') {
+      if (event.locals.user) {
+        throw redirect(303, '/admin');
+      }
+      return resolve(event);
+    }
 
-		return { session, user };
-	};
+    // All other admin routes require auth
+    if (!event.locals.user) {
+      throw redirect(303, '/admin/login');
+    }
 
-	// Protect admin routes
-	if (event.url.pathname.startsWith('/admin')) {
-		const { session } = await event.locals.safeGetSession();
+    // Verify user is in admin_users table
+    const userIsAdmin = await isAdmin(event.locals.user.id);
+    if (!userIsAdmin) {
+      // Authenticated but not an admin — sign out and redirect
+      if (sessionToken) {
+        await invalidateSession(sessionToken);
+        event.cookies.delete(SESSION_COOKIE, { path: '/' });
+      }
+      throw redirect(303, '/admin/login');
+    }
 
-		// Allow access to login page without auth
-		if (event.url.pathname === '/admin/login') {
-			// If already logged in, redirect to dashboard
-			if (session) {
-				throw redirect(303, '/admin');
-			}
-			return resolve(event);
-		}
+    // Rate limit admin routes
+    const ip =
+      event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      event.request.headers.get('x-real-ip') ||
+      '0.0.0.0';
+    const rateOk = await checkRateLimit(`admin:${ip}`, 60, 60); // 60 req/min
+    if (!rateOk) {
+      return new Response(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
-		// All other admin routes require auth
-		if (!session) {
-			throw redirect(303, '/admin/login');
-		}
-
-		// Verify user is in admin_users table (not just any authenticated user)
-		const { data: adminUser } = await supabaseAdmin
-			.from('admin_users')
-			.select('id')
-			.eq('user_id', session.user.id)
-			.single();
-
-		if (!adminUser) {
-			// Authenticated but not an admin — sign out and redirect
-			await event.locals.supabase.auth.signOut();
-			throw redirect(303, '/admin/login');
-		}
-	}
-
-	return resolve(event, {
-		filterSerializedResponseHeaders(name) {
-			return name === 'content-range' || name === 'x-supabase-api-version';
-		},
-	});
+  // ── Resolve with security headers ──────────────────────
+  return resolve(event, {
+    transformPageChunk({ html }) {
+      return html.replace(/%sveltekit.nonce%/g, nonce);
+    },
+    filterSerializedResponseHeaders(name) {
+      return name === 'content-range';
+    },
+  });
 };
 
-export const handle = customHandle;
+export { handle };

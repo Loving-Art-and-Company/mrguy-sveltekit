@@ -1,6 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase';
-import { MRGUY_BRAND_ID } from '$lib/types/database';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 import type { RequestHandler } from './$types';
 
 interface ClientSession {
@@ -32,28 +31,22 @@ export const GET: RequestHandler = async ({ cookies }) => {
 
   const phone = session.phone;
 
-  // Fetch bookings for this phone from Supabase
-  const { data: bookings, error: dbError } = await supabaseAdmin
-    .from('bookings')
-    .select('id, clientName, serviceName, price, date, time, status, paymentStatus, created_at')
-    .eq('brand_id', MRGUY_BRAND_ID)
-    .eq('contact', phone)
-    .in('status', ['pending', 'confirmed']) // Only upcoming bookings
-    .order('date', { ascending: true });
+  // Fetch bookings for this phone via repository
+  try {
+    const bookings = await bookingRepo.listByContact(phone, ['pending', 'confirmed']);
 
-  if (dbError) {
-    console.error('Failed to fetch bookings:', dbError);
+    return json({
+      bookings: bookings.map((b) => ({
+        id: b.id,
+        serviceName: b.serviceName,
+        price: b.price,
+        date: b.date,
+        time: b.time,
+        status: b.status,
+      })),
+    });
+  } catch (err) {
+    console.error('Failed to fetch bookings:', err);
     throw error(500, 'Failed to fetch bookings');
   }
-
-  return json({
-    bookings: bookings.map((b) => ({
-      id: b.id,
-      serviceName: b.serviceName,
-      price: b.price,
-      date: b.date,
-      time: b.time,
-      status: b.status,
-    })),
-  });
 };

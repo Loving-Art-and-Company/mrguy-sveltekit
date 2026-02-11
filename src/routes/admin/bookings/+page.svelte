@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Booking } from '$lib/types/database';
+	import type { BookingRow } from '$lib/repositories/bookingRepo';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -74,7 +74,7 @@
 	}
 
 	// Navigate to booking detail
-	function viewBooking(booking: Booking) {
+	function viewBooking(booking: BookingRow) {
 		goto(`/admin/bookings/${booking.id}`);
 	}
 </script>

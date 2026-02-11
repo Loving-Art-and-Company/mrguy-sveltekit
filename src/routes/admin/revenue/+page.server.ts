@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '$lib/server/supabase';
-import { MRGUY_BRAND_ID, type Booking } from '$lib/types/database';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
+import type { BookingRow } from '$lib/repositories/bookingRepo';
 import type { PageServerLoad } from './$types';
 
 type Period = 'week' | 'month' | 'year';
@@ -34,7 +34,7 @@ export interface RevenueData {
 	topService: string | null;
 	serviceBreakdown: ServiceBreakdown[];
 	timeData: TimeDataPoint[];
-	recentBookings: Booking[];
+	recentBookings: BookingRow[];
 }
 
 function getPeriodRange(period: Period): DateRange {
@@ -81,7 +81,7 @@ function calculatePercentChange(current: number, previous: number): number {
 	return Math.round(((current - previous) / previous) * 100);
 }
 
-function aggregateByService(bookings: Booking[]): ServiceBreakdown[] {
+function aggregateByService(bookings: BookingRow[]): ServiceBreakdown[] {
 	const serviceMap = new Map<string, { revenue: number; count: number }>();
 
 	for (const booking of bookings) {
@@ -103,7 +103,7 @@ function aggregateByService(bookings: Booking[]): ServiceBreakdown[] {
 		.sort((a, b) => b.revenue - a.revenue);
 }
 
-function aggregateByTime(bookings: Booking[], period: Period): TimeDataPoint[] {
+function aggregateByTime(bookings: BookingRow[], period: Period): TimeDataPoint[] {
 	const grouped = new Map<string, number>();
 
 	for (const booking of bookings) {
@@ -111,16 +111,13 @@ function aggregateByTime(bookings: Booking[], period: Period): TimeDataPoint[] {
 		const date = new Date(booking.date);
 
 		if (period === 'week') {
-			// Daily for week view
 			key = booking.date;
 		} else if (period === 'month') {
-			// Weekly for month view (week starting Monday)
 			const dayOfWeek = date.getDay();
 			const monday = new Date(date);
 			monday.setDate(date.getDate() - ((dayOfWeek + 6) % 7));
 			key = monday.toISOString().split('T')[0];
 		} else {
-			// Monthly for year view
 			key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 		}
 
@@ -156,50 +153,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	const currentRange = getPeriodRange(period);
 	const previousRange = getPreviousPeriodRange(period);
 
-	// Fetch current period paid bookings
-	const { data: currentBookings, error: currentError } = await supabaseAdmin
-		.from('bookings')
-		.select('*')
-		.eq('brand_id', MRGUY_BRAND_ID)
-		.eq('paymentStatus', 'paid')
-		.gte('date', currentRange.start)
-		.lte('date', currentRange.end)
-		.order('date', { ascending: false });
-
-	if (currentError) {
-		console.error('Error fetching current bookings:', currentError);
-	}
-
-	// Fetch previous period paid bookings for comparison
-	const { data: previousBookings, error: previousError } = await supabaseAdmin
-		.from('bookings')
-		.select('*')
-		.eq('brand_id', MRGUY_BRAND_ID)
-		.eq('paymentStatus', 'paid')
-		.gte('date', previousRange.start)
-		.lte('date', previousRange.end);
-
-	if (previousError) {
-		console.error('Error fetching previous bookings:', previousError);
-	}
-
-	// Fetch recent paid bookings for table (last 10)
-	const { data: recentBookings, error: recentError } = await supabaseAdmin
-		.from('bookings')
-		.select('*')
-		.eq('brand_id', MRGUY_BRAND_ID)
-		.eq('paymentStatus', 'paid')
-		.order('date', { ascending: false })
-		.order('time', { ascending: false })
-		.limit(10);
-
-	if (recentError) {
-		console.error('Error fetching recent bookings:', recentError);
-	}
-
-	const current = (currentBookings ?? []) as Booking[];
-	const previous = (previousBookings ?? []) as Booking[];
-	const recent = (recentBookings ?? []) as Booking[];
+	// Parallel fetch: current period, previous period, and recent paid bookings
+	const [current, previous, recent] = await Promise.all([
+		bookingRepo.listPaidInRange(currentRange.start, currentRange.end),
+		bookingRepo.listPaidInRange(previousRange.start, previousRange.end),
+		bookingRepo.listRecentPaid(10),
+	]);
 
 	const totalRevenue = current.reduce((sum, b) => sum + b.price, 0);
 	const previousRevenue = previous.reduce((sum, b) => sum + b.price, 0);

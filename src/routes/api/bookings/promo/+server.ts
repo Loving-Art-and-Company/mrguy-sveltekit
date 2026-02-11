@@ -1,8 +1,8 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
-import { supabaseAdmin } from '$lib/server/supabase';
-import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
+import { notifyOwnerOfBooking } from '$lib/server/email';
 
 // Validation schema for promo booking
 const promoBookingSchema = z.object({
@@ -31,7 +31,7 @@ const UPGRADE_PRICES: Record<string, { name: string; price: number }> = {
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const result = promoBookingSchema.safeParse(body);
     if (!result.success) {
@@ -64,7 +64,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const upgradeNames = data.upgrades
       .map(id => UPGRADE_PRICES[id]?.name)
       .filter(Boolean);
-    
+
     const serviceName = upgradeNames.length > 0
       ? `${promoService.name} + ${upgradeNames.join(', ')}`
       : promoService.name;
@@ -79,61 +79,58 @@ export const POST: RequestHandler = async ({ request }) => {
     const state = 'FL';
     const zip = addressParts[2]?.match(/\d{5}/)?.[0] || '33326';
 
-    // Create booking in database
-    const bookingData: any = {
-      service_id: promoService.id,
-      service_name: serviceName,
-      service_price: totalPrice,
-      scheduled_date: null, // Promo bookings - we'll contact to schedule
-      scheduled_time: null,
-      address_street: street,
-      address_city: city,
-      address_state: state,
-      address_zip: zip,
-      address_instructions: `Promo: ${data.promo_code}`,
-      customer_name: data.name,
-      customer_phone: cleanPhone,
-      customer_email: data.email,
+    // Build notes with address + promo info
+    const notes = [
+      `Address: ${street}, ${city}, ${state} ${zip}`,
+      `Promo: ${data.promo_code}`,
+      data.email ? `Email: ${data.email}` : null,
+      'Vehicle info pending — will contact to schedule',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    // Generate a "pending" date placeholder for promo bookings
+    const today = new Date().toISOString().split('T')[0];
+    const bookingId = bookingRepo.generateBookingId(today);
+
+    // Create booking in database — map to actual schema columns
+    const newBooking = await bookingRepo.insert({
+      id: bookingId,
+      clientName: data.name,
+      serviceName,
+      price: totalPrice,
+      date: today, // Promo bookings — we'll contact to schedule
+      time: null,
+      contact: cleanPhone,
+      notes,
       status: 'pending',
-      vehicle_info_pending: true,
-      created_at: new Date().toISOString()
-    };
+      paymentStatus: totalPrice === 0 ? 'paid' : 'unpaid',
+    });
 
-    // Only add promo_code if column exists (for backward compatibility)
-    // This will be added once migration runs
-    // bookingData.promo_code = data.promo_code;
-
-    const { data: newBooking, error: dbError } = await supabaseAdmin
-      .from('bookings')
-      .insert(bookingData)
-      .select()
-      .single();
-
-    if (dbError) {
-      console.error('Database error creating promo booking:', dbError);
+    if (!newBooking) {
       throw error(500, 'Failed to create booking');
     }
 
     // Prepare booking data for emails
     const emailBooking = {
-      service: { 
-        name: serviceName, 
-        price: totalPrice 
+      service: {
+        name: serviceName,
+        price: totalPrice
       },
-      schedule: { 
-        date: 'To be scheduled', 
+      schedule: {
+        date: 'To be scheduled',
         time: 'We will contact you'
       },
-      address: { 
-        street, 
-        city, 
-        state, 
-        zip 
+      address: {
+        street,
+        city,
+        state,
+        zip
       },
-      contact: { 
-        name: data.name, 
-        phone: cleanPhone, 
-        email: data.email 
+      contact: {
+        name: data.name,
+        phone: cleanPhone,
+        email: data.email
       }
     };
 
@@ -176,12 +173,12 @@ async function sendPromoConfirmation(
   promoCode: string
 ): Promise<boolean> {
   const { sendEmail } = await import('$lib/server/email');
-  
+
   const html = `
     <h2>Thanks for claiming your free wash, ${name}!</h2>
-    
+
     <p>We've received your request for a <strong>${serviceName}</strong>.</p>
-    
+
     <h3>What's Next?</h3>
     <ol>
       <li>We'll contact you within <strong>24 hours</strong> to schedule your service</li>
@@ -189,18 +186,18 @@ async function sendPromoConfirmation(
       <li>You pick a convenient date and time</li>
       <li>We come to you and handle the rest!</li>
     </ol>
-    
+
     <p style="background: #f8f8f8; border-left: 4px solid #c41e3a; padding: 1rem; margin: 1.5rem 0;">
       <strong>Promo Code:</strong> ${promoCode.toUpperCase()}<br>
       <strong>Service:</strong> ${serviceName}
     </p>
-    
+
     <p style="margin-top: 30px;">
       <strong>Questions?</strong><br>
       Call or text: <a href="tel:9548044747">954-804-4747</a><br>
       Email: <a href="mailto:bookings@mrguydetail.com">bookings@mrguydetail.com</a>
     </p>
-    
+
     <p style="color: #666; margin-top: 20px;">
       - The Mr. Guy Team
     </p>
