@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '$lib/server/supabase';
-import { MRGUY_BRAND_ID, type Booking } from '$lib/types/database';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
+import type { BookingRow } from '$lib/repositories/bookingRepo';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -13,52 +13,44 @@ export const load: PageServerLoad = async ({ url }) => {
 	if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
 		const [y, m] = monthParam.split('-').map(Number);
 		year = y;
-		month = m - 1; // Convert to 0-indexed
+		month = m - 1;
 	} else {
 		year = now.getFullYear();
 		month = now.getMonth();
 	}
 
-	// Calculate first and last day of month for query
+	// Calculate first and last day of month
 	const firstDay = new Date(year, month, 1);
 	const lastDay = new Date(year, month + 1, 0);
 
 	const fromDate = formatDate(firstDay);
 	const toDate = formatDate(lastDay);
 
-	// Fetch all bookings for this month
-	const { data: bookingsData, error } = await supabaseAdmin
-		.from('bookings')
-		.select('*')
-		.eq('brand_id', MRGUY_BRAND_ID)
-		.gte('date', fromDate)
-		.lte('date', toDate)
-		.order('time', { ascending: true });
+	try {
+		const bookingsData = await bookingRepo.listByMonth(fromDate, toDate);
 
-	if (error) {
-		console.error('Error fetching calendar bookings:', error);
+		// Group bookings by date
+		const bookings: Record<string, BookingRow[]> = {};
+		for (const booking of bookingsData) {
+			if (!bookings[booking.date]) {
+				bookings[booking.date] = [];
+			}
+			bookings[booking.date].push(booking);
+		}
+
 		return {
-			bookings: {} as Record<string, Booking[]>,
+			bookings,
+			currentMonth: `${year}-${String(month + 1).padStart(2, '0')}`,
+		};
+	} catch (err) {
+		console.error('Error fetching calendar bookings:', err);
+		return {
+			bookings: {} as Record<string, BookingRow[]>,
 			currentMonth: `${year}-${String(month + 1).padStart(2, '0')}`,
 		};
 	}
-
-	// Group bookings by date
-	const bookings: Record<string, Booking[]> = {};
-	for (const booking of (bookingsData ?? []) as Booking[]) {
-		if (!bookings[booking.date]) {
-			bookings[booking.date] = [];
-		}
-		bookings[booking.date].push(booking);
-	}
-
-	return {
-		bookings,
-		currentMonth: `${year}-${String(month + 1).padStart(2, '0')}`,
-	};
 };
 
-// Format date as YYYY-MM-DD
 function formatDate(date: Date): string {
 	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

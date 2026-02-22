@@ -2,17 +2,15 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	const { session, user } = await locals.safeGetSession();
-
 	// Don't guard the login page
 	if (url.pathname === '/admin/login') {
-		return { session, user };
+		return { user: locals.user };
 	}
 
 	// Redirect to login if not authenticated
-	if (!session) {
+	if (!locals.user) {
 		redirect(303, '/admin/login');
 	}
 
-	return { session, user };
+	return { user: locals.user };
 };

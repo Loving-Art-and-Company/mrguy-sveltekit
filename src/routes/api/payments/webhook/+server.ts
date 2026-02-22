@@ -1,10 +1,10 @@
 import { json, error } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
-import { supabaseAdmin } from '$lib/server/supabase';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
+import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
 import type { RequestHandler } from './$types';
 import type { BookingData } from '$lib/types/booking';
-import type { Database } from '$lib/types/database';
 
 // Lazy-init Stripe to avoid build-time errors
 let _stripe: Stripe | null = null;
@@ -83,32 +83,23 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const pkg = (await import('$lib/data/services')).SERVICE_PACKAGES.find(
     (p) => p.id === bookingData.service.packageId
   );
-  const { MRGUY_BRAND_ID } = await import('$lib/types/database');
 
   const clientName = metadata.customer_name || bookingData.contact.name;
 
   // Upsert client profile
-  const { error: clientError } = await supabaseAdmin
-    .from('client_profiles')
-    .upsert(
-      {
-        brand_id: MRGUY_BRAND_ID,
-        phone,
-        name: clientName,
-        verified: true,
-      } as Database['public']['Tables']['client_profiles']['Insert'],
-      { onConflict: 'phone' }
-    );
+  const client = await clientProfileRepo.upsert({
+    phone,
+    name: clientName,
+    verified: true,
+  });
 
-  if (clientError) {
-    console.error('Failed to create client:', clientError);
+  if (!client) {
+    console.error('Failed to create client profile');
     return;
   }
 
   // Generate booking ID (BK-YYYYMMDD-XXXX)
-  const dateStr = bookingData.schedule.date.replace(/-/g, '');
-  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const bookingId = `BK-${dateStr}-${randomSuffix}`;
+  const bookingId = bookingRepo.generateBookingId(bookingData.schedule.date);
 
   // Build notes with vehicle and address info
   const notes = [
@@ -121,10 +112,9 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     .filter(Boolean)
     .join('\n');
 
-  // Create booking (using actual Supabase schema with camelCase)
-  const { error: bookingError } = await supabaseAdmin.from('bookings').insert({
+  // Create booking
+  const booking = await bookingRepo.insert({
     id: bookingId,
-    brand_id: MRGUY_BRAND_ID,
     clientName,
     serviceName: pkg?.name || 'Unknown Package',
     price: session.amount_total ? session.amount_total / 100 : 0,
@@ -137,10 +127,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     status: 'confirmed',
     paymentStatus: 'paid',
     reminderSent: false,
-  } as Database['public']['Tables']['bookings']['Insert']);
+  });
 
-  if (bookingError) {
-    console.error('Failed to create booking:', bookingError);
+  if (!booking) {
+    console.error('Failed to create booking');
     return;
   }
 

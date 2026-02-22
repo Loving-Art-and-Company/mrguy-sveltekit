@@ -1,5 +1,4 @@
-import { supabaseAdmin } from '$lib/server/supabase';
-import { MRGUY_BRAND_ID, type Booking } from '$lib/types/database';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -8,40 +7,18 @@ export const load: PageServerLoad = async ({ url }) => {
 	const to = url.searchParams.get('to');
 	const search = url.searchParams.get('search');
 
-	let query = supabaseAdmin
-		.from('bookings')
-		.select('*')
-		.eq('brand_id', MRGUY_BRAND_ID)
-		.order('date', { ascending: false })
-		.order('time', { ascending: false });
+	try {
+		const bookings = await bookingRepo.list({ status, from, to, search });
 
-	// Apply status filter
-	if (status && status !== 'all') {
-		query = query.eq('status', status);
+		return {
+			bookings,
+			filters: { status, from, to, search },
+		};
+	} catch (err) {
+		console.error('Error fetching bookings:', err);
+		return {
+			bookings: [],
+			filters: { status, from, to, search },
+		};
 	}
-
-	// Apply date range filters
-	if (from) {
-		query = query.gte('date', from);
-	}
-	if (to) {
-		query = query.lte('date', to);
-	}
-
-	// Apply search filter (client name or phone)
-	if (search) {
-		query = query.or(`clientName.ilike.%${search}%,contact.ilike.%${search}%`);
-	}
-
-	const { data: bookings, error } = await query;
-
-	if (error) {
-		console.error('Error fetching bookings:', error);
-		return { bookings: [] as Booking[], filters: { status, from, to, search } };
-	}
-
-	return {
-		bookings: (bookings ?? []) as Booking[],
-		filters: { status, from, to, search },
-	};
 };

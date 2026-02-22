@@ -1,6 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { supabaseAdmin } from '$lib/server/supabase';
-import { MRGUY_BRAND_ID } from '$lib/types/database';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 import type { RequestHandler } from './$types';
 
 interface ClientSession {
@@ -66,15 +65,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
   }
 
   // Fetch the booking to verify ownership
-  const { data: booking, error: fetchError } = await supabaseAdmin
-    .from('bookings')
-    .select('id, contact, status, date')
-    .eq('id', bookingId)
-    .eq('brand_id', MRGUY_BRAND_ID)
-    .single();
+  const booking = await bookingRepo.getForReschedule(bookingId);
 
-  if (fetchError || !booking) {
-    console.error('Booking fetch error:', fetchError);
+  if (!booking) {
     throw error(404, 'Booking not found');
   }
 
@@ -103,15 +96,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     updateData.time = newTime;
   }
 
-  const { data: updatedBooking, error: updateError } = await supabaseAdmin
-    .from('bookings')
-    .update(updateData)
-    .eq('id', bookingId)
-    .select('id, serviceName, price, date, time, status')
-    .single();
+  const updatedBooking = await bookingRepo.update(bookingId, updateData);
 
-  if (updateError) {
-    console.error('Booking update error:', updateError);
+  if (!updatedBooking) {
     throw error(500, 'Failed to reschedule booking');
   }
 

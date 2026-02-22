@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
-import { supabaseAdmin } from '$lib/server/supabase';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 
 // Validation schema for modal booking
@@ -32,7 +32,7 @@ const bookingSchema = z.object({
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const result = bookingSchema.safeParse(body);
     if (!result.success) {
@@ -47,33 +47,34 @@ export const POST: RequestHandler = async ({ request }) => {
     // Clean phone number (remove formatting)
     const cleanPhone = booking.contact.phone.replace(/\D/g, '');
 
-    // Create booking in database
-    const { data: newBooking, error: dbError } = await supabaseAdmin
-      .from('bookings')
-      .insert({
-        service_id: booking.service.id,
-        service_name: booking.service.name,
-        service_price: booking.service.price,
-        scheduled_date: booking.schedule.date,
-        scheduled_time: booking.schedule.time,
-        address_street: booking.address.street,
-        address_city: booking.address.city,
-        address_state: booking.address.state,
-        address_zip: booking.address.zip,
-        address_instructions: booking.address.instructions || null,
-        customer_name: booking.contact.name,
-        customer_phone: cleanPhone,
-        customer_email: booking.contact.email || null,
-        status: 'pending',
-        vehicle_info_pending: true,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+    // Build notes with address info (no address columns in bookings schema)
+    const notes = [
+      `Address: ${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
+      booking.address.instructions ? `Instructions: ${booking.address.instructions}` : null,
+      'Vehicle info pending',
+    ]
+      .filter(Boolean)
+      .join('\n');
 
-    if (dbError) {
-      console.error('Database error creating booking:', dbError);
-      // Don't expose DB errors to client, but still try to send notifications
+    // Generate booking ID
+    const bookingId = bookingRepo.generateBookingId(booking.schedule.date);
+
+    // Create booking in database — map validated data to actual schema columns
+    const newBooking = await bookingRepo.insert({
+      id: bookingId,
+      clientName: booking.contact.name,
+      serviceName: booking.service.name,
+      price: booking.service.price,
+      date: booking.schedule.date,
+      time: booking.schedule.time,
+      contact: cleanPhone,
+      notes,
+      status: 'pending',
+      paymentStatus: 'unpaid',
+    });
+
+    if (!newBooking) {
+      console.error('Database error creating booking');
     }
 
     // Send email notifications (don't block on these)
