@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Booking } from '$lib/types/database';
+	import type { BookingRow } from '$lib/repositories/bookingRepo';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -114,12 +114,12 @@
 	}
 
 	// Get bookings for a specific date
-	function getBookingsForDate(dateStr: string): Booking[] {
+	function getBookingsForDate(dateStr: string): BookingRow[] {
 		return data.bookings[dateStr] ?? [];
 	}
 
 	// Count bookings by status for a date
-	function getStatusCounts(bookings: Booking[]): { confirmed: number; completed: number; cancelled: number } {
+	function getStatusCounts(bookings: BookingRow[]): { confirmed: number; completed: number; cancelled: number } {
 		return bookings.reduce(
 			(acc, b) => {
 				if (b.status === 'confirmed') acc.confirmed++;

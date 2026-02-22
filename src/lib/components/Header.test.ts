@@ -14,20 +14,10 @@ describe('Header', () => {
 		expect(screen.getByRole('link', { name: 'My Booking' })).toBeInTheDocument();
 	});
 
-	it('renders login button by default', () => {
+	it('renders phone number link', () => {
 		render(Header);
-		expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
-	});
-
-	it('hides login button when showLogin is false', () => {
-		render(Header, { props: { showLogin: false } });
-		expect(screen.queryByRole('link', { name: /login/i })).not.toBeInTheDocument();
-	});
-
-	it('has correct href for login button', () => {
-		render(Header);
-		const loginLink = screen.getByRole('link', { name: /login/i });
-		expect(loginLink).toHaveAttribute('href', '/login');
+		const phoneLink = screen.getByRole('link', { name: /call us/i });
+		expect(phoneLink).toHaveAttribute('href', 'tel:+19548044747');
 	});
 
 	it('has correct href for logo', () => {
@@ -39,7 +29,7 @@ describe('Header', () => {
 	it('has correct href for Book Now link', () => {
 		render(Header);
 		const bookLink = screen.getByRole('link', { name: 'Book Now' });
-		expect(bookLink).toHaveAttribute('href', '/book');
+		expect(bookLink).toHaveAttribute('href', '/#services');
 	});
 
 	it('has correct href for My Booking link', () => {

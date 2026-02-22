@@ -1,45 +1,42 @@
-<script>
+<script lang="ts">
   /**
    * Agentation for Svelte
    * Visual feedback for AI coding agents
-   * 
+   *
    * Based on the React version by Benji Taylor
    * Ported to Svelte by Abdias @ Loving Art & Company
    */
-  
+
   import { browser } from '$app/environment';
 
-  // Props
-  let { onAnnotationAdd = undefined, copyToClipboard = true, enabled = true } = $props();
+  interface Annotation {
+    element: string;
+    elementPath: string;
+    text: string;
+    boundingBox: { x: number; y: number; width: number; height: number };
+    attributes: Record<string, string>;
+    timestamp: string;
+  }
+
+  interface Props {
+    onAnnotationAdd?: (annotation: Annotation) => void;
+    copyToClipboard?: boolean;
+    enabled?: boolean;
+  }
+
+  let { onAnnotationAdd, copyToClipboard = true, enabled = true }: Props = $props();
 
   // State
   let isActive = $state(false);
-  let overlay = $state(null);
-  let highlightBox = $state(null);
-  let currentElement = $state(null);
-  let annotations = $state([]);
-
-  // Annotation type
-  /**
-   * @typedef {Object} Annotation
-   * @property {string} element - Element tag name
-   * @property {string} elementPath - Full CSS selector path
-   * @property {string} text - Element text content
-   * @property {Object} boundingBox - Element dimensions
-   * @property {number} boundingBox.x
-   * @property {number} boundingBox.y
-   * @property {number} boundingBox.width
-   * @property {number} boundingBox.height
-   * @property {Object} attributes - Element attributes
-   * @property {string} screenshot - Data URL of element screenshot (optional)
-   * @property {string} timestamp - ISO timestamp
-   */
+  let overlay = $state<HTMLDivElement | null>(null);
+  let highlightBox = $state<HTMLDivElement | null>(null);
+  let currentElement = $state<Element | null>(null);
+  let annotations = $state<Annotation[]>([]);
 
   $effect(() => {
     if (!browser || !enabled) return;
 
-    // Keyboard shortcut (Cmd/Ctrl + Shift + A)
-    const handleKeydown = (e) => {
+    const handleKeydown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'A') {
         e.preventDefault();
         toggleActive();
@@ -56,7 +53,7 @@
 
   function toggleActive() {
     isActive = !isActive;
-    
+
     if (isActive) {
       createOverlay();
       document.body.style.cursor = 'crosshair';
@@ -68,33 +65,20 @@
   function createOverlay() {
     if (overlay) return;
 
-    // Create overlay element
     overlay = document.createElement('div');
     overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.05);
-      z-index: 999998;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.05); z-index: 999998; pointer-events: none;
     `;
     document.body.appendChild(overlay);
 
-    // Create highlight box
     highlightBox = document.createElement('div');
     highlightBox.style.cssText = `
-      position: fixed;
-      border: 2px solid #3b82f6;
-      background: rgba(59, 130, 246, 0.1);
-      pointer-events: none;
-      z-index: 999999;
-      display: none;
+      position: fixed; border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.1);
+      pointer-events: none; z-index: 999999; display: none;
     `;
     document.body.appendChild(highlightBox);
 
-    // Add event listeners
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleEscape);
@@ -102,12 +86,12 @@
 
   function cleanup() {
     document.body.style.cursor = '';
-    
+
     if (overlay) {
       overlay.remove();
       overlay = null;
     }
-    
+
     if (highlightBox) {
       highlightBox.remove();
       highlightBox = null;
@@ -116,15 +100,15 @@
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('click', handleClick);
     document.removeEventListener('keydown', handleEscape);
-    
+
     currentElement = null;
   }
 
-  function handleMouseMove(e) {
-    if (!isActive) return;
+  function handleMouseMove(e: MouseEvent) {
+    if (!isActive || !highlightBox) return;
 
     const element = document.elementFromPoint(e.clientX, e.clientY);
-    
+
     if (!element || element === overlay || element === highlightBox) {
       highlightBox.style.display = 'none';
       currentElement = null;
@@ -141,66 +125,59 @@
     highlightBox.style.height = `${rect.height}px`;
   }
 
-  function handleClick(e) {
+  function handleClick(e: MouseEvent) {
     if (!isActive || !currentElement) return;
 
     e.preventDefault();
     e.stopPropagation();
 
     captureAnnotation(currentElement);
-    toggleActive(); // Exit annotation mode after capture
+    toggleActive();
   }
 
-  function handleEscape(e) {
+  function handleEscape(e: KeyboardEvent) {
     if (e.key === 'Escape' && isActive) {
       toggleActive();
     }
   }
 
-  function captureAnnotation(element) {
+  function captureAnnotation(element: Element) {
     const rect = element.getBoundingClientRect();
-    
-    const annotation = {
+
+    const annotation: Annotation = {
       element: element.tagName.toLowerCase(),
       elementPath: getElementPath(element),
       text: element.textContent?.trim() || '',
-      boundingBox: {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height
-      },
+      boundingBox: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       attributes: getElementAttributes(element),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     annotations = [...annotations, annotation];
 
-    // Copy to clipboard if enabled
     if (copyToClipboard) {
       const formatted = formatAnnotation(annotation);
-      navigator.clipboard.writeText(formatted).catch(err => {
+      navigator.clipboard.writeText(formatted).catch((err) => {
         console.error('Failed to copy annotation:', err);
       });
     }
 
-    // Call callback if provided
     if (onAnnotationAdd) {
       onAnnotationAdd(annotation);
     }
   }
 
-  function getElementPath(element) {
-    const path = [];
-    let current = element;
+  function getElementPath(element: Element): string {
+    const path: string[] = [];
+    let current: Element | null = element;
 
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
-      
+
       if (current.id) {
         selector += `#${current.id}`;
-      } else if (current.className) {
-        const classes = Array.from(current.classList).join('.');
+      } else if (current.className && typeof current.className === 'string') {
+        const classes = current.className.trim().split(/\s+/).join('.');
         if (classes) selector += `.${classes}`;
       }
 
@@ -211,17 +188,17 @@
     return path.join(' > ');
   }
 
-  function getElementAttributes(element) {
-    const attrs = {};
-    
-    for (const attr of element.attributes) {
+  function getElementAttributes(element: Element): Record<string, string> {
+    const attrs: Record<string, string> = {};
+
+    for (const attr of Array.from(element.attributes)) {
       attrs[attr.name] = attr.value;
     }
 
     return attrs;
   }
 
-  function formatAnnotation(annotation) {
+  function formatAnnotation(annotation: Annotation): string {
     return `Element: ${annotation.element}
 Path: ${annotation.elementPath}
 Text: ${annotation.text}

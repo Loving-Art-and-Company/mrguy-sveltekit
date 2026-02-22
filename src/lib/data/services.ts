@@ -22,7 +22,11 @@ export interface MembershipTier {
   description: string;
   features: string[];
   recommendedFor: string;
+  badge?: string;
 }
+
+/** Alias for PackageMenu compatibility */
+export type SubscriptionTier = MembershipTier;
 
 export const BUSINESS_INFO = {
   name: "Mr. Guy Mobile Detail",

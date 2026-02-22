@@ -61,9 +61,10 @@
 	}
 
 	// Format timestamp
-	function formatTimestamp(ts: string | null): string {
+	function formatTimestamp(ts: Date | string | null): string {
 		if (!ts) return 'N/A';
-		return new Date(ts).toLocaleString('en-US', {
+		const d = ts instanceof Date ? ts : new Date(ts);
+		return d.toLocaleString('en-US', {
 			dateStyle: 'medium',
 			timeStyle: 'short',
 		});
@@ -112,7 +113,7 @@
 	<header class="detail-header">
 		<div class="header-info">
 			<h1>Booking #{booking.id}</h1>
-			<p class="created-at">Created {formatTimestamp(booking.created_at)}</p>
+			<p class="created-at">Created {formatTimestamp(booking.createdAt)}</p>
 		</div>
 		<div class="header-badges">
 			<span class="status-badge {getStatusClass(booking.status)}">
@@ -232,7 +233,7 @@
 				</div>
 				<div class="info-item">
 					<span class="info-label">Created At</span>
-					<span class="info-value">{formatTimestamp(booking.created_at)}</span>
+					<span class="info-value">{formatTimestamp(booking.createdAt)}</span>
 				</div>
 				<div class="info-item">
 					<span class="info-label">Reminder Sent</span>

@@ -1,0 +1,8 @@
+# Mr. Guy Mobile Detail
+# https://mrguymobiledetail.com
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://mrguymobiledetail.com/sitemap.xml
