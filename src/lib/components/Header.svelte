@@ -1,12 +1,6 @@
 <script lang="ts">
   import { BUSINESS_INFO } from '$lib/data/services';
-  import { LogIn } from 'lucide-svelte';
-
-  interface Props {
-    showLogin?: boolean;
-  }
-
-  let { showLogin = true }: Props = $props();
+  import { Phone, CalendarCheck } from 'lucide-svelte';
 </script>
 
 <header class="header">
@@ -17,13 +11,15 @@
     </a>
 
     <nav class="nav">
-      <a href="/#services" class="nav-link">Book Now</a>
-      {#if showLogin}
-        <a href="/admin/login" class="login-btn">
-          <LogIn size={18} />
-          <span>Login</span>
-        </a>
-      {/if}
+      <a href="tel:+19548044747" class="phone-link" aria-label="Call us at 954-804-4747">
+        <Phone size={18} />
+        <span class="phone-text">954-804-4747</span>
+      </a>
+      <a href="/reschedule" class="nav-link">
+        <CalendarCheck size={16} />
+        <span>My Booking</span>
+      </a>
+      <a href="/#services" class="book-btn">Book Now</a>
     </nav>
   </div>
 </header>
@@ -74,11 +70,33 @@
   .nav {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
+  }
+
+  .phone-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .phone-link:hover {
+    color: var(--color-primary);
+  }
+
+  .phone-link :global(svg) {
+    flex-shrink: 0;
   }
 
   .nav-link {
-    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
@@ -86,13 +104,16 @@
   }
 
   .nav-link:hover {
-    color: #1a1a1a;
+    color: var(--color-primary);
   }
 
-  .login-btn {
+  .nav-link :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .book-btn {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     background: var(--color-primary);
     color: var(--text-inverse);
     padding: 0.5rem 1rem;
@@ -103,7 +124,7 @@
     transition: background 0.2s, transform 0.2s;
   }
 
-  .login-btn:hover {
+  .book-btn:hover {
     background: var(--color-primary-hover);
     transform: translateY(-1px);
   }
@@ -123,19 +144,20 @@
     }
 
     .nav {
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
-    .nav-link {
+    .phone-text {
       display: none;
     }
 
-    .login-btn span {
+    .nav-link span {
       display: none;
     }
 
-    .login-btn {
-      padding: 0.5rem;
+    .book-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
     }
   }
 </style>

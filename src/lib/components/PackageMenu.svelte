@@ -110,14 +110,14 @@
         <h3>{tier.name}</h3>
 
         <div class="price">
-          <span class="amount">${tier.priceHigh}</span>
+          <span class="amount">${tier.price}</span>
           <span class="frequency">/month</span>
         </div>
 
         <p class="description">{tier.description}</p>
 
         <ul class="includes">
-          {#each tier.includes as item}
+          {#each tier.features as item}
             <li>
               <Check size={16} />
               {item}
@@ -125,9 +125,9 @@
           {/each}
         </ul>
 
-        <button class="select-btn subscription-btn" onclick={() => handleSelectSubscription(tier)}>
-          Start Saving →
-        </button>
+        <a href="tel:+19548044747" class="select-btn subscription-btn">
+          Call to Enroll →
+        </a>
       </article>
     {/each}
   </div>
@@ -455,6 +455,9 @@
   .subscription-btn {
     background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
     box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    text-align: center;
+    text-decoration: none;
+    display: block;
   }
 
   .subscription-btn:hover {

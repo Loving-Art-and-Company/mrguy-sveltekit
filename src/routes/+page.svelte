@@ -71,8 +71,8 @@
 </script>
 
 <svelte:head>
-  <title>{BUSINESS_INFO.name} - {BUSINESS_INFO.tagline}</title>
-  <meta name="description" content={BUSINESS_INFO.subTagline} />
+  <title>Mobile Car Detailing in West Broward, FL | Mr. Guy Detail</title>
+  <meta name="description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45. Serving Weston, Pembroke Pines, Miramar & more." />
 </svelte:head>
 
 <main>
@@ -83,7 +83,7 @@
 
   <!-- Packages Section -->
   <section id="services" class="packages-section">
-    <h2 class="section-title">Skip the Car Wash Line. Forever.</h2>
+    <h1 class="section-title">Skip the Car Wash Line. Forever.</h1>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
     {#if showPromoBanner}
       <div class="promo-banner" role="status" aria-live="polite">
