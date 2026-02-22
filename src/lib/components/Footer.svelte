@@ -35,7 +35,7 @@
           </li>
           <li>
             <Mail size={14} />
-            <a href="mailto:info@lovingartandcompany.com">info@lovingartandcompany.com</a>
+            <a href="mailto:info@mrguymobiledetail.com">info@mrguymobiledetail.com</a>
           </li>
           <li>
             <Clock size={14} />
