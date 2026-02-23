@@ -69,6 +69,10 @@
 
     <div class="footer-bottom">
       <p>&copy; {new Date().getFullYear()} {BUSINESS_INFO.name}. All rights reserved.</p>
+      <p class="footer-phone">
+        <Phone size={12} />
+        <a href="tel:+19548044747">+1 (954) 804-4747</a>
+      </p>
       <p class="footer-location">
         <MapPin size={12} />
         Serving {BUSINESS_INFO.location}
@@ -186,6 +190,26 @@
     font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.4);
     margin: 0;
+  }
+
+  .footer-phone {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .footer-phone :global(svg) {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .footer-phone a {
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-phone a:hover {
+    color: var(--color-primary);
   }
 
   .footer-location {
