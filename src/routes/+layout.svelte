@@ -1,11 +1,13 @@
 <script lang="ts">
   import '../app.css';
   import { page } from '$app/state';
+  import { afterNavigate } from '$app/navigation';
   import Header from '$lib/components/Header.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import PWAInstaller from '$lib/components/PWAInstaller.svelte';
   import Agentation from '$lib/components/Agentation.svelte';
   import { dev } from '$app/environment';
+  import { trackPageview } from '$lib/analytics';
 
   let { children } = $props();
 
@@ -14,6 +16,11 @@
   const isAdmin = $derived(page.url.pathname.startsWith('/admin'));
   const showChrome = $derived(!isStandalone && !isAdmin);
 
+  // Track pageviews on navigation (must be in component context)
+  afterNavigate(({ to }) => {
+    if (!to?.url) return;
+    trackPageview(to.url.href);
+  });
 </script>
 
 <svelte:head>

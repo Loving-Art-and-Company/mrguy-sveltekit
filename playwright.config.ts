@@ -22,10 +22,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // webServer: {
-  //   command: 'npm run dev -- --port 5180 --host',
-  //   url: 'http://localhost:5180',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120000,
-  // },
+  webServer: {
+    command: 'npm run dev -- --port 5180 --host',
+    url: 'http://localhost:5180',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
 });

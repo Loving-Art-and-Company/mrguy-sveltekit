@@ -4,17 +4,18 @@
  * Runs 10 mock bookings with iterative detection and repair.
  * Each booking uses different test data to cover edge cases.
  * 
- * Ralph Loop: Run → Detect Failure → Diagnose → Repair → Re-run
+ * Ralph Loop: Run -> Detect Failure -> Diagnose -> Repair -> Re-run
  */
 
 import { test, expect, type Page } from '@playwright/test';
 
 // Test data for 10 mock bookings
 // Uses only the first 3 services (Most Popular section) to avoid scrolling issues
+// Service names match SERVICE_PACKAGES in src/lib/data/services.ts
 const MOCK_BOOKINGS = [
   {
     id: 1,
-    service: 'Exterior Wash',
+    service: 'Quick Refresh',
     name: 'John Smith',
     phone: '9541234567',
     email: 'john@test.com',
@@ -24,7 +25,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 2,
-    service: 'Interior Wash',
+    service: 'Family Hauler',
     name: 'Jane Doe',
     phone: '9549876543',
     email: 'jane@test.com',
@@ -34,7 +35,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 3,
-    service: 'Full Wax',
+    service: 'Electric',
     name: 'Bob Johnson',
     phone: '9545551234',
     email: '', // No email - optional field
@@ -44,7 +45,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 4,
-    service: 'Exterior Wash',
+    service: 'Quick Refresh',
     name: 'Alice Williams',
     phone: '9547778899',
     email: 'alice.w@email.org',
@@ -54,7 +55,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 5,
-    service: 'Interior Wash',
+    service: 'Family Hauler',
     name: 'Charlie Brown',
     phone: '9541112233',
     email: 'charlie@company.co',
@@ -64,7 +65,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 6,
-    service: 'Full Wax',
+    service: 'Electric',
     name: 'Diana Prince',
     phone: '9544445566',
     email: 'diana.p@mail.net',
@@ -74,7 +75,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 7,
-    service: 'Exterior Wash',
+    service: 'Quick Refresh',
     name: 'Edward Norton',
     phone: '9546667788',
     email: '', // No email
@@ -84,7 +85,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 8,
-    service: 'Interior Wash',
+    service: 'Family Hauler',
     name: 'Fiona Apple',
     phone: '9548889900',
     email: 'fiona@music.com',
@@ -94,7 +95,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 9,
-    service: 'Full Wax',
+    service: 'Electric',
     name: 'George Lucas',
     phone: '9541239876',
     email: 'george@films.io',
@@ -104,7 +105,7 @@ const MOCK_BOOKINGS = [
   },
   {
     id: 10,
-    service: 'Exterior Wash',
+    service: 'Quick Refresh',
     name: 'Hannah Montana',
     phone: '9549871234',
     email: 'hannah@disney.tv',
@@ -131,22 +132,26 @@ test.describe('Booking Flow E2E Tests', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
+    // Wait for Svelte hydration to complete (event handlers attached)
+    await page.waitForSelector('main[data-hydrated="true"]', { timeout: 15000 });
+    
     // Wait for services section to be visible
     await page.waitForSelector('#services', { timeout: 10000 });
     
     // Find the service card containing the service name
     const serviceCard = page.locator('article.card', { hasText: serviceName }).first();
-    
-    // Scroll to the card (it may be in "More Services" section below the fold)
-    await serviceCard.scrollIntoViewIfNeeded();
     await expect(serviceCard).toBeVisible({ timeout: 10000 });
     
-    // Click the "Book Now" button within the card
+    // Find and scroll to the Book Now button specifically (it may be below the fold)
     const bookButton = serviceCard.locator('button.select-btn', { hasText: /book now/i });
-    await bookButton.click();
+    await bookButton.scrollIntoViewIfNeeded();
+    await expect(bookButton).toBeVisible({ timeout: 5000 });
+    
+    // Click the button and wait for modal
+    await bookButton.click({ timeout: 5000 });
     
     // Wait for modal to open
-    await expect(page.locator('.modal-overlay')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.modal-overlay')).toBeVisible({ timeout: 10000 });
   }
 
   // Helper: Fill step 1 (Date & Time)
@@ -236,6 +241,11 @@ test.describe('Booking Flow E2E Tests', () => {
   // Run booking tests
   for (const booking of MOCK_BOOKINGS) {
     test(`Booking #${booking.id}: ${booking.service} for ${booking.name}`, async ({ page }) => {
+      // Capture console errors to debug hydration issues
+      page.on('console', msg => {
+        if (msg.type() === 'error') console.log(`[Browser Error] ${msg.text()}`);
+      });
+      page.on('pageerror', err => console.log(`[Page Error] ${err.message}`));
       let success = false;
       let error: string | undefined;
       let repairAttempt = 0;
@@ -314,5 +324,3 @@ test.describe('Booking Flow E2E Tests', () => {
     expect(successCount).toBe(MOCK_BOOKINGS.length);
   });
 });
-
-

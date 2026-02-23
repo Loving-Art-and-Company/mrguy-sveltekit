@@ -23,7 +23,11 @@
     track('package_selected', { service: pkg.name, price: pkg.priceHigh });
   }
 
+  let hydrated = $state(false);
+
   onMount(() => {
+    hydrated = true;
+
     showPromoBanner = isFeatureEnabled('promo_banner');
     if (showPromoBanner) {
       track('promo_banner_viewed');
@@ -75,7 +79,7 @@
   <meta name="description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45. Serving Weston, Pembroke Pines, Miramar & more." />
 </svelte:head>
 
-<main>
+<main data-hydrated={hydrated ? 'true' : undefined}>
 
 
   <!-- Bento Slideshow -->

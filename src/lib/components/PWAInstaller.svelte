@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 
 	let deferredPrompt: any = $state(null);
 	let showInstallBanner = $state(false);
 	let isInstalled = $state(false);
 	let visitCount = $state(0);
 
-	$effect(() => {
-		if (!browser) return;
-
+	onMount(() => {
 		// Register service worker
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker
@@ -36,7 +34,7 @@
 		}
 
 		// Listen for beforeinstallprompt event
-		window.addEventListener('beforeinstallprompt', (e) => {
+		const handleBeforeInstall = (e: Event) => {
 			e.preventDefault();
 			deferredPrompt = e;
 
@@ -44,14 +42,22 @@
 			if (visitCount >= 2) {
 				showInstallBanner = true;
 			}
-		});
+		};
 
 		// Listen for app installed event
-		window.addEventListener('appinstalled', () => {
+		const handleAppInstalled = () => {
 			isInstalled = true;
 			showInstallBanner = false;
 			deferredPrompt = null;
-		});
+		};
+
+		window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+		window.addEventListener('appinstalled', handleAppInstalled);
+
+		return () => {
+			window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+			window.removeEventListener('appinstalled', handleAppInstalled);
+		};
 	});
 
 	async function handleInstall() {
