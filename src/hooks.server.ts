@@ -2,11 +2,12 @@
 // Custom auth, CSRF, CSP, rate limiting — replaces Supabase SSR client
 // Adapted from FPP/Carolina pattern for MrGuy admin auth
 
-import { type Handle, redirect } from '@sveltejs/kit';
+import { type Handle, type HandleServerError, redirect } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/server/auth';
 import { issueToken, requireCsrf } from '$lib/server/csrf';
 import { checkRateLimit } from '$lib/server/rateLimit';
+import { notifyError } from '$lib/server/email';
 import crypto from 'node:crypto';
 
 /** CSRF: origin-based validation for API routes */
@@ -123,4 +124,25 @@ const handle: Handle = async ({ event, resolve }) => {
   });
 };
 
-export { handle };
+/** Send email notification for unhandled server errors */
+const handleError: HandleServerError = async ({ error, event, status, message }) => {
+  const err = error instanceof Error ? error : new Error(String(error));
+
+  // Don't notify on 404s or expected client errors
+  if (status === 404) return { message };
+
+  console.error('Unhandled server error:', err);
+
+  // Fire-and-forget — don't let notification failure break the error response
+  notifyError({
+    message: err.message || message,
+    stack: err.stack,
+    url: event.url.pathname,
+    method: event.request.method,
+    status,
+  }).catch(() => {});
+
+  return { message };
+};
+
+export { handle, handleError };

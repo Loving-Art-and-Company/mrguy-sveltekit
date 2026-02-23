@@ -1,17 +1,21 @@
 import { env } from '$env/dynamic/private';
 import { Resend } from 'resend';
 
+const BUSINESS_EMAIL = 'info@mrguymobiledetail.com';
+const MONITOR_EMAIL = 'info@lovingartandcompany.com';
+
 interface EmailParams {
   to: string;
   subject: string;
   html: string;
+  cc?: string | string[];
 }
 
 /**
  * Send email via Resend
  * Fails silently - booking should succeed even if email fails
  */
-export async function sendEmail({ to, subject, html }: EmailParams): Promise<boolean> {
+export async function sendEmail({ to, subject, html, cc }: EmailParams): Promise<boolean> {
   const apiKey = env.RESEND_API_KEY;
 
   if (!apiKey) {
@@ -27,6 +31,7 @@ export async function sendEmail({ to, subject, html }: EmailParams): Promise<boo
       to,
       subject,
       html,
+      ...(cc ? { cc: Array.isArray(cc) ? cc : [cc] } : {}),
     });
 
     if (error) {
@@ -50,8 +55,6 @@ export async function notifyOwnerOfBooking(booking: {
   address: { street: string; city: string; state: string; zip: string };
   contact: { name: string; phone: string; email?: string };
 }): Promise<boolean> {
-  const OWNER_EMAIL = 'info@lovingartandcompany.com';
-  
   const html = `
     <h2>New Booking Received!</h2>
     
@@ -77,7 +80,8 @@ export async function notifyOwnerOfBooking(booking: {
   `;
 
   return sendEmail({
-    to: OWNER_EMAIL,
+    to: BUSINESS_EMAIL,
+    cc: MONITOR_EMAIL,
     subject: `New Booking: ${booking.service.name} - ${formatDate(booking.schedule.date)}`,
     html,
   });
@@ -121,9 +125,53 @@ export async function sendCustomerConfirmation(booking: {
 
   return sendEmail({
     to: booking.contact.email,
+    cc: [BUSINESS_EMAIL, MONITOR_EMAIL],
     subject: `Booking Confirmed - ${booking.service.name}`,
     html,
   });
+}
+
+/**
+ * Send error/crash notification to the team
+ */
+export async function notifyError(details: {
+  message: string;
+  stack?: string;
+  url?: string;
+  method?: string;
+  status?: number;
+}): Promise<boolean> {
+  const html = `
+    <h2 style="color: #dc2626;">Bug/Crash Report</h2>
+    
+    <p><strong>Error:</strong> ${escapeHtml(details.message)}</p>
+    ${details.url ? `<p><strong>URL:</strong> ${escapeHtml(details.url)}</p>` : ''}
+    ${details.method ? `<p><strong>Method:</strong> ${details.method}</p>` : ''}
+    ${details.status ? `<p><strong>Status:</strong> ${details.status}</p>` : ''}
+    
+    ${details.stack ? `
+    <h3>Stack Trace</h3>
+    <pre style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 12px;">${escapeHtml(details.stack)}</pre>
+    ` : ''}
+
+    <p style="color: #666; margin-top: 20px;">
+      <em>Reported at ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET</em>
+    </p>
+  `;
+
+  return sendEmail({
+    to: MONITOR_EMAIL,
+    subject: `[MrGuy] Error: ${details.message.slice(0, 80)}`,
+    html,
+  });
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // Helper functions
