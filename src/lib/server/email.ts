@@ -132,8 +132,13 @@ export async function sendCustomerConfirmation(booking: {
 }
 
 /**
- * Send error/crash notification to the team
+ * Send error/crash notification to the team.
+ * Rate-limited to max 10 emails per 5-minute window to prevent flooding.
  */
+const errorEmailWindow: number[] = [];
+const ERROR_EMAIL_LIMIT = 10;
+const ERROR_EMAIL_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function notifyError(details: {
   message: string;
   stack?: string;
@@ -141,6 +146,20 @@ export async function notifyError(details: {
   method?: string;
   status?: number;
 }): Promise<boolean> {
+  // Rate limiting — drop if too many recent error emails
+  const now = Date.now();
+  while (errorEmailWindow.length > 0 && errorEmailWindow[0] < now - ERROR_EMAIL_WINDOW_MS) {
+    errorEmailWindow.shift();
+  }
+  if (errorEmailWindow.length >= ERROR_EMAIL_LIMIT) {
+    console.warn(`[notifyError] Rate limited — ${errorEmailWindow.length} error emails in last 5min`);
+    return false;
+  }
+  errorEmailWindow.push(now);
+
+  // Scrub sensitive patterns from stack traces (tokens, keys, secrets)
+  const scrubbed = details.stack ? scrubSensitive(details.stack) : undefined;
+
   const html = `
     <h2 style="color: #dc2626;">Bug/Crash Report</h2>
     
@@ -149,9 +168,9 @@ export async function notifyError(details: {
     ${details.method ? `<p><strong>Method:</strong> ${details.method}</p>` : ''}
     ${details.status ? `<p><strong>Status:</strong> ${details.status}</p>` : ''}
     
-    ${details.stack ? `
+    ${scrubbed ? `
     <h3>Stack Trace</h3>
-    <pre style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 12px;">${escapeHtml(details.stack)}</pre>
+    <pre style="background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 12px;">${escapeHtml(scrubbed)}</pre>
     ` : ''}
 
     <p style="color: #666; margin-top: 20px;">
@@ -164,6 +183,16 @@ export async function notifyError(details: {
     subject: `[MrGuy] Error: ${details.message.slice(0, 80)}`,
     html,
   });
+}
+
+/** Remove tokens, API keys, and secrets from stack traces */
+function scrubSensitive(text: string): string {
+  return text
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, 'Bearer [REDACTED]')
+    .replace(/re_[A-Za-z0-9]{20,}/g, '[REDACTED_RESEND_KEY]')
+    .replace(/sk_[A-Za-z0-9]{20,}/g, '[REDACTED_STRIPE_KEY]')
+    .replace(/postgres(ql)?:\/\/[^\s"']+/g, '[REDACTED_DB_URL]')
+    .replace(/eyJ[A-Za-z0-9\-._]{30,}/g, '[REDACTED_JWT]');
 }
 
 function escapeHtml(str: string): string {

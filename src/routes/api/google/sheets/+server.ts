@@ -17,6 +17,12 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		throw error(401, 'Missing authentication tokens');
 	}
 
+	const driveId = env.GOOGLE_SHARED_DRIVE_ID;
+	if (!driveId) {
+		console.error('GOOGLE_SHARED_DRIVE_ID is not configured');
+		throw error(500, 'Google Drive integration is not configured');
+	}
+
 	const accessToken = authHeader.slice(7);
 	const pageToken = url.searchParams.get('pageToken');
 
@@ -30,7 +36,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			supportsAllDrives: 'true',
 			includeItemsFromAllDrives: 'true',
 			corpora: 'drive',
-			driveId: env.GOOGLE_SHARED_DRIVE_ID ?? ''
+			driveId
 		});
 
 		if (pageToken) {

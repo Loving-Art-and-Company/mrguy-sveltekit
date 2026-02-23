@@ -17,7 +17,11 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const accessToken = authHeader.slice(7);
 
 	// Get query params
-	const folderId = url.searchParams.get('folderId') || env.GOOGLE_SHARED_DRIVE_ID || '';
+	const folderId = url.searchParams.get('folderId') || env.GOOGLE_SHARED_DRIVE_ID;
+	if (!folderId) {
+		console.error('GOOGLE_SHARED_DRIVE_ID is not configured and no folderId provided');
+		throw error(500, 'Google Drive integration is not configured');
+	}
 	const pageToken = url.searchParams.get('pageToken');
 
 	// For now, we can't refresh tokens server-side without expiresAt

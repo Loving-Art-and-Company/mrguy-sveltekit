@@ -140,7 +140,9 @@ const handleError: HandleServerError = async ({ error, event, status, message })
     url: event.url.pathname,
     method: event.request.method,
     status,
-  }).catch(() => {});
+  }).catch((notifyErr) => {
+    console.warn('[handleError] Failed to send error notification:', notifyErr);
+  });
 
   return { message };
 };
