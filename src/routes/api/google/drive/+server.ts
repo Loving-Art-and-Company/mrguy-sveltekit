@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { GOOGLE_SHARED_DRIVE_ID } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { getValidToken, type TokenInfo } from '$lib/google/token-refresh';
 
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	const accessToken = authHeader.slice(7);
 
 	// Get query params
-	const folderId = url.searchParams.get('folderId') || GOOGLE_SHARED_DRIVE_ID;
+	const folderId = url.searchParams.get('folderId') || env.GOOGLE_SHARED_DRIVE_ID || '';
 	const pageToken = url.searchParams.get('pageToken');
 
 	// For now, we can't refresh tokens server-side without expiresAt
