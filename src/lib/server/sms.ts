@@ -54,9 +54,9 @@ export async function sendSMS({ to, message }: SMSParams): Promise<boolean> {
 }
 
 /**
- * Notify Pablo of new booking
+ * Notify owner of new booking via SMS
  */
-export async function notifyPabloOfBooking(booking: {
+export async function notifyOwnerOfBookingSMS(booking: {
   service: { name: string; price: number };
   schedule: { date: string; time: string };
   address: { street: string; city: string; state: string; zip: string };
@@ -82,7 +82,7 @@ Note: Vehicle details not collected - follow up via SMS`;
 /**
  * Send confirmation SMS to customer
  */
-export async function sendCustomerConfirmation(booking: {
+export async function sendCustomerConfirmationSMS(booking: {
   service: { name: string };
   schedule: { date: string; time: string };
   address: { street: string; city: string };

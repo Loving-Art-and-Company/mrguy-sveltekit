@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
+import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
 
 // Validation schema for modal booking
 const bookingSchema = z.object({
@@ -77,20 +78,28 @@ export const POST: RequestHandler = async ({ request }) => {
       console.error('Database error creating booking');
     }
 
-    // Send email notifications (don't block on these)
-    const emailPromises = [
+    // Send email + SMS notifications (don't block on these)
+    const notificationPromises = [
       notifyOwnerOfBooking(booking),
-      sendCustomerConfirmation(booking)
+      sendCustomerConfirmation(booking),
+      notifyOwnerOfBookingSMS(booking),
+      sendCustomerConfirmationSMS(booking),
     ];
 
-    // Fire and forget - don't wait for emails to complete
-    Promise.allSettled(emailPromises).then(results => {
-      const [ownerResult, customerResult] = results;
-      if (ownerResult.status === 'rejected' || !ownerResult.value) {
-        console.warn('Failed to notify owner of booking');
+    // Fire and forget - don't wait for notifications to complete
+    Promise.allSettled(notificationPromises).then(results => {
+      const [ownerEmail, customerEmail, ownerSMS, customerSMS] = results;
+      if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
+        console.warn('Failed to notify owner of booking (email)');
       }
-      if (customerResult.status === 'rejected' || !customerResult.value) {
-        console.warn('Failed to send customer confirmation email');
+      if (customerEmail.status === 'rejected' || !customerEmail.value) {
+        console.warn('Failed to send customer confirmation (email)');
+      }
+      if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
+        console.warn('Failed to notify owner of booking (SMS)');
+      }
+      if (customerSMS.status === 'rejected' || !customerSMS.value) {
+        console.warn('Failed to send customer confirmation (SMS)');
       }
     });
 
