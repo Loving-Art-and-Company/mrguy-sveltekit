@@ -3,6 +3,7 @@
 // Adapted from FPP/Carolina pattern for MrGuy admin auth
 
 import { type Handle, redirect } from '@sveltejs/kit';
+import { building } from '$app/environment';
 import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/server/auth';
 import { issueToken, requireCsrf } from '$lib/server/csrf';
 import { checkRateLimit } from '$lib/server/rateLimit';
@@ -25,42 +26,48 @@ const handle: Handle = async ({ event, resolve }) => {
   const nonce = crypto.randomBytes(16).toString('base64');
   event.locals.nonce = nonce;
 
-  // ── CSRF: double-submit cookie token ────────────────────
-  // Issue a CSRF token cookie on every request (clients read it for headers)
-  issueToken(event.cookies);
+  // ── CSRF (skip during prerendering — no cookies/secrets available) ──
+  if (!building) {
+    // Issue a CSRF token cookie on every request (clients read it for headers)
+    issueToken(event.cookies);
 
-  // ── CSRF: reject cross-origin state-changing API requests ──
-  if (event.url.pathname.startsWith('/api/') && !isValidOrigin(event.request, event.url)) {
-    // Allow Stripe webhooks (verified by signature, not origin)
-    if (!event.url.pathname.includes('/webhook')) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Reject cross-origin state-changing API requests
+    if (event.url.pathname.startsWith('/api/') && !isValidOrigin(event.request, event.url)) {
+      // Allow Stripe webhooks (verified by signature, not origin)
+      if (!event.url.pathname.includes('/webhook')) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Validate double-submit token on admin API mutations
+    if (
+      event.url.pathname.startsWith('/api/auth/') &&
+      !['GET', 'HEAD', 'OPTIONS'].includes(event.request.method) &&
+      !event.url.pathname.includes('/webhook')
+    ) {
+      try {
+        requireCsrf(event.cookies, event.request);
+      } catch {
+        return new Response(JSON.stringify({ error: 'CSRF validation failed' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
   }
 
-  // ── CSRF: validate double-submit token on admin API mutations ──
-  if (
-    event.url.pathname.startsWith('/api/auth/') &&
-    !['GET', 'HEAD', 'OPTIONS'].includes(event.request.method) &&
-    !event.url.pathname.includes('/webhook')
-  ) {
-    try {
-      requireCsrf(event.cookies, event.request);
-    } catch {
-      return new Response(JSON.stringify({ error: 'CSRF validation failed' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
+  // ── Session resolution (skip during prerendering) ───────
+  if (!building) {
+    const sessionToken = event.cookies.get(SESSION_COOKIE);
+    if (sessionToken) {
+      const user = await verifySession(sessionToken);
+      event.locals.user = user;
+    } else {
+      event.locals.user = null;
     }
-  }
-
-  // ── Session resolution ──────────────────────────────────
-  const sessionToken = event.cookies.get(SESSION_COOKIE);
-  if (sessionToken) {
-    const user = await verifySession(sessionToken);
-    event.locals.user = user;
   } else {
     event.locals.user = null;
   }
