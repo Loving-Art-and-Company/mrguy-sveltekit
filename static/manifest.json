@@ -1,6 +1,6 @@
 {
-  "name": "MrGuy Detail - Mobile Car Detailing",
-  "short_name": "MrGuy Detail",
+  "name": "Mr. Guy Mobile Detail",
+  "short_name": "Mr. Guy Detail",
   "description": "West Broward's premier mobile auto detailing. Book same-day service in 60 seconds.",
   "start_url": "/?source=pwa",
   "scope": "/",

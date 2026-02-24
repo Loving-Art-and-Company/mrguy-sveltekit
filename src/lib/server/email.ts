@@ -115,7 +115,7 @@ export async function sendCustomerConfirmation(booking: {
     <p style="margin-top: 30px;">
       <strong>Questions?</strong><br>
       Call or text: <a href="tel:9548044747">954-804-4747</a><br>
-      Email: <a href="mailto:bookings@mrguydetail.com">bookings@mrguydetail.com</a>
+      Email: <a href="mailto:info@mrguymobiledetail.com">info@mrguymobiledetail.com</a>
     </p>
     
     <p style="color: #666; margin-top: 20px;">
