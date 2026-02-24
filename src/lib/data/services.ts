@@ -79,16 +79,7 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
     includes: ["Vegan Leather Care", "Frunk Cleaning", "Charge Port Detail", "Scratch-Free Wash"],
     badge: "TESLA FRIENDLY",
   },
-  {
-    id: "tesla_3y_special",
-    name: 'The "Model 3/Y" Kit',
-    priceLow: 150,
-    priceHigh: 250,
-    avgPrice: 200,
-    description: "Expert maintenance targeting common Model 3/Y wear points—keeping white seats stain-free and glass roof crystal clear.",
-    includes: ["Vegan Leather Conditioning", "Glass Roof Clarity", "Frunk & Sub-Trunk", "Screen Fingerprint Removal"],
-    badge: "OWNER FAVORITE",
-  },
+
   {
     id: "gold",
     name: 'The "Showroom"',
