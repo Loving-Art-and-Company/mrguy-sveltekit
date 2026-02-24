@@ -90,3 +90,40 @@
 - Max iterations prevent infinite loops
 **Consequences:** More upfront planning, but autonomous execution worked well
 **Status:** Complete (all 6 phases shipped)
+
+---
+
+## 2026-02-23 - Server-Side Promo Pricing (Never Trust Client)
+**Context:** Implementing 25% first-time client discount ("Fresh Start" promo)
+**Decision:** All pricing derived server-side from packageId lookup; client-submitted prices ignored
+**Rationale:**
+- Client can manipulate prices in POST body — server must be source of truth
+- Server looks up package by ID, applies promo discount if eligible
+- First-time eligibility checked via phone number lookup against bookings table
+- Codex review flagged client-trusted pricing as critical security issue
+**Consequences:** Slightly more server logic, but prevents price manipulation attacks
+**Status:** Active
+
+---
+
+## 2026-02-23 - Shared Phone Normalization
+**Context:** Phone stored as 10-digit in /api/bookings/create but as +1XXXXXXXXXX (E.164) in /api/payments/webhook
+**Decision:** Create shared `normalizePhone()` utility, always store canonical 10-digit format
+**Rationale:**
+- Inconsistent formats caused first-time client lookups to miss existing bookings
+- Single normalizer ensures all booking writers store the same format
+- Lookup queries check both formats for backward compatibility
+**Consequences:** Need to eventually backfill old E.164 entries in bookings table
+**Status:** Active
+
+---
+
+## 2026-02-23 - Environment-Driven Promo Toggle
+**Context:** Need ability to enable/disable promo without code changes
+**Decision:** Use PROMO_ENABLED environment variable (defaults to enabled, only 'false' disables)
+**Rationale:**
+- Ops can toggle promo in Vercel dashboard without redeploying
+- Server load function passes flag to client via page data
+- Server endpoints independently verify eligibility (don't trust client flag)
+**Consequences:** Must remember to set env var in Vercel; defaults-to-enabled means promo is live unless explicitly disabled
+**Status:** Active
