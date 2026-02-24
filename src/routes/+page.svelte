@@ -1,15 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { PackageMenu, BUSINESS_INFO, type ServicePackage } from '$lib';
-  import Sparkle from '$lib/components/Sparkle.svelte';
-  import OptimizedImage from '$lib/components/OptimizedImage.svelte';
-  import AnimatedSection from '$lib/components/AnimatedSection.svelte';
-  import BeforeAfterSlider from '$lib/components/BeforeAfterSlider.svelte';
-  import ProcessTimeline from '$lib/components/ProcessTimeline.svelte';
-
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import BookingModal from '$lib/components/BookingModal.svelte';
-  import { ripple } from '$lib/actions/ripple';
   import { track } from '$lib/analytics';
 
   let { data } = $props();
@@ -43,26 +36,6 @@
     document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const processSteps = [
-    {
-      title: '1. We Show Up',
-      description: 'Book online, pick your time. We pull up with everything.',
-      imageSrc: '/images/process/step-2-wash',
-      imageAlt: 'Mobile detailing van arrives at your location'
-    },
-    {
-      title: '2. We Detail',
-      description: 'Wash, polish, protect. Whatever you picked.',
-      imageSrc: '/images/process/step-3-polish',
-      imageAlt: 'Professional detailing in progress'
-    },
-    {
-      title: '3. You\'re Done',
-      description: 'Car looks good. You didn\'t have to go anywhere.',
-      imageSrc: '/images/process/step-5-final',
-      imageAlt: 'Clean detailed car ready to go'
-    }
-  ];
 </script>
 
 <svelte:head>
@@ -119,13 +92,6 @@
     background: var(--color-bg-white);
   }
 
-  /* Services Showcase */
-  .services-showcase {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 8rem 2rem;
-  }
-
   .section-title {
     text-align: center;
     font-size: clamp(2rem, 4vw, 3.5rem);
@@ -153,77 +119,6 @@
     margin-left: auto;
     margin-right: auto;
     opacity: 0.9;
-  }
-
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
-  }
-
-  .service-card {
-    background: var(--color-bg-white);
-    border-radius: 1.5rem;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid var(--border-light);
-  }
-
-  .service-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-xl);
-  }
-
-  .service-image {
-    width: 100%;
-    height: 240px;
-    overflow: hidden;
-  }
-
-  .service-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .service-card:hover .service-image :global(img) {
-    transform: scale(1.05);
-  }
-
-  /* Before/After Section */
-  .before-after-section {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 8rem 2rem;
-    background: var(--color-bg-lighter);
-  }
-
-  .before-after-container {
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  /* Process Section */
-  .process-section {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 8rem 2rem;
-    background: var(--color-bg-white);
-  }
-
-  .service-card h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 1.5rem 1.5rem 0.75rem;
-    color: var(--text-primary);
-  }
-
-  .service-card p {
-    color: var(--text-secondary);
-    margin: 0 1.5rem 1.5rem;
-    line-height: 1.6;
   }
 
   /* Packages Section - Liquid Gradient */
@@ -355,18 +250,7 @@
   }
 
   /* Responsive Design */
-  @media (max-width: 1024px) {
-    .services-grid {
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-  }
-
   @media (max-width: 640px) {
-    .services-showcase {
-      padding: 4rem 1rem;
-    }
-
     .packages-section {
       padding: 4rem 1rem;
     }
@@ -376,28 +260,9 @@
       margin-bottom: 3rem;
     }
 
-    .services-grid {
-      grid-template-columns: 1fr;
-    }
-
     .feature {
       padding: 0.875rem 1.5rem;
       font-size: 1rem;
-    }
-  }
-
-  /* Responsive adjustments for new sections */
-  @media (max-width: 1024px) {
-    .before-after-section,
-    .process-section {
-      padding: 5rem 2rem;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .before-after-section,
-    .process-section {
-      padding: 3rem 1rem;
     }
   }
 </style>

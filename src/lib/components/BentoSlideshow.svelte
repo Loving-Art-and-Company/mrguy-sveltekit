@@ -72,7 +72,7 @@
         class:active={currentSlide === i}
         onclick={() => goToSlide(i)}
         aria-label="Go to slide {i + 1}"
-      />
+      ></button>
     {/each}
   </div>
 </section>

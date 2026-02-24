@@ -230,7 +230,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
-  <div class="modal-overlay" onclick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div class="modal-overlay" onclick={handleOverlayClick} onkeydown={handleKeydown} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
     <div class="modal-container">
       
       {#if showSuccess}
@@ -297,8 +298,8 @@
             
             {#if currentStep === 0}
               <div class="step-content">
-                <div class="form-section">
-                  <label class="form-label">Select Date *</label>
+                <fieldset class="form-section">
+                  <legend class="form-label">Select Date *</legend>
                   <div class="date-grid">
                     {#each availableDates.slice(0, 14) as date}
                       <button
@@ -312,11 +313,11 @@
                     {/each}
                   </div>
                   {#if errors.date}<span class="error">{errors.date}</span>{/if}
-                </div>
+                </fieldset>
 
                 {#if schedule.date}
-                  <div class="form-section">
-                    <label class="form-label">Select Time *</label>
+                  <fieldset class="form-section">
+                    <legend class="form-label">Select Time *</legend>
                     <div class="time-grid">
                       {#each timeSlots as slot}
                         <button
@@ -330,7 +331,7 @@
                       {/each}
                     </div>
                     {#if errors.time}<span class="error">{errors.time}</span>{/if}
-                  </div>
+                  </fieldset>
                 {/if}
 
                 <button 
@@ -810,6 +811,8 @@
   /* Form Elements */
   .form-section {
     margin-bottom: 1.5rem;
+    border: none;
+    padding: 0;
   }
 
   .form-label {
@@ -851,7 +854,7 @@
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
   }
 
-  input.error, textarea.error {
+  input.error {
     border-color: #ef4444;
   }
 

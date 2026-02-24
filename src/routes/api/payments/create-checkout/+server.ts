@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
 import { env } from '$env/dynamic/private';
-import { PUBLIC_BASE_URL } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { isFirstTimeClient } from '$lib/server/promo';
 import { normalizePhone } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
@@ -69,8 +69,8 @@ export const POST: RequestHandler = async ({ request }) => {
         promo_code: promoCode || '',
         booking_data: JSON.stringify(bookingData),
       },
-      success_url: `${PUBLIC_BASE_URL}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${PUBLIC_BASE_URL}/book?cancelled=true`,
+      success_url: `${publicEnv.PUBLIC_BASE_URL}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${publicEnv.PUBLIC_BASE_URL}/book?cancelled=true`,
     });
 
     return json({ sessionId: session.id, url: session.url });
