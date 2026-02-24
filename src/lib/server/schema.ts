@@ -120,6 +120,7 @@ export const bookings = pgTable(
     transactionId: text('transactionId'),
     paymentMethod: text('paymentMethod'),
     notes: text('notes'),
+    promoCode: text('promo_code'),
     signature: text('signature'),
     status: text('status').default('pending'),
     paymentStatus: text('paymentStatus').default('unpaid'),

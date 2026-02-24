@@ -10,12 +10,13 @@
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import BookingModal from '$lib/components/BookingModal.svelte';
   import { ripple } from '$lib/actions/ripple';
-  import { track, isFeatureEnabled, onFeatureFlags } from '$lib/analytics';
+  import { track } from '$lib/analytics';
+
+  let { data } = $props();
 
   // Booking modal state
   let showBookingModal = $state(false);
   let selectedService = $state<ServicePackage | null>(null);
-  let showPromoBanner = $state(false);
 
   function handlePackageSelect(pkg: ServicePackage) {
     selectedService = pkg;
@@ -27,19 +28,9 @@
 
   onMount(() => {
     hydrated = true;
-
-    showPromoBanner = isFeatureEnabled('promo_banner');
-    if (showPromoBanner) {
+    if (data.promoEnabled) {
       track('promo_banner_viewed');
     }
-
-    onFeatureFlags(() => {
-      const enabled = isFeatureEnabled('promo_banner');
-      if (enabled && !showPromoBanner) {
-        track('promo_banner_viewed');
-      }
-      showPromoBanner = enabled;
-    });
   });
 
   function closeBookingModal() {
@@ -89,12 +80,12 @@
   <section id="services" class="packages-section">
     <h1 class="section-title">Skip the Car Wash Line. Forever.</h1>
     <p class="section-subtitle">Book in 60 seconds. We show up. You never leave home.</p>
-    {#if showPromoBanner}
+    {#if data.promoEnabled}
       <div class="promo-banner" role="status" aria-live="polite">
-        <strong>Limited Promo:</strong> Fresh Start 25% off — today only.
+        <strong>First-Time Client Special:</strong> 25% off your first booking.
       </div>
     {/if}
-    <PackageMenu onSelect={handlePackageSelect} />
+    <PackageMenu onSelect={handlePackageSelect} showPromo={data.promoEnabled} />
   </section>
 
   <!-- Why Choose Us -->
@@ -117,6 +108,7 @@
   <BookingModal 
     service={selectedService}
     isOpen={showBookingModal}
+    showPromo={data.promoEnabled}
     onClose={closeBookingModal}
     onEditService={handleEditService}
   />

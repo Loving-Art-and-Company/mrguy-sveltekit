@@ -1,16 +1,20 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
+import { env } from '$env/dynamic/private';
+import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
+import { isFirstTimeClient } from '$lib/server/promo';
+import { normalizePhone } from '$lib/server/phone';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
+
+const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
 // Validation schema for modal booking
 const bookingSchema = z.object({
   service: z.object({
     id: z.string(),
-    name: z.string(),
-    price: z.number()
   }),
   schedule: z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -45,8 +49,20 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const booking = result.data;
 
-    // Clean phone number (remove formatting)
-    const cleanPhone = booking.contact.phone.replace(/\D/g, '');
+    // Derive service name and price server-side from package ID
+    const pkg = SERVICE_PACKAGES.find((p) => p.id === booking.service.id);
+    if (!pkg) {
+      return json({ message: 'Invalid service selected' }, { status: 400 });
+    }
+
+    // Normalize phone to canonical 10-digit format
+    const cleanPhone = normalizePhone(booking.contact.phone);
+
+    // Check promo eligibility: is promo enabled + is this a first-time client?
+    const promoEnabled = env.PROMO_ENABLED !== 'false';
+    const firstTime = promoEnabled ? await isFirstTimeClient(cleanPhone) : false;
+    const finalPrice = firstTime ? getPromoPrice(pkg.priceHigh) : pkg.priceHigh;
+    const promoCode = firstTime ? 'fresh_start_25' : null;
 
     // Build notes with address info (no address columns in bookings schema)
     const notes = [
@@ -60,15 +76,17 @@ export const POST: RequestHandler = async ({ request }) => {
     // Generate booking ID
     const bookingId = bookingRepo.generateBookingId(booking.schedule.date);
 
-    // Create booking in database — map validated data to actual schema columns
+    // Create booking in database — derive all pricing server-side
     const newBooking = await bookingRepo.insert({
       id: bookingId,
+      brandId: MRGUY_BRAND_ID,
       clientName: booking.contact.name,
-      serviceName: booking.service.name,
-      price: booking.service.price,
+      serviceName: pkg.name,
+      price: finalPrice,
       date: booking.schedule.date,
       time: booking.schedule.time,
       contact: cleanPhone,
+      promoCode,
       notes,
       status: 'pending',
       paymentStatus: 'unpaid',
@@ -78,12 +96,18 @@ export const POST: RequestHandler = async ({ request }) => {
       console.error('Database error creating booking');
     }
 
+    // Build notification payload with server-derived values
+    const notificationPayload = {
+      ...booking,
+      service: { id: pkg.id, name: pkg.name, price: finalPrice },
+    };
+
     // Send email + SMS notifications (don't block on these)
     const notificationPromises = [
-      notifyOwnerOfBooking(booking),
-      sendCustomerConfirmation(booking),
-      notifyOwnerOfBookingSMS(booking),
-      sendCustomerConfirmationSMS(booking),
+      notifyOwnerOfBooking(notificationPayload),
+      sendCustomerConfirmation(notificationPayload),
+      notifyOwnerOfBookingSMS(notificationPayload),
+      sendCustomerConfirmationSMS(notificationPayload),
     ];
 
     // Fire and forget - don't wait for notifications to complete
@@ -106,7 +130,9 @@ export const POST: RequestHandler = async ({ request }) => {
     return json({
       success: true,
       bookingId: newBooking?.id || 'pending',
-      message: 'Booking created successfully'
+      message: 'Booking created successfully',
+      promoApplied: firstTime,
+      price: finalPrice,
     });
 
   } catch (err) {

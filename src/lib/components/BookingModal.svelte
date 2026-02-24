@@ -1,16 +1,20 @@
 <script lang="ts">
   import { X, Calendar, MapPin, User, Check, ChevronRight } from 'lucide-svelte';
   import type { ServicePackage } from '$lib/data/services';
+  import { getPromoPrice } from '$lib/data/services';
   import { track } from '$lib/analytics';
 
   interface Props {
     service: ServicePackage;
     isOpen: boolean;
+    showPromo?: boolean;
     onClose: () => void;
     onEditService: () => void;
   }
 
-  let { service, isOpen, onClose, onEditService }: Props = $props();
+  let { service, isOpen, showPromo = false, onClose, onEditService }: Props = $props();
+
+  const displayPrice = $derived(showPromo ? getPromoPrice(service.priceHigh) : service.priceHigh);
 
   // Step management (0=Date/Time, 1=Location, 2=Contact)
   let currentStep = $state(0);
@@ -140,7 +144,7 @@
     
     isSubmitting = true;
     errors = {};
-    track('booking_submit', { service: service.name, price: service.priceHigh });
+    track('booking_submit', { service: service.name, price: displayPrice });
 
     try {
       const response = await fetch('/api/bookings/create', {
@@ -166,7 +170,7 @@
       // Show success message
       showSuccess = true;
       successCountdown = 3;
-      track('booking_success', { service: service.name, price: service.priceHigh });
+      track('booking_success', { service: service.name, price: displayPrice });
       
       // Countdown and auto-close
       const interval = setInterval(() => {
@@ -253,7 +257,7 @@
         <div class="service-summary">
           <div class="service-info">
             <h3>{service.name}</h3>
-            <span class="price">${service.priceHigh}</span>
+            <span class="price">${displayPrice}</span>
           </div>
           <ul class="includes">
             {#each service.includes.slice(0, 3) as item}
@@ -490,7 +494,7 @@
                   <h4>Booking Summary</h4>
                   <div class="summary-row">
                     <span>{service.name}</span>
-                    <span class="summary-price">${service.priceHigh}</span>
+                    <span class="summary-price">${displayPrice}</span>
                   </div>
                   <div class="summary-row light">
                     <span>{formatDate(schedule.date)} at {formatTime(schedule.time)}</span>
@@ -516,7 +520,7 @@
                   {#if isSubmitting}
                     Processing...
                   {:else}
-                    Book Appointment - ${service.priceHigh}
+                    Book Appointment - ${displayPrice}
                   {/if}
                 </button>
               </div>

@@ -3,8 +3,11 @@ import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
+import { normalizePhone } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
 import type { BookingData } from '$lib/types/booking';
+
+const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
 // Lazy-init Stripe to avoid build-time errors
 let _stripe: Stripe | null = null;
@@ -76,7 +79,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Normalize phone to E.164
+  // Normalize phone to canonical 10-digit format
   const phone = normalizePhone(metadata.customer_phone || bookingData.contact.phone);
 
   // Get service package info
@@ -113,8 +116,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     .join('\n');
 
   // Create booking
+  const promoCode = metadata.promo_code || null;
   const booking = await bookingRepo.insert({
     id: bookingId,
+    brandId: MRGUY_BRAND_ID,
     clientName,
     serviceName: pkg?.name || 'Unknown Package',
     price: session.amount_total ? session.amount_total / 100 : 0,
@@ -123,6 +128,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     contact: phone,
     transactionId: session.id,
     paymentMethod: 'stripe',
+    promoCode,
     notes,
     status: 'confirmed',
     paymentStatus: 'paid',
@@ -138,13 +144,4 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   // TODO: Send confirmation SMS via Twilio
 }
 
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-  return `+${digits}`;
-}
+

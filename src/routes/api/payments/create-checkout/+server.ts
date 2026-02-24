@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
 import { env } from '$env/dynamic/private';
 import { PUBLIC_BASE_URL } from '$env/static/public';
+import { isFirstTimeClient } from '$lib/server/promo';
+import { normalizePhone } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
 
 // Lazy-init Stripe to avoid build-time errors
@@ -26,8 +28,18 @@ export const POST: RequestHandler = async ({ request }) => {
       throw error(400, 'Invalid package selected');
     }
 
-    // Calculate price with promo discount
-    const priceInCents = getPromoPrice(pkg.avgPrice) * 100;
+    // Normalize phone and check promo eligibility
+    const cleanPhone = normalizePhone(customerPhone || '');
+    const promoEnabled = env.PROMO_ENABLED !== 'false';
+    const firstTime = promoEnabled && cleanPhone.length === 10
+      ? await isFirstTimeClient(cleanPhone)
+      : false;
+
+    // Use priceHigh as the canonical price, apply discount only if eligible
+    const basePrice = pkg.priceHigh;
+    const finalPrice = firstTime ? getPromoPrice(basePrice) : basePrice;
+    const priceInCents = finalPrice * 100;
+    const promoCode = firstTime ? 'fresh_start_25' : null;
 
     // Create Stripe checkout session
     const session = await getStripe().checkout.sessions.create({
@@ -54,6 +66,7 @@ export const POST: RequestHandler = async ({ request }) => {
         package_id: packageId,
         customer_name: customerName,
         customer_phone: customerPhone,
+        promo_code: promoCode || '',
         booking_data: JSON.stringify(bookingData),
       },
       success_url: `${PUBLIC_BASE_URL}/book/success?session_id={CHECKOUT_SESSION_ID}`,

@@ -2,7 +2,10 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
+import { normalizePhone } from '$lib/server/phone';
 import { notifyOwnerOfBooking } from '$lib/server/email';
+
+const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
 // Validation schema for promo booking
 const promoBookingSchema = z.object({
@@ -69,8 +72,8 @@ export const POST: RequestHandler = async ({ request }) => {
       ? `${promoService.name} + ${upgradeNames.join(', ')}`
       : promoService.name;
 
-    // Clean phone number
-    const cleanPhone = data.phone.replace(/\D/g, '');
+    // Normalize phone to canonical 10-digit format
+    const cleanPhone = normalizePhone(data.phone);
 
     // Parse address (basic parsing - just store as-is for now)
     const addressParts = data.address.split(',').map(s => s.trim());
@@ -96,12 +99,14 @@ export const POST: RequestHandler = async ({ request }) => {
     // Create booking in database — map to actual schema columns
     const newBooking = await bookingRepo.insert({
       id: bookingId,
+      brandId: MRGUY_BRAND_ID,
       clientName: data.name,
       serviceName,
       price: totalPrice,
       date: today, // Promo bookings — we'll contact to schedule
       time: null,
       contact: cleanPhone,
+      promoCode: data.promo_code,
       notes,
       status: 'pending',
       paymentStatus: totalPrice === 0 ? 'paid' : 'unpaid',
