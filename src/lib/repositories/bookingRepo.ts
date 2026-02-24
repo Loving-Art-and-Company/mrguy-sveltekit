@@ -3,7 +3,7 @@
 
 import { db } from '$lib/server/db';
 import { bookings } from '$lib/server/schema';
-import { eq, and, gte, lte, or, ilike, desc, asc, sql, count } from 'drizzle-orm';
+import { eq, and, gte, lte, or, ilike, desc, asc, sql, count, inArray } from 'drizzle-orm';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
@@ -163,7 +163,7 @@ export async function listByContact(
       and(
         eq(bookings.brandId, MRGUY_BRAND_ID),
         eq(bookings.contact, phone),
-        sql`${bookings.status} = ANY(${statuses})`
+        inArray(bookings.status, statuses)
       )
     )
     .orderBy(asc(bookings.date));

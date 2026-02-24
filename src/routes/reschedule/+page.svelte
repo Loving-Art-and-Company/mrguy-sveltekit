@@ -1,10 +1,9 @@
 <script lang="ts">
   import { BUSINESS_INFO } from '$lib/data/services';
   import PhoneInput from '$lib/components/PhoneInput.svelte';
-  import OtpInput from '$lib/components/OtpInput.svelte';
-  import { Phone, KeyRound, Calendar, ChevronLeft, Check, Loader2, AlertCircle, PartyPopper } from 'lucide-svelte';
+  import { Phone, Calendar, ChevronLeft, Check, Loader2, AlertCircle, PartyPopper } from 'lucide-svelte';
 
-  type Step = 'phone' | 'otp' | 'bookings' | 'date_select' | 'confirmation';
+  type Step = 'phone' | 'bookings' | 'date_select' | 'confirmation';
 
   interface Booking {
     id: string;
@@ -18,7 +17,6 @@
   // State
   let step = $state<Step>('phone');
   let phone = $state('');
-  let otpCode = $state('');
   let isLoading = $state(false);
   let errorMessage = $state('');
 
@@ -28,8 +26,8 @@
   let newTime = $state('');
   let rescheduledBooking = $state<Booking | null>(null);
 
-  // Send OTP to phone number
-  async function sendOtp() {
+  // Look up bookings by phone number
+  async function lookupBookings() {
     if (phone.length !== 10) {
       errorMessage = 'Please enter a valid 10-digit phone number';
       return;
@@ -39,7 +37,7 @@
     errorMessage = '';
 
     try {
-      const response = await fetch('/api/otp/send', {
+      const response = await fetch('/api/bookings/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
@@ -47,60 +45,17 @@
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to send verification code');
+        throw new Error(data.message || 'Failed to look up bookings');
       }
 
-      step = 'otp';
-    } catch (err) {
-      errorMessage = err instanceof Error ? err.message : 'Failed to send verification code';
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // Verify OTP code
-  async function verifyOtp() {
-    if (otpCode.length !== 6) {
-      errorMessage = 'Please enter the 6-digit verification code';
-      return;
-    }
-
-    isLoading = true;
-    errorMessage = '';
-
-    try {
-      const response = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: otpCode }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Invalid verification code');
-      }
-
-      // Fetch bookings after successful verification
-      await fetchBookings();
+      const data = await response.json();
+      bookings = data.bookings || [];
       step = 'bookings';
     } catch (err) {
-      errorMessage = err instanceof Error ? err.message : 'Verification failed';
+      errorMessage = err instanceof Error ? err.message : 'Failed to look up bookings';
     } finally {
       isLoading = false;
     }
-  }
-
-  // Fetch bookings for verified phone
-  async function fetchBookings() {
-    const response = await fetch('/api/bookings/mine');
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Failed to fetch bookings');
-    }
-
-    const data = await response.json();
-    bookings = data.bookings || [];
   }
 
   // Proceed to date selection
@@ -151,7 +106,6 @@
   function startOver() {
     step = 'phone';
     phone = '';
-    otpCode = '';
     bookings = [];
     selectedBooking = null;
     newDate = '';
@@ -241,9 +195,7 @@
 
   <!-- Step indicators -->
   <div class="steps">
-    <div class="step-dot" class:active={step === 'phone'} class:completed={['otp', 'bookings', 'date_select', 'confirmation'].includes(step)}></div>
-    <div class="step-line" class:completed={['otp', 'bookings', 'date_select', 'confirmation'].includes(step)}></div>
-    <div class="step-dot" class:active={step === 'otp'} class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
+    <div class="step-dot" class:active={step === 'phone'} class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
     <div class="step-line" class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
     <div class="step-dot" class:active={step === 'bookings' || step === 'date_select'} class:completed={step === 'confirmation'}></div>
     <div class="step-line" class:completed={step === 'confirmation'}></div>
@@ -257,9 +209,9 @@
         <Phone size={32} />
       </div>
       <h2>Enter Your Phone Number</h2>
-      <p class="desc">We'll send a verification code to access your bookings.</p>
+      <p class="desc">We'll look up your bookings using the phone number on file.</p>
 
-      <form onsubmit={(e) => { e.preventDefault(); sendOtp(); }}>
+      <form onsubmit={(e) => { e.preventDefault(); lookupBookings(); }}>
         <PhoneInput bind:value={phone} error={errorMessage && phone.length > 0 && phone.length < 10 ? errorMessage : ''} />
 
         {#if errorMessage && (phone.length === 0 || phone.length === 10)}
@@ -273,45 +225,6 @@
           {:else}
             Look Up My Booking
           {/if}
-        </button>
-      </form>
-    </section>
-
-  {:else if step === 'otp'}
-    <!-- Step 2: OTP Verification -->
-    <section class="card">
-      <div class="icon">
-        <KeyRound size={32} />
-      </div>
-      <h2>Enter Verification Code</h2>
-      <p class="desc">We sent a 6-digit code to your phone</p>
-
-      <form onsubmit={(e) => { e.preventDefault(); verifyOtp(); }}>
-        <OtpInput
-          bind:value={otpCode}
-          error={errorMessage}
-          oncomplete={verifyOtp}
-        />
-
-        {#if errorMessage}
-          <p class="error">{errorMessage}</p>
-        {/if}
-
-        <button type="submit" class="btn primary" disabled={isLoading || otpCode.length !== 6}>
-          {#if isLoading}
-            <Loader2 size={18} class="spinner" />
-            Verifying...
-          {:else}
-            Verify
-          {/if}
-        </button>
-
-        <button type="button" class="btn secondary" onclick={() => { step = 'phone'; otpCode = ''; errorMessage = ''; }}>
-          Change Phone Number
-        </button>
-
-        <button type="button" class="btn link" onclick={sendOtp} disabled={isLoading}>
-          Didn't receive code? Resend
         </button>
       </form>
     </section>
