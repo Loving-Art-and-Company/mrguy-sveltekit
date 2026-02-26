@@ -12,3 +12,12 @@ initAnalytics({
 	disable: dev,
 	sessionRecording: PUBLIC_POSTHOG_SESSION_RECORDING === 'true',
 });
+
+// Reload the page when a stale deployment causes a dynamic import to fail.
+// This happens when users have the old page open after a new deploy: the browser
+// tries to fetch a JS chunk by its old hash, which no longer exists on the server.
+export const handleError = ({ error }: { error: unknown }) => {
+		if (error instanceof TypeError && error.message.includes('Failed to fetch dynamically imported module')) {
+					window.location.reload();
+		}
+};
