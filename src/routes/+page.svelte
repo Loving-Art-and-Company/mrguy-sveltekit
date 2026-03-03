@@ -14,7 +14,12 @@
   function handlePackageSelect(pkg: ServicePackage) {
     selectedService = pkg;
     showBookingModal = true;
-    track('package_selected', { service: pkg.name, price: pkg.priceHigh });
+    track('package_selected', {
+      service_id: pkg.id,
+      service_name: pkg.name,
+      quoted_price: pkg.priceHigh,
+      location: 'homepage_packages',
+    });
   }
 
   let hydrated = $state(false);
@@ -22,7 +27,7 @@
   onMount(() => {
     hydrated = true;
     if (data.promoEnabled) {
-      track('promo_banner_viewed');
+      track('promo_banner_viewed', { location: 'homepage_services' });
     }
   });
 
@@ -41,6 +46,63 @@
 <svelte:head>
   <title>Mobile Car Detailing in West Broward, FL | Mr. Guy Detail</title>
   <meta name="description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45. Serving Weston, Pembroke Pines, Miramar & more." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Mobile Car Detailing in West Broward, FL | Mr. Guy Detail" />
+  <meta property="og:description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45." />
+  <meta property="og:image" content="https://mrguymobiledetail.com/images/slide-1.jpg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:title" content="Mobile Car Detailing in West Broward, FL | Mr. Guy Detail" />
+  <meta name="twitter:description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45." />
+  <meta name="twitter:image" content="https://mrguymobiledetail.com/images/slide-1.jpg" />
+
+  <!-- LocalBusiness + Service structured data -->
+  {@html `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "AutoDetailing",
+    "name": "Mr. Guy Mobile Detail",
+    "description": "Professional mobile car detailing in West Broward, South Florida. We come to you.",
+    "url": "https://mrguymobiledetail.com",
+    "telephone": "+19548339143",
+    "priceRange": "$45 - $2,000",
+    "image": "https://mrguymobiledetail.com/images/slide-1.jpg",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Weston",
+      "addressRegion": "FL",
+      "addressCountry": "US"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 26.1003,
+      "longitude": -80.3997
+    },
+    "areaServed": [
+      { "@type": "City", "name": "Weston" },
+      { "@type": "City", "name": "Pembroke Pines" },
+      { "@type": "City", "name": "Miramar" },
+      { "@type": "City", "name": "Davie" },
+      { "@type": "City", "name": "Southwest Ranches" }
+    ],
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+      "opens": "08:00",
+      "closes": "18:00"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Detailing Services",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Quick Refresh", "description": "Foam cannon bath, rinse, tire shine, vacuum" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 45, "maxPrice": 75, "priceCurrency": "USD" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Family Hauler", "description": "Deep interior scrub, carpet shampoo, leather wipe, spray wax" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 130, "maxPrice": 220, "priceCurrency": "USD" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Electric (Tesla Friendly)", "description": "EV-specific cleaning, vegan leather care, charge port detail" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 150, "maxPrice": 250, "priceCurrency": "USD" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Showroom Detail", "description": "Clay bar, iron decon, 6-month sealant, engine bay rinse" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 220, "maxPrice": 350, "priceCurrency": "USD" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ceramic Coating", "description": "Multi-year protection, paint correction, hydrophobic layer" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 450, "maxPrice": 2000, "priceCurrency": "USD" } }
+      ]
+    }
+  })}</script>`}
 </svelte:head>
 
 <main data-hydrated={hydrated ? 'true' : undefined}>
