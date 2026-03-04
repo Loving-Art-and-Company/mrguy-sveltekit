@@ -50,12 +50,14 @@
   <!-- Open Graph -->
   <meta property="og:title" content="Mobile Car Detailing in West Broward, FL | Mr. Guy Detail" />
   <meta property="og:description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45." />
-  <meta property="og:image" content="https://mrguymobiledetail.com/images/slide-1.jpg" />
+  <meta property="og:image" content="https://mrguymobiledetail.com/images/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <!-- Twitter -->
   <meta name="twitter:title" content="Mobile Car Detailing in West Broward, FL | Mr. Guy Detail" />
   <meta name="twitter:description" content="Professional mobile car detailing in West Broward, FL. We come to you — book in 60 seconds. Prices from $45." />
-  <meta name="twitter:image" content="https://mrguymobiledetail.com/images/slide-1.jpg" />
+  <meta name="twitter:image" content="https://mrguymobiledetail.com/images/og-image.png" />
 
   <!-- LocalBusiness + Service structured data -->
   {@html `<script type="application/ld+json">${JSON.stringify({
@@ -64,7 +66,7 @@
     "name": "Mr. Guy Mobile Detail",
     "description": "Professional mobile car detailing in West Broward, South Florida. We come to you.",
     "url": "https://mrguymobiledetail.com",
-    "telephone": "+19548339143",
+    "telephone": "+19548044747",
     "priceRange": "$45 - $2,000",
     "image": "https://mrguymobiledetail.com/images/slide-1.jpg",
     "address": {
