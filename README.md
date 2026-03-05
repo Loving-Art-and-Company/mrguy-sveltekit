@@ -95,6 +95,7 @@ npm run dev
 - **Architecture & Commands:** [`CLAUDE.md`](./CLAUDE.md)
 - **Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
 - **Security Policies:** [`SECURITY.md`](./SECURITY.md)
+- **Analytics Tracking Plan:** [`docs/tracking-plan.md`](./docs/tracking-plan.md)
 
 ## Project Structure
 

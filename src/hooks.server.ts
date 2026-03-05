@@ -23,6 +23,8 @@ function isValidOrigin(request: Request, url: URL): boolean {
 }
 
 const handle: Handle = async ({ event, resolve }) => {
+  let sessionToken: string | undefined;
+
   // ── CSP nonce ───────────────────────────────────────────
   const nonce = crypto.randomBytes(16).toString('base64');
   event.locals.nonce = nonce;
@@ -62,7 +64,7 @@ const handle: Handle = async ({ event, resolve }) => {
 
   // ── Session resolution (skip during prerendering) ───────
   if (!building) {
-    const sessionToken = event.cookies.get(SESSION_COOKIE);
+    sessionToken = event.cookies.get(SESSION_COOKIE);
     if (sessionToken) {
       const user = await verifySession(sessionToken);
       event.locals.user = user;

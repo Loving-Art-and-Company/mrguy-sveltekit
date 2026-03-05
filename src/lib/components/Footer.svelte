@@ -1,6 +1,7 @@
 <script lang="ts">
   import { BUSINESS_INFO } from '$lib/data/services';
   import { Phone, Mail, MapPin, Clock } from 'lucide-svelte';
+  import { track } from '$lib/analytics';
 
   const serviceCities = [
     'Weston',
@@ -31,11 +32,15 @@
         <ul class="footer-list">
           <li>
             <Phone size={14} />
-            <a href="tel:+19548044747">954-804-4747</a>
+            <a href="tel:+19548044747" onclick={() => track('cta_clicked', { cta_type: 'phone_call', location: 'footer' })}>
+              954-804-4747
+            </a>
           </li>
           <li>
             <Mail size={14} />
-            <a href="mailto:info@mrguymobiledetail.com">info@mrguymobiledetail.com</a>
+            <a href="mailto:info@mrguymobiledetail.com" onclick={() => track('cta_clicked', { cta_type: 'email', location: 'footer' })}>
+              info@mrguymobiledetail.com
+            </a>
           </li>
           <li>
             <Clock size={14} />
@@ -61,8 +66,8 @@
       <div class="footer-section">
         <h4>Quick Links</h4>
         <ul class="footer-list">
-          <li><a href="/#services">Book a Detail</a></li>
-          <li><a href="/reschedule">My Booking</a></li>
+          <li><a href="/#services" onclick={() => track('cta_clicked', { cta_type: 'book_now', location: 'footer' })}>Book a Detail</a></li>
+          <li><a href="/reschedule" onclick={() => track('cta_clicked', { cta_type: 'my_booking', location: 'footer' })}>My Booking</a></li>
         </ul>
       </div>
     </div>
@@ -71,7 +76,9 @@
       <p>&copy; {new Date().getFullYear()} {BUSINESS_INFO.name}. All rights reserved.</p>
       <p class="footer-phone">
         <Phone size={12} />
-        <a href="tel:+19548044747">+1 (954) 804-4747</a>
+        <a href="tel:+19548044747" onclick={() => track('cta_clicked', { cta_type: 'phone_call', location: 'footer_bottom' })}>
+          +1 (954) 804-4747
+        </a>
       </p>
       <p class="footer-location">
         <MapPin size={12} />

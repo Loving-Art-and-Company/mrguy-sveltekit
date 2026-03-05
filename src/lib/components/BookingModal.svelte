@@ -15,6 +15,7 @@
   let { service, isOpen, showPromo = false, onClose, onEditService }: Props = $props();
 
   const displayPrice = $derived(showPromo ? getPromoPrice(service.priceHigh) : service.priceHigh);
+  const stepNames = ['schedule', 'location', 'contact'] as const;
 
   // Step management (0=Date/Time, 1=Location, 2=Contact)
   let currentStep = $state(0);
@@ -95,7 +96,11 @@
   }
 
   function handleEditServiceClick() {
-    track('booking_edit_service', { service: service.name });
+    track('booking_edit_service', {
+      service_id: service.id,
+      service_name: service.name,
+      step_name: stepNames[currentStep] || 'unknown',
+    });
     onEditService();
   }
 
@@ -126,7 +131,12 @@
     if (!validateStep(currentStep)) return;
     
     if (currentStep < 2) {
-      track('booking_step_completed', { step: currentStep + 1, service: service.name });
+      track('booking_step_completed', {
+        step_index: currentStep + 1,
+        step_name: stepNames[currentStep],
+        service_id: service.id,
+        service_name: service.name,
+      });
       currentStep++;
     } else {
       submitBooking();
@@ -144,7 +154,15 @@
     
     isSubmitting = true;
     errors = {};
-    track('booking_submit', { service: service.name, price: displayPrice });
+    track('booking_submit', {
+      service_id: service.id,
+      service_name: service.name,
+      quoted_price: displayPrice,
+      promo_visible: showPromo,
+      has_email: Boolean(contact.email),
+      step_index: currentStep + 1,
+      step_name: stepNames[currentStep] || 'unknown',
+    });
 
     try {
       const response = await fetch('/api/bookings/create', {
@@ -162,15 +180,23 @@
         })
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         throw new Error(data.message || 'Booking failed');
       }
 
       // Show success message
       showSuccess = true;
       successCountdown = 3;
-      track('booking_success', { service: service.name, price: displayPrice });
+      track('booking_success', {
+        service_id: service.id,
+        service_name: service.name,
+        quoted_price: displayPrice,
+        final_price: typeof data.price === 'number' ? data.price : displayPrice,
+        promo_applied: Boolean(data.promoApplied),
+        booking_id: typeof data.bookingId === 'string' ? data.bookingId : undefined,
+      });
       
       // Countdown and auto-close
       const interval = setInterval(() => {
@@ -183,14 +209,26 @@
 
     } catch (err) {
       errors.submit = err instanceof Error ? err.message : 'Booking failed. Please try again or call 954-804-4747.';
-      track('booking_error', { service: service.name });
+      track('booking_error', {
+        service_id: service.id,
+        service_name: service.name,
+        quoted_price: displayPrice,
+        step_index: currentStep + 1,
+        step_name: stepNames[currentStep] || 'unknown',
+      });
     } finally {
       isSubmitting = false;
     }
   }
 
   function handleClose() {
-    track('booking_modal_closed', { step: currentStep + 1, success: showSuccess });
+    track('booking_modal_closed', {
+      step_index: currentStep + 1,
+      step_name: stepNames[currentStep] || 'unknown',
+      completed: showSuccess,
+      service_id: service.id,
+      service_name: service.name,
+    });
     // Reset state
     currentStep = 0;
     showSuccess = false;
@@ -217,7 +255,12 @@
   $effect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      track('booking_modal_opened', { service: service.name });
+      track('booking_modal_opened', {
+        service_id: service.id,
+        service_name: service.name,
+        quoted_price: displayPrice,
+        promo_visible: showPromo,
+      });
     } else {
       document.body.style.overflow = '';
     }

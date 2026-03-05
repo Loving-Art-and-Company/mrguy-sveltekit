@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
+import { checkRateLimit } from '$lib/server/rateLimit';
 import type { RequestHandler } from './$types';
 
 interface ClientSession {
@@ -15,6 +16,16 @@ interface RescheduleRequest {
 }
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
+  const rateLimit = await checkRateLimit(
+    `rl:booking-reschedule:${getClientIp(request)}`,
+    10,
+    60
+  );
+
+  if (!rateLimit.success) {
+    throw error(429, 'Too many requests. Please wait a moment and try again.');
+  }
+
   // Validate session
   const sessionCookie = cookies.get('client_session');
 
@@ -115,3 +126,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     },
   });
 };
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const direct = request.headers.get('x-real-ip');
+  return xff?.split(',')[0]?.trim() || direct || 'unknown';
+}

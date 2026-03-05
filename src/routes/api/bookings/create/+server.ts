@@ -6,6 +6,7 @@ import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { isFirstTimeClient } from '$lib/server/promo';
 import { normalizePhone } from '$lib/server/phone';
+import { checkRateLimit } from '$lib/server/rateLimit';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
 
@@ -36,6 +37,16 @@ const bookingSchema = z.object({
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
+    const rateLimit = await checkRateLimit(
+      `rl:booking-create:${getClientIp(request)}`,
+      6,
+      60
+    );
+
+    if (!rateLimit.success) {
+      throw error(429, 'Too many requests. Please wait a moment and try again.');
+    }
+
     const body = await request.json();
 
     // Validate input
@@ -94,6 +105,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     if (!newBooking) {
       console.error('Database error creating booking');
+      throw error(500, 'Failed to create booking. Please try again or call 954-804-4747.');
     }
 
     // Build notification payload with server-derived values
@@ -140,3 +152,9 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(500, 'Failed to create booking. Please try again or call 954-804-4747.');
   }
 };
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const direct = request.headers.get('x-real-ip');
+  return xff?.split(',')[0]?.trim() || direct || 'unknown';
+}

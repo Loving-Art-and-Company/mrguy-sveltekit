@@ -2,6 +2,7 @@
   import { BUSINESS_INFO } from '$lib/data/services';
   import PhoneInput from '$lib/components/PhoneInput.svelte';
   import { Phone, Calendar, ChevronLeft, Check, Loader2, AlertCircle, PartyPopper } from 'lucide-svelte';
+  import { track } from '$lib/analytics';
 
   type Step = 'phone' | 'bookings' | 'date_select' | 'confirmation';
 
@@ -35,6 +36,7 @@
 
     isLoading = true;
     errorMessage = '';
+    track('reschedule_lookup_submitted');
 
     try {
       const response = await fetch('/api/bookings/lookup', {
@@ -50,9 +52,11 @@
 
       const data = await response.json();
       bookings = data.bookings || [];
+      track('reschedule_lookup_success', { booking_count: bookings.length });
       step = 'bookings';
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : 'Failed to look up bookings';
+      track('reschedule_lookup_failed');
     } finally {
       isLoading = false;
     }
@@ -63,6 +67,11 @@
     selectedBooking = booking;
     newDate = '';
     newTime = booking.time || '10:00';
+    track('reschedule_booking_selected', {
+      booking_id: booking.id,
+      service_name: booking.serviceName,
+      booking_status: booking.status,
+    });
     step = 'date_select';
   }
 
@@ -75,6 +84,12 @@
 
     isLoading = true;
     errorMessage = '';
+    track('reschedule_submit', {
+      booking_id: selectedBooking.id,
+      old_date: selectedBooking.date,
+      new_date: newDate,
+      new_time: newTime || undefined,
+    });
 
     try {
       const response = await fetch('/api/bookings/reschedule', {
@@ -94,9 +109,15 @@
 
       const data = await response.json();
       rescheduledBooking = data.booking;
+      track('reschedule_success', {
+        booking_id: data.booking?.id,
+        new_date: data.booking?.date,
+        new_time: data.booking?.time,
+      });
       step = 'confirmation';
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : 'Reschedule failed';
+      track('reschedule_failed', { booking_id: selectedBooking.id });
     } finally {
       isLoading = false;
     }
@@ -104,6 +125,7 @@
 
   // Reset flow
   function startOver() {
+    track('reschedule_flow_reset', { from_step: step });
     step = 'phone';
     phone = '';
     bookings = [];
@@ -116,6 +138,7 @@
 
   // Go back to bookings list
   function backToBookings() {
+    track('reschedule_back_clicked');
     step = 'bookings';
     selectedBooking = null;
     newDate = '';
@@ -552,19 +575,6 @@
 
   .btn.secondary:hover:not(:disabled) {
     background: #e5e7eb;
-  }
-
-  .btn.link {
-    background: transparent;
-    color: #6b7280;
-    font-weight: 400;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-  }
-
-  .btn.link:hover:not(:disabled) {
-    color: var(--text-primary);
-    text-decoration: underline;
   }
 
   .error {

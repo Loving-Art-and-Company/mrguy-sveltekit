@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { normalizePhone, normalizePhoneE164 } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -14,8 +15,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       throw error(503, 'OTP service not configured');
     }
 
-    // Normalize phone number to E.164 format
-    const normalizedPhone = normalizePhone(phone);
+    const normalizedPhone = normalizePhoneE164(phone);
+    const canonicalPhone = normalizePhone(phone);
+
+    if (!canonicalPhone) {
+      throw error(400, 'Invalid phone number');
+    }
 
     // Verify OTP via Twilio Verify
     const twilioUrl = `https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
@@ -41,7 +46,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     // Set a session cookie for the verified phone
     const sessionToken = generateSessionToken();
     cookies.set('client_session', JSON.stringify({
-      phone: normalizedPhone,
+      phone: canonicalPhone,
       token: sessionToken,
       expires: Date.now() + 30 * 60 * 1000, // 30 minutes
     }), {
@@ -61,17 +66,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     throw error(500, 'Verification failed');
   }
 };
-
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-  return `+${digits}`;
-}
 
 function generateSessionToken(): string {
   const array = new Uint8Array(32);

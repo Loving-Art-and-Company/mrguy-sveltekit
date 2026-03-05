@@ -8,6 +8,7 @@
   import Agentation from '$lib/components/Agentation.svelte';
   import { dev } from '$app/environment';
   import { trackPageview } from '$lib/analytics';
+  import { MRGUY_CANONICAL_ORIGIN } from '$lib/constants/site';
 
   let { children } = $props();
 
@@ -16,7 +17,7 @@
   const isAdmin = $derived(page.url.pathname.startsWith('/admin'));
   const showChrome = $derived(!isStandalone && !isAdmin);
 
-  const canonicalUrl = $derived(`https://mrguymobiledetail.com${page.url.pathname}`);
+  const canonicalUrl = $derived(`${MRGUY_CANONICAL_ORIGIN}${page.url.pathname}`);
 
   // Track pageviews on navigation (must be in component context)
   afterNavigate(({ to }) => {

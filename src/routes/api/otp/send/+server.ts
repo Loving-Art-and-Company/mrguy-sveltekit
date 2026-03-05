@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { normalizePhone, normalizePhoneE164 } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -14,8 +15,12 @@ export const POST: RequestHandler = async ({ request }) => {
       throw error(503, 'OTP service not configured');
     }
 
-    // Normalize phone number to E.164 format
-    const normalizedPhone = normalizePhone(phone);
+    const normalizedPhone = normalizePhoneE164(phone);
+    const canonicalPhone = normalizePhone(phone);
+
+    if (!canonicalPhone) {
+      throw error(400, 'Invalid phone number');
+    }
 
     // Send OTP via Twilio Verify
     const twilioUrl = `https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SERVICE_SID}/Verifications`;
@@ -47,17 +52,3 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(500, 'Failed to send verification code');
   }
 };
-
-function normalizePhone(phone: string): string {
-  // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-
-  // Add +1 for US numbers if not present
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-  return `+${digits}`;
-}

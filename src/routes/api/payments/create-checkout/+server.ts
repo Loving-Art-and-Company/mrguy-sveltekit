@@ -5,6 +5,7 @@ import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { isFirstTimeClient } from '$lib/server/promo';
 import { normalizePhone } from '$lib/server/phone';
+import { checkRateLimit } from '$lib/server/rateLimit';
 import type { RequestHandler } from './$types';
 
 // Lazy-init Stripe to avoid build-time errors
@@ -19,6 +20,16 @@ function getStripe(): Stripe {
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
+    const rateLimit = await checkRateLimit(
+      `rl:booking-checkout:${getClientIp(request)}`,
+      10,
+      60
+    );
+
+    if (!rateLimit.success) {
+      throw error(429, 'Too many requests. Please wait a moment and try again.');
+    }
+
     const data = await request.json();
     const { packageId, customerName, customerPhone, customerEmail, bookingData } = data;
 
@@ -82,3 +93,9 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(500, 'Failed to create checkout session');
   }
 };
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const direct = request.headers.get('x-real-ip');
+  return xff?.split(',')[0]?.trim() || direct || 'unknown';
+}

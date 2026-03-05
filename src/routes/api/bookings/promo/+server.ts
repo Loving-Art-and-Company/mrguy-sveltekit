@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { normalizePhone } from '$lib/server/phone';
+import { checkRateLimit } from '$lib/server/rateLimit';
 import { notifyOwnerOfBooking } from '$lib/server/email';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
@@ -33,6 +34,16 @@ const UPGRADE_PRICES: Record<string, { name: string; price: number }> = {
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
+    const rateLimit = await checkRateLimit(
+      `rl:booking-promo:${getClientIp(request)}`,
+      5,
+      60
+    );
+
+    if (!rateLimit.success) {
+      throw error(429, 'Too many requests. Please wait a moment and try again.');
+    }
+
     const body = await request.json();
 
     // Validate input
@@ -167,6 +178,12 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(500, 'Failed to create booking. Please try again or call 954-804-4747.');
   }
 };
+
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const direct = request.headers.get('x-real-ip');
+  return xff?.split(',')[0]?.trim() || direct || 'unknown';
+}
 
 /**
  * Send promo confirmation email to customer

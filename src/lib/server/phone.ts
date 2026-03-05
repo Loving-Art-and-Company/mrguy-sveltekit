@@ -23,3 +23,11 @@ export function normalizePhone(phone: string): string {
   }
   return digits;
 }
+
+/**
+ * Normalize phone number to US E.164 format for third-party providers.
+ */
+export function normalizePhoneE164(phone: string): string {
+  const base = normalizePhone(phone);
+  return base ? `+1${base}` : '';
+}

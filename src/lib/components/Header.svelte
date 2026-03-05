@@ -1,25 +1,33 @@
 <script lang="ts">
   import { BUSINESS_INFO } from '$lib/data/services';
   import { Phone, CalendarCheck } from 'lucide-svelte';
+  import { track } from '$lib/analytics';
 </script>
 
 <header class="header">
   <div class="header-content">
     <a href="/" class="logo">
-      <img src="/logo/mrguylogo-full-square.png" alt="Mr. Guy Detail Logo" class="logo-img" />
+      <img src="/logo/mrguylogo-full-square.png" alt="" class="logo-img" />
       <span class="logo-text">{BUSINESS_INFO.name}</span>
     </a>
 
     <nav class="nav">
-      <a href="tel:+19548044747" class="phone-link" aria-label="Call us at 954-804-4747">
+      <a
+        href="tel:+19548044747"
+        class="phone-link"
+        aria-label="Call us at 954-804-4747"
+        onclick={() => track('cta_clicked', { cta_type: 'phone_call', location: 'header' })}
+      >
         <Phone size={18} />
         <span class="phone-text">954-804-4747</span>
       </a>
-      <a href="/reschedule" class="nav-link">
+      <a href="/reschedule" class="nav-link" onclick={() => track('cta_clicked', { cta_type: 'my_booking', location: 'header' })}>
         <CalendarCheck size={16} />
         <span>My Booking</span>
       </a>
-      <a href="/#services" class="book-btn">Book Now</a>
+      <a href="/#services" class="book-btn" onclick={() => track('cta_clicked', { cta_type: 'book_now', location: 'header' })}>
+        Book Now
+      </a>
     </nav>
   </div>
 </header>

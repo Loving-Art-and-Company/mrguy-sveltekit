@@ -4,10 +4,28 @@ import { env } from '$env/dynamic/private';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
 import { normalizePhone } from '$lib/server/phone';
+import { SERVICE_PACKAGES } from '$lib/data/services';
+import { bookingSchema, type BookingData } from '$lib/types/booking';
+import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import type { BookingData } from '$lib/types/booking';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
+
+const checkoutMetadataSchema = z.object({
+  package_id: z.string().min(1),
+  customer_name: z.string().trim().optional(),
+  customer_phone: z.string().trim().optional(),
+  promo_code: z.string().trim().optional(),
+  booking_data: z.string().min(1),
+});
+
+interface ParsedCheckoutData {
+  bookingData: BookingData;
+  packageId: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  promoCode: string | null;
+}
 
 // Lazy-init Stripe to avoid build-time errors
 let _stripe: Stripe | null = null;
@@ -65,29 +83,32 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  const { metadata } = session;
-
-  if (!metadata) {
-    console.error('No metadata in checkout session');
+  const parsed = parseCheckoutMetadata(session);
+  if (!parsed) {
     return;
   }
 
-  const bookingData: BookingData = metadata.booking_data ? JSON.parse(metadata.booking_data) : null;
+  const { bookingData, packageId, customerName, customerPhone, promoCode } = parsed;
 
-  if (!bookingData) {
-    console.error('No booking data in session metadata');
+  if (session.payment_status !== 'paid') {
+    console.error('Checkout session completed without paid status:', session.id);
     return;
   }
 
-  // Normalize phone to canonical 10-digit format
-  const phone = normalizePhone(metadata.customer_phone || bookingData.contact.phone);
+  const phone = normalizePhone(customerPhone || bookingData.contact.phone);
+  if (!phone) {
+    console.error('Invalid phone number in checkout session metadata');
+    return;
+  }
 
-  // Get service package info
-  const pkg = (await import('$lib/data/services')).SERVICE_PACKAGES.find(
-    (p) => p.id === bookingData.service.packageId
-  );
+  // Get package info
+  const pkg = SERVICE_PACKAGES.find((p) => p.id === packageId);
+  if (!pkg) {
+    console.error('Invalid package in checkout metadata:', packageId);
+    return;
+  }
 
-  const clientName = metadata.customer_name || bookingData.contact.name;
+  const clientName = customerName || bookingData.contact.name;
 
   // Upsert client profile
   const client = await clientProfileRepo.upsert({
@@ -98,6 +119,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   if (!client) {
     console.error('Failed to create client profile');
+    return;
+  }
+
+  const amountCents = typeof session.amount_total === 'number' ? session.amount_total : null;
+  if (amountCents === null) {
+    console.error('Missing amount_total for checkout session:', session.id);
     return;
   }
 
@@ -116,13 +143,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     .join('\n');
 
   // Create booking
-  const promoCode = metadata.promo_code || null;
   const booking = await bookingRepo.insert({
     id: bookingId,
     brandId: MRGUY_BRAND_ID,
     clientName,
-    serviceName: pkg?.name || 'Unknown Package',
-    price: session.amount_total ? session.amount_total / 100 : 0,
+    serviceName: pkg.name,
+    price: amountCents / 100,
     date: bookingData.schedule.date,
     time: bookingData.schedule.time,
     contact: phone,
@@ -144,4 +170,40 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   // TODO: Send confirmation SMS via Twilio
 }
 
+function parseCheckoutMetadata(session: Stripe.Checkout.Session): ParsedCheckoutData | null {
+  const metadata = session.metadata;
+  const validatedMetadata = checkoutMetadataSchema.safeParse(metadata);
+  if (!validatedMetadata.success) {
+    console.error('Invalid checkout metadata format', validatedMetadata.error.flatten().fieldErrors);
+    return null;
+  }
 
+  let bookingData: BookingData;
+  try {
+    const parsed = JSON.parse(validatedMetadata.data.booking_data);
+    const validatedBookingData = bookingSchema.safeParse(parsed);
+
+    if (!validatedBookingData.success) {
+      console.error('Invalid booking_data format:', validatedBookingData.error.flatten().fieldErrors);
+      return null;
+    }
+
+    bookingData = validatedBookingData.data;
+  } catch (err) {
+    console.error('Unable to parse booking_data JSON:', err);
+    return null;
+  }
+
+  if (bookingData.service.packageId !== validatedMetadata.data.package_id) {
+    console.error('Package mismatch in checkout metadata');
+    return null;
+  }
+
+  return {
+    bookingData,
+    packageId: validatedMetadata.data.package_id,
+    customerName: validatedMetadata.data.customer_name || null,
+    customerPhone: validatedMetadata.data.customer_phone || null,
+    promoCode: validatedMetadata.data.promo_code || null,
+  };
+}

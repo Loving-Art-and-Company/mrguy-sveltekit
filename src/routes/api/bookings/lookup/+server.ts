@@ -1,9 +1,21 @@
 import { json, error } from '@sveltejs/kit';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
+import { checkRateLimit } from '$lib/server/rateLimit';
+import { normalizePhone } from '$lib/server/phone';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
+		const rateLimit = await checkRateLimit(
+			`rl:booking-lookup:${getClientIp(request)}`,
+			8,
+			60
+		);
+
+		if (!rateLimit.success) {
+			throw error(429, 'Too many requests. Please wait a moment and try again.');
+		}
+
 		const { phone } = await request.json();
 
 		if (!phone) {
@@ -60,15 +72,10 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 };
 
-function normalizePhone(phone: string): string {
-	const digits = phone.replace(/\D/g, '');
-	if (digits.length === 10) {
-		return `+1${digits}`;
-	}
-	if (digits.length === 11 && digits.startsWith('1')) {
-		return `+${digits}`;
-	}
-	return `+${digits}`;
+function getClientIp(request: Request): string {
+	const xff = request.headers.get('x-forwarded-for');
+	const direct = request.headers.get('x-real-ip');
+	return xff?.split(',')[0]?.trim() || direct || 'unknown';
 }
 
 function generateSessionToken(): string {
