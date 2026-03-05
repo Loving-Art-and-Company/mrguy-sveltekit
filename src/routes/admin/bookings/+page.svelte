@@ -148,14 +148,18 @@
 	}
 
 	function statusBg(s: string | null): string {
+		if (s === 'pending') return '#fef3c7';
 		if (s === 'confirmed') return '#dbeafe';
+		if (s === 'rescheduled') return '#e0e7ff';
 		if (s === 'completed') return '#d1fae5';
 		if (s === 'cancelled') return '#fee2e2';
 		return '#fef3c7';
 	}
 
 	function statusFg(s: string | null): string {
+		if (s === 'pending') return '#92400e';
 		if (s === 'confirmed') return '#1e40af';
+		if (s === 'rescheduled') return '#3730a3';
 		if (s === 'completed') return '#065f46';
 		if (s === 'cancelled') return '#991b1b';
 		return '#92400e';
@@ -254,9 +258,11 @@
 				<label for="sf" style="display: block; font-size: 0.6875rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem;">Status</label>
 				<select id="sf" bind:value={statusFilter} onchange={applyFilters} style="width: 100%; padding: 0.4375rem 0.625rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.8125rem; background: white; color: #374151;">
 					<option value="all">All</option>
+					<option value="pending">Pending</option>
 					<option value="confirmed">Confirmed</option>
-					<option value="completed">Completed</option>
+					<option value="rescheduled">Rescheduled</option>
 					<option value="cancelled">Cancelled</option>
+					<option value="completed">Completed</option>
 				</select>
 			</div>
 			<div style="min-width: 130px;">

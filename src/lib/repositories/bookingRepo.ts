@@ -201,7 +201,7 @@ export async function update(
   id: string,
   data: Partial<Pick<BookingRow, 'date' | 'time' | 'status' | 'paymentStatus' | 'notes'>>
 ): Promise<
-  Pick<BookingRow, 'id' | 'serviceName' | 'price' | 'date' | 'time' | 'status'> | null
+  Pick<BookingRow, 'id' | 'serviceName' | 'price' | 'date' | 'time' | 'status' | 'paymentStatus'> | null
 > {
   const rows = await db
     .update(bookings)
@@ -214,6 +214,7 @@ export async function update(
       date: bookings.date,
       time: bookings.time,
       status: bookings.status,
+      paymentStatus: bookings.paymentStatus,
     });
   return rows[0] ?? null;
 }

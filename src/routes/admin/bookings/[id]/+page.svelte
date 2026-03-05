@@ -1,460 +1,272 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import type { PageData, ActionData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// Derive booking from props so it updates reactively if data changes
 	const booking = $derived(data.booking);
 
-	// Parse notes field for vehicle and address info
-	function parseNotes(notes: string | null): { vehicle?: string; address?: string; extra?: string } {
-		if (!notes) return {};
-
-		const result: { vehicle?: string; address?: string; extra?: string } = {};
-
-		// Try to extract vehicle info (common patterns)
-		const vehicleMatch = notes.match(/vehicle[:\s]+([^\n]+)/i) ||
-			notes.match(/((?:\d{4}\s+)?\w+\s+\w+(?:\s+\w+)?)/i);
-		if (vehicleMatch) {
-			result.vehicle = vehicleMatch[1].trim();
-		}
-
-		// Try to extract address (common patterns)
-		const addressMatch = notes.match(/address[:\s]+([^\n]+)/i) ||
-			notes.match(/(\d+[^,\n]+,\s*[^,\n]+,\s*(?:FL|Florida)[^,\n]*)/i);
-		if (addressMatch) {
-			result.address = addressMatch[1].trim();
-		}
-
-		// Store any remaining notes
-		let extra = notes;
-		if (result.vehicle) extra = extra.replace(vehicleMatch![0], '');
-		if (result.address) extra = extra.replace(addressMatch![0], '');
-		extra = extra.trim();
-		if (extra && extra !== notes) {
-			result.extra = extra;
-		} else if (!result.vehicle && !result.address) {
-			result.extra = notes;
-		}
-
-		return result;
-	}
-
-	const parsedNotes = $derived(parseNotes(booking.notes));
-
-	// Format price as currency
 	function formatPrice(price: number): string {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD',
-		}).format(price);
+		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 	}
 
-	// Format date for display
 	function formatDate(dateStr: string): string {
 		return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric',
-			year: 'numeric',
+			weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
 		});
 	}
 
-	// Format timestamp
+	function formatTime(t: string | null): string {
+		if (!t) return 'TBD';
+		const [h, m] = t.split(':').map(Number);
+		const period = h >= 12 ? 'PM' : 'AM';
+		const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+		return `${hour}:${String(m).padStart(2, '0')} ${period}`;
+	}
+
 	function formatTimestamp(ts: Date | string | null): string {
 		if (!ts) return 'N/A';
 		const d = ts instanceof Date ? ts : new Date(ts);
-		return d.toLocaleString('en-US', {
-			dateStyle: 'medium',
-			timeStyle: 'short',
-		});
+		return d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 	}
 
-	// Get status badge class
-	function getStatusClass(status: string | null): string {
-		switch (status) {
-			case 'confirmed':
-				return 'badge-blue';
-			case 'completed':
-				return 'badge-green';
-			case 'cancelled':
-				return 'badge-red';
-			default:
-				return 'badge-gray';
-		}
+	// Parse address from notes
+	function parseAddress(notes: string | null): string | null {
+		if (!notes) return null;
+		const match = notes.match(/Address:\s*([^\n]+)/i);
+		return match ? match[1].trim() : null;
 	}
 
-	// Get payment status badge class
-	function getPaymentStatusClass(status: string | null): string {
-		switch (status) {
-			case 'paid':
-				return 'badge-green';
-			case 'pending':
-				return 'badge-yellow';
-			case 'refunded':
-				return 'badge-red';
-			default:
-				return 'badge-gray';
-		}
+	const address = $derived(parseAddress(booking.notes));
+
+	// Status styling
+	const statuses = [
+		{ value: 'pending', label: 'Pending', bg: '#fef3c7', fg: '#92400e', ring: '#f59e0b' },
+		{ value: 'confirmed', label: 'Confirmed', bg: '#dbeafe', fg: '#1e40af', ring: '#3b82f6' },
+		{ value: 'rescheduled', label: 'Rescheduled', bg: '#e0e7ff', fg: '#3730a3', ring: '#6366f1' },
+		{ value: 'cancelled', label: 'Cancelled', bg: '#fee2e2', fg: '#991b1b', ring: '#ef4444' },
+		{ value: 'completed', label: 'Completed', bg: '#d1fae5', fg: '#065f46', ring: '#10b981' },
+	];
+
+	const paymentStatuses = [
+		{ value: 'unpaid', label: 'Unpaid', bg: '#f3f4f6', fg: '#4b5563' },
+		{ value: 'paid', label: 'Paid', bg: '#d1fae5', fg: '#065f46' },
+		{ value: 'refunded', label: 'Refunded', bg: '#fee2e2', fg: '#991b1b' },
+	];
+
+	function getStatus(s: string | null) {
+		return statuses.find(st => st.value === s) ?? statuses[0];
 	}
+
+	function getPaymentStatus(s: string | null) {
+		return paymentStatuses.find(ps => ps.value === s) ?? paymentStatuses[0];
+	}
+
+	let updating = $state(false);
+
+	const cardStyle = 'background: white; padding: 1.25rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);';
+	const labelStyle = 'font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 0.25rem;';
+	const valueStyle = 'font-size: 0.9375rem; color: #1f2937;';
 </script>
 
 <svelte:head>
 	<title>Booking {booking.id} - Mr. Guy Admin</title>
 </svelte:head>
 
-<div class="detail-page">
-	<!-- Back Button -->
-	<a href="/admin/bookings" class="back-link">
-		<span class="back-arrow">&larr;</span> Back to Bookings
+<div style="max-width: 900px;">
+	<!-- Back -->
+	<a href="/admin/bookings" style="display: inline-flex; align-items: center; gap: 0.375rem; color: #6b7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 1rem;">
+		&#8592; Back to Bookings
 	</a>
 
 	<!-- Header -->
-	<header class="detail-header">
-		<div class="header-info">
-			<h1>Booking #{booking.id}</h1>
-			<p class="created-at">Created {formatTimestamp(booking.createdAt)}</p>
+	<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+		<div>
+			<h1 style="margin: 0 0 0.25rem; font-size: 1.5rem; color: #1a1a2e;">
+				{booking.clientName}
+			</h1>
+			<p style="margin: 0; color: #9ca3af; font-size: 0.8125rem;">
+				{booking.id} &middot; Created {formatTimestamp(booking.createdAt)}
+			</p>
 		</div>
-		<div class="header-badges">
-			<span class="status-badge {getStatusClass(booking.status)}">
+		<div style="display: flex; gap: 0.5rem;">
+			<span style="display: inline-block; padding: 0.3125rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: capitalize; background: {getStatus(booking.status).bg}; color: {getStatus(booking.status).fg};">
 				{booking.status || 'pending'}
 			</span>
-			<span class="status-badge {getPaymentStatusClass(booking.paymentStatus)}">
+			<span style="display: inline-block; padding: 0.3125rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: capitalize; background: {getPaymentStatus(booking.paymentStatus).bg}; color: {getPaymentStatus(booking.paymentStatus).fg};">
 				{booking.paymentStatus || 'unpaid'}
 			</span>
 		</div>
-	</header>
+	</div>
 
-	<div class="detail-grid">
-		<!-- Appointment Details -->
-		<section class="detail-card">
-			<h2>Appointment Details</h2>
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-label">Date</span>
-					<span class="info-value">{formatDate(booking.date)}</span>
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+		<!-- Appointment -->
+		<div style={cardStyle}>
+			<h2 style="margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; color: #374151; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6;">Appointment</h2>
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+				<div>
+					<div style={labelStyle}>Date</div>
+					<div style="{valueStyle} font-weight: 600;">{formatDate(booking.date)}</div>
 				</div>
-				<div class="info-item">
-					<span class="info-label">Time</span>
-					<span class="info-value">{booking.time || 'TBD'}</span>
+				<div>
+					<div style={labelStyle}>Time</div>
+					<div style={valueStyle}>{formatTime(booking.time)}</div>
 				</div>
-				<div class="info-item">
-					<span class="info-label">Service</span>
-					<span class="info-value">{booking.serviceName}</span>
+				<div>
+					<div style={labelStyle}>Service</div>
+					<div style={valueStyle}>{booking.serviceName}</div>
 				</div>
-				<div class="info-item">
-					<span class="info-label">Price</span>
-					<span class="info-value price">{formatPrice(booking.price)}</span>
+				<div>
+					<div style={labelStyle}>Price</div>
+					<div style="{valueStyle} font-weight: 700; color: #059669; font-size: 1.125rem;">{formatPrice(booking.price)}</div>
 				</div>
 			</div>
-		</section>
+		</div>
 
-		<!-- Client Information -->
-		<section class="detail-card">
-			<h2>Client Information</h2>
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-label">Name</span>
-					<span class="info-value">{booking.clientName}</span>
+		<!-- Client -->
+		<div style={cardStyle}>
+			<h2 style="margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; color: #374151; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6;">Client</h2>
+			<div style="display: grid; gap: 1rem;">
+				<div>
+					<div style={labelStyle}>Name</div>
+					<div style="{valueStyle} font-weight: 600;">{booking.clientName}</div>
 				</div>
-				<div class="info-item">
-					<span class="info-label">Phone</span>
-					<span class="info-value">
-						<a href="tel:{booking.contact}" class="contact-link">{booking.contact}</a>
-					</span>
+				<div>
+					<div style={labelStyle}>Phone</div>
+					<div style={valueStyle}>
+						<a href="tel:{booking.contact}" style="color: #e94560; text-decoration: none; font-weight: 500;">{booking.contact}</a>
+					</div>
 				</div>
-			</div>
-		</section>
-
-		<!-- Vehicle & Location -->
-		<section class="detail-card">
-			<h2>Vehicle & Location</h2>
-			<div class="info-grid">
-				{#if parsedNotes.vehicle}
-					<div class="info-item">
-						<span class="info-label">Vehicle</span>
-						<span class="info-value">{parsedNotes.vehicle}</span>
-					</div>
-				{/if}
-				{#if parsedNotes.address}
-					<div class="info-item full-width">
-						<span class="info-label">Address</span>
-						<span class="info-value">{parsedNotes.address}</span>
-					</div>
-				{/if}
-				{#if !parsedNotes.vehicle && !parsedNotes.address}
-					<div class="info-item full-width">
-						<span class="info-value muted">No vehicle or location info available</span>
+				{#if address}
+					<div>
+						<div style={labelStyle}>Address</div>
+						<div style={valueStyle}>{address}</div>
 					</div>
 				{/if}
 			</div>
-		</section>
+		</div>
 
-		<!-- Payment Information -->
-		<section class="detail-card">
-			<h2>Payment Information</h2>
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-label">Payment Method</span>
-					<span class="info-value">{booking.paymentMethod || 'N/A'}</span>
-				</div>
-				<div class="info-item">
-					<span class="info-label">Payment Status</span>
-					<span class="status-badge {getPaymentStatusClass(booking.paymentStatus)}">
-						{booking.paymentStatus || 'unpaid'}
-					</span>
-				</div>
-				{#if booking.transactionId}
-					<div class="info-item full-width">
-						<span class="info-label">Transaction ID</span>
-						<span class="info-value mono">{booking.transactionId}</span>
+		<!-- Status Controls -->
+		<div style="{cardStyle} grid-column: 1 / -1;">
+			<h2 style="margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; color: #374151; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6;">Update Status</h2>
+
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+				<!-- Booking Status -->
+				<div>
+					<div style="{labelStyle} margin-bottom: 0.625rem;">Booking Status</div>
+					<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+						{#each statuses as s}
+							{@const isActive = booking.status === s.value || (!booking.status && s.value === 'pending')}
+							<form
+								method="POST"
+								action="?/updateStatus"
+								use:enhance={() => {
+									updating = true;
+									return async ({ update }) => {
+										updating = false;
+										await update();
+									};
+								}}
+							>
+								<input type="hidden" name="status" value={s.value} />
+								<button
+									type="submit"
+									disabled={isActive || updating}
+									style="
+										padding: 0.4375rem 0.875rem;
+										border-radius: 0.375rem;
+										font-size: 0.8125rem;
+										font-weight: 600;
+										cursor: {isActive ? 'default' : 'pointer'};
+										border: 2px solid {isActive ? s.ring : 'transparent'};
+										background: {isActive ? s.bg : '#f9fafb'};
+										color: {isActive ? s.fg : '#6b7280'};
+										opacity: {updating && !isActive ? '0.5' : '1'};
+										transition: all 0.15s;
+									"
+								>{s.label}</button>
+							</form>
+						{/each}
 					</div>
-				{/if}
-			</div>
-		</section>
-
-		<!-- Additional Notes -->
-		{#if parsedNotes.extra || booking.notes}
-			<section class="detail-card full-width">
-				<h2>Notes</h2>
-				<div class="notes-content">
-					{parsedNotes.extra || booking.notes}
 				</div>
-			</section>
+
+				<!-- Payment Status -->
+				<div>
+					<div style="{labelStyle} margin-bottom: 0.625rem;">Payment Status</div>
+					<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+						{#each paymentStatuses as ps}
+							{@const isActive = booking.paymentStatus === ps.value || (!booking.paymentStatus && ps.value === 'unpaid')}
+							<form
+								method="POST"
+								action="?/updatePaymentStatus"
+								use:enhance={() => {
+									updating = true;
+									return async ({ update }) => {
+										updating = false;
+										await update();
+									};
+								}}
+							>
+								<input type="hidden" name="paymentStatus" value={ps.value} />
+								<button
+									type="submit"
+									disabled={isActive || updating}
+									style="
+										padding: 0.4375rem 0.875rem;
+										border-radius: 0.375rem;
+										font-size: 0.8125rem;
+										font-weight: 600;
+										cursor: {isActive ? 'default' : 'pointer'};
+										border: 2px solid {isActive ? (ps.value === 'paid' ? '#10b981' : ps.value === 'refunded' ? '#ef4444' : '#9ca3af') : 'transparent'};
+										background: {isActive ? ps.bg : '#f9fafb'};
+										color: {isActive ? ps.fg : '#6b7280'};
+										opacity: {updating && !isActive ? '0.5' : '1'};
+										transition: all 0.15s;
+									"
+								>{ps.label}</button>
+							</form>
+						{/each}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Notes -->
+		{#if booking.notes}
+			<div style="{cardStyle} grid-column: 1 / -1;">
+				<h2 style="margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; color: #374151; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6;">Notes</h2>
+				<div style="background: #f9fafb; padding: 0.875rem; border-radius: 0.5rem; font-size: 0.875rem; color: #4b5563; white-space: pre-wrap; line-height: 1.6;">
+					{booking.notes}
+				</div>
+			</div>
 		{/if}
 
-		<!-- System Info -->
-		<section class="detail-card full-width system-info">
-			<h2>System Information</h2>
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-label">Booking ID</span>
-					<span class="info-value mono">{booking.id}</span>
+		<!-- Payment Info -->
+		<div style="{cardStyle} grid-column: 1 / -1; background: #fafafa;">
+			<h2 style="margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; color: #9ca3af; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6;">Payment & System</h2>
+			<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+				<div>
+					<div style={labelStyle}>Payment Method</div>
+					<div style={valueStyle}>{booking.paymentMethod || 'N/A'}</div>
 				</div>
-				<div class="info-item">
-					<span class="info-label">Created At</span>
-					<span class="info-value">{formatTimestamp(booking.createdAt)}</span>
-				</div>
-				<div class="info-item">
-					<span class="info-label">Reminder Sent</span>
-					<span class="info-value">{booking.reminderSent ? 'Yes' : 'No'}</span>
+				{#if booking.transactionId}
+					<div>
+						<div style={labelStyle}>Transaction ID</div>
+						<div style="font-family: monospace; font-size: 0.8125rem; color: #374151; background: #e5e7eb; padding: 0.25rem 0.5rem; border-radius: 0.25rem; word-break: break-all;">{booking.transactionId}</div>
+					</div>
+				{/if}
+				{#if booking.promoCode}
+					<div>
+						<div style={labelStyle}>Promo Code</div>
+						<div style="{valueStyle} font-weight: 600; color: #7c3aed;">{booking.promoCode}</div>
+					</div>
+				{/if}
+				<div>
+					<div style={labelStyle}>Reminder Sent</div>
+					<div style={valueStyle}>{booking.reminderSent ? 'Yes' : 'No'}</div>
 				</div>
 			</div>
-		</section>
+		</div>
 	</div>
 </div>
-
-<style>
-	.detail-page {
-		max-width: 1000px;
-	}
-
-	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: #6b7280;
-		text-decoration: none;
-		font-size: 0.875rem;
-		margin-bottom: 1.5rem;
-		transition: color 0.2s;
-	}
-
-	.back-link:hover {
-		color: #e94560;
-	}
-
-	.back-arrow {
-		font-size: 1.2em;
-	}
-
-	/* Header */
-	.detail-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.header-info h1 {
-		margin: 0 0 0.25rem 0;
-		font-size: 1.75rem;
-		color: #1a1a2e;
-	}
-
-	.created-at {
-		margin: 0;
-		color: #6b7280;
-		font-size: 0.875rem;
-	}
-
-	.header-badges {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	/* Grid Layout */
-	.detail-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1.5rem;
-	}
-
-	.detail-card {
-		background: white;
-		padding: 1.5rem;
-		border-radius: 0.75rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	}
-
-	.detail-card.full-width {
-		grid-column: span 2;
-	}
-
-	.detail-card h2 {
-		margin: 0 0 1rem 0;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #374151;
-		padding-bottom: 0.75rem;
-		border-bottom: 1px solid #e5e7eb;
-	}
-
-	.info-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1rem;
-	}
-
-	.info-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.info-item.full-width {
-		grid-column: span 2;
-	}
-
-	.info-label {
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #6b7280;
-		font-weight: 500;
-	}
-
-	.info-value {
-		font-size: 0.9375rem;
-		color: #1f2937;
-	}
-
-	.info-value.price {
-		font-weight: 600;
-		color: #059669;
-		font-size: 1.125rem;
-	}
-
-	.info-value.mono {
-		font-family: monospace;
-		font-size: 0.8125rem;
-		background: #f3f4f6;
-		padding: 0.25rem 0.5rem;
-		border-radius: 0.25rem;
-		word-break: break-all;
-	}
-
-	.info-value.muted {
-		color: #9ca3af;
-		font-style: italic;
-	}
-
-	.contact-link {
-		color: #e94560;
-		text-decoration: none;
-	}
-
-	.contact-link:hover {
-		text-decoration: underline;
-	}
-
-	/* Notes */
-	.notes-content {
-		background: #f9fafb;
-		padding: 1rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		color: #4b5563;
-		white-space: pre-wrap;
-		line-height: 1.6;
-	}
-
-	/* Status Badges */
-	.status-badge {
-		display: inline-block;
-		padding: 0.25rem 0.75rem;
-		border-radius: 9999px;
-		font-size: 0.75rem;
-		font-weight: 500;
-		text-transform: capitalize;
-	}
-
-	.badge-blue {
-		background: #dbeafe;
-		color: #1e40af;
-	}
-
-	.badge-green {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.badge-red {
-		background: #fee2e2;
-		color: #991b1b;
-	}
-
-	.badge-yellow {
-		background: #fef3c7;
-		color: #92400e;
-	}
-
-	.badge-gray {
-		background: #f3f4f6;
-		color: #4b5563;
-	}
-
-	/* System Info */
-	.system-info {
-		background: #fafafa;
-	}
-
-	.system-info h2 {
-		color: #6b7280;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
-		.detail-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.detail-card.full-width {
-			grid-column: span 1;
-		}
-
-		.info-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.info-item.full-width {
-			grid-column: span 1;
-		}
-
-		.detail-header {
-			flex-direction: column;
-		}
-	}
-</style>
