@@ -27,7 +27,7 @@ export async function sendEmail({ to, subject, html, cc }: EmailParams): Promise
     const resend = new Resend(apiKey);
     
     const { data, error } = await resend.emails.send({
-      from: 'Mr. Guy Detail <bookings@mrguydetail.com>',
+      from: 'Mr. Guy Detail <bookings@mrguymobiledetail.com>',
       to,
       subject,
       html,
