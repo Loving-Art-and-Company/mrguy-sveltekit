@@ -196,26 +196,16 @@ export async function insert(data: BookingInsert): Promise<BookingRow | null> {
   return rows[0] ?? null;
 }
 
-/** Update a booking by ID */
+/** Update a booking by ID (any editable field) */
 export async function update(
   id: string,
-  data: Partial<Pick<BookingRow, 'date' | 'time' | 'status' | 'paymentStatus' | 'notes'>>
-): Promise<
-  Pick<BookingRow, 'id' | 'serviceName' | 'price' | 'date' | 'time' | 'status' | 'paymentStatus'> | null
-> {
+  data: Partial<Pick<BookingRow, 'clientName' | 'serviceName' | 'price' | 'date' | 'time' | 'contact' | 'status' | 'paymentStatus' | 'notes'>>
+): Promise<BookingRow | null> {
   const rows = await db
     .update(bookings)
     .set(data)
     .where(eq(bookings.id, id))
-    .returning({
-      id: bookings.id,
-      serviceName: bookings.serviceName,
-      price: bookings.price,
-      date: bookings.date,
-      time: bookings.time,
-      status: bookings.status,
-      paymentStatus: bookings.paymentStatus,
-    });
+    .returning();
   return rows[0] ?? null;
 }
 

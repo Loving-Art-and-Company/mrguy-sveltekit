@@ -116,18 +116,6 @@
 		goto(`/admin/bookings?from=${dateStr}&to=${dateStr}&month=${data.currentMonth}`);
 	}
 
-	function getBookingCount(dateStr: string): number {
-		return (data.calendarByDate[dateStr] ?? []).length;
-	}
-
-	function hasConfirmed(dateStr: string): boolean {
-		return (data.calendarByDate[dateStr] ?? []).some(b => b.status === 'confirmed' || b.status === 'pending');
-	}
-
-	function hasCompleted(dateStr: string): boolean {
-		return (data.calendarByDate[dateStr] ?? []).some(b => b.status === 'completed');
-	}
-
 	// ─── Table helpers ──────────────────────
 	function formatPrice(price: number): string {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
@@ -207,13 +195,13 @@
 		<!-- Days grid -->
 		<div style="display: grid; grid-template-columns: repeat(7, 1fr);">
 			{#each calendarDays as day}
-				{@const count = getBookingCount(day.dateStr)}
+				{@const dayBookings = data.calendarByDate[day.dateStr] ?? []}
 				{@const isSelected = data.filters.from === day.dateStr && data.filters.to === day.dateStr}
 				<button
 					onclick={() => selectDay(day.dateStr)}
 					style="
-						min-height: 64px;
-						padding: 0.375rem;
+						min-height: 88px;
+						padding: 0.25rem;
 						border: none;
 						border-right: 1px solid #f3f4f6;
 						border-bottom: 1px solid #f3f4f6;
@@ -221,30 +209,43 @@
 						cursor: pointer;
 						display: flex;
 						flex-direction: column;
-						align-items: flex-start;
+						align-items: stretch;
 						text-align: left;
 						position: relative;
+						gap: 1px;
+						overflow: hidden;
 						{isSelected ? 'box-shadow: inset 0 0 0 2px #e94560;' : ''}
 						{day.isToday ? 'box-shadow: inset 0 0 0 2px #f59e0b;' : ''}
 					"
 				>
 					<span style="
-						font-size: 0.8125rem;
+						font-size: 0.75rem;
 						font-weight: {day.isToday ? '800' : '500'};
 						color: {!day.isCurrent ? '#c4c4c4' : day.isToday ? '#92400e' : '#374151'};
+						margin-bottom: 1px;
 					">{day.day}</span>
-					{#if count > 0}
-						<div style="margin-top: auto; display: flex; gap: 3px; align-items: center;">
-							<span style="
-								font-size: 0.625rem;
-								font-weight: 700;
-								color: white;
-								background: {hasConfirmed(day.dateStr) ? '#3b82f6' : hasCompleted(day.dateStr) ? '#10b981' : '#6b7280'};
-								padding: 0.0625rem 0.3125rem;
-								border-radius: 0.25rem;
-								line-height: 1.4;
-							">{count}</span>
-						</div>
+					{#each dayBookings.slice(0, 3) as b}
+						<div style="
+							background: {statusBg(b.status)};
+							color: {statusFg(b.status)};
+							font-size: 0.5625rem;
+							font-weight: 600;
+							padding: 1px 3px;
+							border-radius: 2px;
+							white-space: nowrap;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							line-height: 1.4;
+							border-left: 2px solid {statusFg(b.status)};
+						">{formatTime(b.time)} {b.clientName}</div>
+					{/each}
+					{#if dayBookings.length > 3}
+						<div style="
+							font-size: 0.5rem;
+							color: #6b7280;
+							font-weight: 600;
+							padding: 0 3px;
+						">+{dayBookings.length - 3} more</div>
 					{/if}
 				</button>
 			{/each}
