@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { json, error, isHttpError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { env } from '$env/dynamic/private';
@@ -148,6 +148,9 @@ export const POST: RequestHandler = async ({ request }) => {
     });
 
   } catch (err) {
+    // Re-throw SvelteKit HttpErrors (429, 400, etc.) as-is
+    if (isHttpError(err)) throw err;
+
     console.error('Booking creation error:', err);
     throw error(500, 'Failed to create booking. Please try again or call 954-804-4747.');
   }

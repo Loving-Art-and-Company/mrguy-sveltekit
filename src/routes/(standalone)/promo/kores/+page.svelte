@@ -75,7 +75,7 @@
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to create booking');
+        throw new Error(data.message || 'Failed to create booking. Please try again or call 954-804-4747.');
       }
 
       success = true;
