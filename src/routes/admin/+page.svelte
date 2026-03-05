@@ -69,11 +69,7 @@
 			</a>
 			<a href="/admin/bookings" class="quick-link">
 				<span class="ql-icon">📅</span>
-				View All Bookings
-			</a>
-			<a href="/admin/calendar" class="quick-link">
-				<span class="ql-icon">🗓️</span>
-				Calendar View
+				Bookings & Calendar
 			</a>
 			<a href="/admin/revenue" class="quick-link">
 				<span class="ql-icon">📊</span>
