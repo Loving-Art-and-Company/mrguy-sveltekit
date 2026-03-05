@@ -1,12 +1,7 @@
 // src/lib/server/rateLimit.ts
-// Upstash Redis rate limiting with circuit breaker (fail-closed)
+// Upstash Redis rate limiting — fail-open (allow on Redis errors)
 
 import { redis } from './redis';
-
-let redisFailureCount = 0;
-let lastRedisFailure = 0;
-const FAILURE_THRESHOLD = 5;
-const CIRCUIT_OPEN_DURATION = 60000; // 1 minute
 
 export interface RateLimitResult {
   success: boolean;
@@ -16,25 +11,16 @@ export interface RateLimitResult {
 
 /**
  * Check rate limit for a given key.
- * FAIL-CLOSED: if Redis is unavailable, requests are DENIED.
+ * FAIL-OPEN: if Redis is unavailable, requests are ALLOWED.
+ * For a low-traffic booking form, blocking real customers is worse than
+ * missing rate limiting during a Redis outage.
  */
 export async function checkRateLimit(
   key: string,
   limit = 10,
   window = 60,
-  timeout = 500
+  timeout = 1500
 ): Promise<RateLimitResult> {
-  const now = Date.now();
-
-  // Check circuit breaker
-  if (
-    redisFailureCount >= FAILURE_THRESHOLD &&
-    now - lastRedisFailure < CIRCUIT_OPEN_DURATION
-  ) {
-    console.warn('[rateLimit] Circuit breaker OPEN — denying request');
-    return { success: false, limit: 0, remaining: 0 };
-  }
-
   try {
     const pipeline = redis.pipeline();
     pipeline.incr(key);
@@ -56,19 +42,13 @@ export async function checkRateLimit(
     const success = current <= limit;
     const remaining = Math.max(0, limit - current);
 
-    // Reset failure count on success
-    redisFailureCount = 0;
-
     if (!success) {
       console.warn(`[rateLimit] Rate limit exceeded: ${key} (${current}/${limit})`);
     }
 
     return { success, limit, remaining };
   } catch (err) {
-    redisFailureCount++;
-    lastRedisFailure = now;
-
-    console.error('[rateLimit] Redis error — denying request (fail-closed):', err);
-    return { success: false, limit: 0, remaining: 0 };
+    console.warn('[rateLimit] Redis error — allowing request (fail-open):', err);
+    return { success: true, limit, remaining: limit };
   }
 }
