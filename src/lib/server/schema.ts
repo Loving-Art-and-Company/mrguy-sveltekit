@@ -98,6 +98,24 @@ export const adminUsers = pgTable(
 );
 
 // ============================================================
+// GOOGLE TOKENS (server-side storage for Calendar sync)
+// ============================================================
+
+export const googleTokens = pgTable('google_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' })
+    .unique(),
+  refreshToken: text('refresh_token').notNull(),
+  accessToken: text('access_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  email: text('email'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================================
 // BOOKINGS
 // Note: Original Supabase schema uses mixed camelCase/snake_case.
 // Drizzle maps camelCase properties to the ACTUAL column names.

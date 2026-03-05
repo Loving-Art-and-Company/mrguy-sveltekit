@@ -142,6 +142,7 @@
 	<!-- Results Summary -->
 	<div class="results-summary">
 		<span>{data.bookings.length} booking{data.bookings.length !== 1 ? 's' : ''} found</span>
+		<a href="/admin/bookings/new" class="add-booking-btn">+ Add Booking</a>
 	</div>
 
 	<!-- Bookings Table -->
@@ -303,6 +304,24 @@
 		margin-bottom: 1rem;
 		color: #6b7280;
 		font-size: 0.875rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.add-booking-btn {
+		padding: 0.5rem 1rem;
+		background: #e94560;
+		color: white;
+		border-radius: 0.375rem;
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.875rem;
+		transition: background 0.2s;
+	}
+
+	.add-booking-btn:hover {
+		background: #d63651;
 	}
 
 	/* Table */

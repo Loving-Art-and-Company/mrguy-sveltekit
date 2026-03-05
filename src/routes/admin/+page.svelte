@@ -63,6 +63,10 @@
 	<section class="quick-links">
 		<h3>Quick Actions</h3>
 		<div class="links-grid">
+			<a href="/admin/bookings/new" class="quick-link quick-link-primary">
+				<span class="ql-icon">+</span>
+				Add Booking
+			</a>
 			<a href="/admin/bookings" class="quick-link">
 				<span class="ql-icon">📅</span>
 				View All Bookings
@@ -189,6 +193,22 @@
 
 	.quick-link:hover {
 		background: #f3f4f6;
+	}
+
+	.quick-link-primary {
+		background: #e9456010;
+		color: #e94560;
+		border: 1px dashed #e9456040;
+	}
+
+	.quick-link-primary:hover {
+		background: #e9456020;
+	}
+
+	.quick-link-primary .ql-icon {
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1;
 	}
 
 	.ql-icon {

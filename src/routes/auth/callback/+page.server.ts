@@ -2,8 +2,9 @@ import { redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { exchangeCodeForTokens, getGoogleUserInfo } from '$lib/google/client';
 import { calculateExpiresAt } from '$lib/google/token-refresh';
+import { storeGoogleTokens } from '$lib/server/calendar';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
 	const errorParam = url.searchParams.get('error');
@@ -28,6 +29,17 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		// Calculate expiry timestamp
 		const expiresAt = calculateExpiresAt(tokenResponse.expires_in);
+
+		// Store refresh token server-side for Calendar sync
+		if (tokenResponse.refresh_token && locals.user) {
+			await storeGoogleTokens(
+				locals.user.id,
+				tokenResponse.refresh_token,
+				tokenResponse.access_token,
+				tokenResponse.expires_in,
+				userInfo.email
+			).catch((err) => console.error('[oauth] Failed to store tokens server-side:', err));
+		}
 
 		// Decode return URL from state
 		const returnTo = state ? decodeURIComponent(state) : '/admin';

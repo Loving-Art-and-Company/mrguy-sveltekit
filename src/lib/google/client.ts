@@ -7,8 +7,7 @@ function getEnv(key: string): string {
 }
 
 /**
- * Google OAuth scopes - minimal set for Drive, Sheets, and Docs access
- * Removed Calendar and Chat scopes per plan requirements
+ * Google OAuth scopes - Drive, Sheets, Docs, and Calendar access
  */
 export const GOOGLE_SCOPES = [
 	'openid',
@@ -16,7 +15,8 @@ export const GOOGLE_SCOPES = [
 	'profile',
 	'https://www.googleapis.com/auth/drive',
 	'https://www.googleapis.com/auth/spreadsheets',
-	'https://www.googleapis.com/auth/documents'
+	'https://www.googleapis.com/auth/documents',
+	'https://www.googleapis.com/auth/calendar'
 ].join(' ');
 
 /**

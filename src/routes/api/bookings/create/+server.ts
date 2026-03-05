@@ -9,6 +9,7 @@ import { normalizePhone } from '$lib/server/phone';
 import { checkRateLimit } from '$lib/server/rateLimit';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
+import { createCalendarEvent } from '$lib/server/calendar';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
@@ -114,12 +115,19 @@ export const POST: RequestHandler = async ({ request }) => {
       service: { id: pkg.id, name: pkg.name, price: finalPrice },
     };
 
-    // Send email + SMS notifications (don't block on these)
+    // Send email + SMS notifications + calendar sync (don't block on these)
     const notificationPromises = [
       notifyOwnerOfBooking(notificationPayload),
       sendCustomerConfirmation(notificationPayload),
       notifyOwnerOfBookingSMS(notificationPayload),
       sendCustomerConfirmationSMS(notificationPayload),
+      createCalendarEvent({
+        id: bookingId,
+        service: { name: pkg.name, price: finalPrice },
+        schedule: booking.schedule,
+        address: booking.address,
+        contact: { name: booking.contact.name, phone: cleanPhone, email: booking.contact.email || undefined },
+      }),
     ];
 
     // Fire and forget - don't wait for notifications to complete
