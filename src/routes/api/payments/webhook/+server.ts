@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/private';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
 import { normalizePhone } from '$lib/server/phone';
+import { getStripe } from '$lib/server/stripe';
 import { SERVICE_PACKAGES } from '$lib/data/services';
 import { bookingSchema, type BookingData } from '$lib/types/booking';
 import { z } from 'zod';
@@ -19,22 +20,17 @@ const checkoutMetadataSchema = z.object({
   booking_data: z.string().min(1),
 });
 
+const existingBookingCheckoutSchema = z.object({
+  payment_flow: z.literal('existing_booking'),
+  booking_id: z.string().min(1),
+});
+
 interface ParsedCheckoutData {
   bookingData: BookingData;
   packageId: string;
   customerName: string | null;
   customerPhone: string | null;
   promoCode: string | null;
-}
-
-// Lazy-init Stripe to avoid build-time errors
-let _stripe: Stripe | null = null;
-function getStripe(): Stripe {
-  if (!_stripe) {
-    if (!env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
-    _stripe = new Stripe(env.STRIPE_SECRET_KEY);
-  }
-  return _stripe;
 }
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -83,17 +79,23 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
+  if (session.payment_status !== 'paid') {
+    console.error('Checkout session completed without paid status:', session.id);
+    return;
+  }
+
+  const existingBookingMetadata = existingBookingCheckoutSchema.safeParse(session.metadata);
+  if (existingBookingMetadata.success) {
+    await handleExistingBookingCheckout(session, existingBookingMetadata.data.booking_id);
+    return;
+  }
+
   const parsed = parseCheckoutMetadata(session);
   if (!parsed) {
     return;
   }
 
   const { bookingData, packageId, customerName, customerPhone, promoCode } = parsed;
-
-  if (session.payment_status !== 'paid') {
-    console.error('Checkout session completed without paid status:', session.id);
-    return;
-  }
 
   const phone = normalizePhone(customerPhone || bookingData.contact.phone);
   if (!phone) {
@@ -153,7 +155,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     time: bookingData.schedule.time,
     contact: phone,
     transactionId: session.id,
-    paymentMethod: 'stripe',
+    paymentMethod: 'stripe_checkout',
     promoCode,
     notes,
     status: 'confirmed',
@@ -168,6 +170,36 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   // Booking created successfully
   // TODO: Send confirmation SMS via Twilio
+}
+
+async function handleExistingBookingCheckout(
+  session: Stripe.Checkout.Session,
+  bookingId: string
+) {
+  const booking = await bookingRepo.getById(bookingId);
+  if (!booking) {
+    console.error('Booking not found for checkout session:', bookingId);
+    return;
+  }
+
+  if (booking.paymentStatus === 'paid') {
+    return;
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id;
+
+  const updated = await bookingRepo.update(bookingId, {
+    paymentStatus: 'paid',
+    paymentMethod: 'stripe_checkout',
+    transactionId: paymentIntentId || session.id,
+  });
+
+  if (!updated) {
+    console.error('Failed to update booking payment status:', bookingId);
+  }
 }
 
 function parseCheckoutMetadata(session: Stripe.Checkout.Session): ParsedCheckoutData | null {

@@ -8,6 +8,10 @@
 	let editing = $state(false);
 	let saving = $state(false);
 	let updating = $state(false);
+	let creatingPaymentLink = $state(false);
+	let paymentLink = $state<string | null>(null);
+	let paymentLinkError = $state<string | null>(null);
+	let paymentLinkCopied = $state(false);
 
 	// Editable fields
 	let clientName = $state('');
@@ -63,10 +67,52 @@
 		editing = false;
 	}
 
+	function openPaymentLink() {
+		if (!paymentLink) return;
+		window.open(paymentLink, '_blank', 'noopener,noreferrer');
+	}
+
+	async function copyPaymentLink() {
+		if (!paymentLink) return;
+
+		try {
+			await navigator.clipboard.writeText(paymentLink);
+			paymentLinkCopied = true;
+			paymentLinkError = null;
+			setTimeout(() => {
+				paymentLinkCopied = false;
+			}, 2000);
+		} catch {
+			paymentLinkError = 'Could not copy the payment link. Copy it manually instead.';
+		}
+	}
+
 	// Close edit mode on successful save
 	$effect(() => {
 		if (form && 'edited' in form && form.edited) {
 			editing = false;
+		}
+	});
+
+	$effect(() => {
+		if (!form) return;
+
+		if ('paymentUrl' in form && typeof form.paymentUrl === 'string') {
+			paymentLink = form.paymentUrl;
+			paymentLinkError = null;
+			paymentLinkCopied = false;
+		}
+
+		if ('paymentLinkError' in form && typeof form.paymentLinkError === 'string') {
+			paymentLinkError = form.paymentLinkError;
+		}
+	});
+
+	$effect(() => {
+		if (booking.paymentStatus === 'paid') {
+			paymentLink = null;
+			paymentLinkError = null;
+			paymentLinkCopied = false;
 		}
 	});
 
@@ -87,6 +133,18 @@
 
 	const addr = $derived(parseAddr(booking.notes));
 	const clientEmail = $derived(parseEmail(booking.notes));
+	const statusBadge = $derived(getSt(booking.status));
+	const paymentStatusBadge = $derived(getPs(booking.paymentStatus));
+	const canCollectPayment = $derived(
+		booking.status === 'completed' && booking.paymentStatus === 'unpaid'
+	);
+	const paymentReadyLabel = $derived(
+		canCollectPayment
+			? 'Ready to collect on-site'
+			: booking.paymentStatus === 'paid'
+				? 'Payment already captured'
+				: 'Finish the detail before collecting payment'
+	);
 
 	const timeSlots = Array.from({ length: 11 }, (_, i) => {
 		const h = i + 8;
@@ -114,6 +172,18 @@
 	const valStyle = 'font-size:0.9375rem;color:#1f2937;';
 	const cardStyle = 'background:white;padding:1.25rem;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
 	const headStyle = 'margin:0 0 1rem;font-size:0.9375rem;font-weight:700;color:#374151;padding-bottom:0.625rem;border-bottom:1px solid #f3f4f6;';
+	const pageGridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;';
+	const splitGridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;';
+	const statusGridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;';
+	const metaGridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;';
+	const paymentActionGridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;';
+	const primaryButtonStyle = 'width:100%;padding:0.875rem 1rem;background:#1a1a2e;color:white;border:none;border-radius:0.625rem;font-size:0.9375rem;font-weight:700;cursor:pointer;';
+	const accentButtonStyle = 'width:100%;padding:0.875rem 1rem;background:#e94560;color:white;border:none;border-radius:0.625rem;font-size:0.9375rem;font-weight:700;cursor:pointer;';
+	const secondaryButtonStyle = 'width:100%;padding:0.875rem 1rem;background:white;color:#374151;border:1px solid #d1d5db;border-radius:0.625rem;font-size:0.9375rem;font-weight:600;cursor:pointer;';
+	const successNoticeStyle = 'font-size:0.875rem;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;padding:0.875rem 1rem;border-radius:0.75rem;';
+	const warningNoticeStyle = 'font-size:0.875rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;padding:0.875rem 1rem;border-radius:0.75rem;';
+	const dangerNoticeStyle = 'font-size:0.875rem;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;padding:0.875rem 1rem;border-radius:0.75rem;';
+	const paymentSummaryStyle = 'display:grid;gap:0.75rem;padding:1rem;border-radius:0.75rem;background:#f8fafc;border:1px solid #e5e7eb;';
 </script>
 
 <svelte:head>
@@ -136,10 +206,8 @@
 			<p style="margin:0;color:#9ca3af;font-size:0.8125rem;">{booking.id} &middot; Created {fmtTs(booking.createdAt)}</p>
 		</div>
 		<div style="display:flex;gap:0.5rem;">
-			{@const st = getSt(booking.status)}
-			{@const ps = getPs(booking.paymentStatus)}
-			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{st.bg};color:{st.fg};">{booking.status || 'pending'}</span>
-			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{ps.bg};color:{ps.fg};">{booking.paymentStatus || 'unpaid'}</span>
+			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{booking.status || 'pending'}</span>
+			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{paymentStatusBadge.bg};color:{paymentStatusBadge.fg};">{booking.paymentStatus || 'unpaid'}</span>
 		</div>
 	</div>
 
@@ -241,11 +309,131 @@
 		</form>
 	{:else}
 		<!-- ═══ VIEW MODE ═══ -->
-		<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+		<div style={pageGridStyle}>
+			<!-- Collect Payment -->
+			<div style="{cardStyle} grid-column:1/-1;">
+				<h2 style={headStyle}>Collect Payment</h2>
+
+				<div style={splitGridStyle}>
+					<div style={paymentSummaryStyle}>
+						<div>
+							<div style={labelStyle}>Amount Due</div>
+							<div style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#1a1a2e;">{fmtPrice(booking.price)}</div>
+						</div>
+						<div style="font-size:0.9375rem;font-weight:600;color:#1f2937;">{paymentReadyLabel}</div>
+						<div style="font-size:0.875rem;line-height:1.6;color:#4b5563;">
+							The fastest driveway flow is: finish the detail, tap one button, hand the phone to the client, then come back here after Stripe confirms payment.
+						</div>
+						<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+							<span style="padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{booking.status || 'pending'}</span>
+							<span style="padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{paymentStatusBadge.bg};color:{paymentStatusBadge.fg};">{booking.paymentStatus || 'unpaid'}</span>
+						</div>
+					</div>
+
+					<div style="display:grid;gap:0.875rem;align-content:start;">
+						{#if booking.paymentStatus === 'paid'}
+							<div style={successNoticeStyle}>
+								This booking is already paid. You're done.
+							</div>
+						{:else if booking.paymentStatus === 'refunded'}
+							<div style={dangerNoticeStyle}>
+								This booking is refunded. Review it manually before collecting payment again.
+							</div>
+						{:else if booking.status === 'cancelled'}
+							<div style={dangerNoticeStyle}>
+								This booking is cancelled. Review it manually before collecting payment.
+							</div>
+						{:else if !canCollectPayment}
+							<form
+								method="POST"
+								action="?/completeAndCreatePaymentLink"
+								use:enhance={() => {
+									creatingPaymentLink = true;
+									paymentLinkError = null;
+									return async ({ update }) => {
+										creatingPaymentLink = false;
+										await update();
+									};
+								}}
+							>
+								<button
+									type="submit"
+									disabled={creatingPaymentLink}
+									style="{primaryButtonStyle} opacity:{creatingPaymentLink ? '0.6' : '1'};"
+								>
+									{creatingPaymentLink ? 'Preparing payment...' : 'Complete Service & Create Payment Link'}
+								</button>
+							</form>
+							<div style={warningNoticeStyle}>
+								Use this when the detail is finished. It marks the booking completed and prepares the checkout page in one step.
+							</div>
+						{:else}
+							<form
+								method="POST"
+								action="?/createPaymentLink"
+								use:enhance={() => {
+									creatingPaymentLink = true;
+									paymentLinkError = null;
+									return async ({ update }) => {
+										creatingPaymentLink = false;
+										await update();
+									};
+								}}
+							>
+								<button
+									type="submit"
+									disabled={creatingPaymentLink}
+									style="{primaryButtonStyle} opacity:{creatingPaymentLink ? '0.6' : '1'};"
+								>
+									{creatingPaymentLink ? 'Generating...' : paymentLink ? 'Refresh Payment Link' : 'Create Payment Link'}
+								</button>
+							</form>
+							<div style={warningNoticeStyle}>
+								Generate the Stripe page only when the client is ready to pay so the handoff stays smooth.
+							</div>
+						{/if}
+
+						{#if paymentLinkError}
+							<div style={dangerNoticeStyle}>
+								{paymentLinkError}
+							</div>
+						{/if}
+					</div>
+				</div>
+
+				{#if paymentLink}
+					<div style="display:grid;gap:0.875rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+						<div>
+							<div style={labelStyle}>Payment Link</div>
+							<input readonly value={paymentLink} style={inputStyle} />
+						</div>
+						<div style={paymentActionGridStyle}>
+							<button
+								type="button"
+								onclick={openPaymentLink}
+								style={accentButtonStyle}
+							>
+								Open on Customer&apos;s Phone
+							</button>
+							<button
+								type="button"
+								onclick={copyPaymentLink}
+								style={secondaryButtonStyle}
+							>
+								{paymentLinkCopied ? 'Copied' : 'Copy Payment Link'}
+							</button>
+						</div>
+						<p style="margin:0;font-size:0.8125rem;line-height:1.6;color:#6b7280;">
+							Open launches the Stripe page in a new tab so you can jump back to this booking after the client pays. Copy is the backup if you need to paste the link somewhere else.
+						</p>
+					</div>
+				{/if}
+			</div>
+
 			<!-- Appointment -->
 			<div style={cardStyle}>
 				<h2 style={headStyle}>Appointment</h2>
-				<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+				<div style={metaGridStyle}>
 					<div><div style={labelStyle}>Date</div><div style="{valStyle} font-weight:600;">{fmtDate(booking.date)}</div></div>
 					<div><div style={labelStyle}>Time</div><div style={valStyle}>{fmtTime(booking.time)}</div></div>
 					<div><div style={labelStyle}>Service</div><div style={valStyle}>{booking.serviceName}</div></div>
@@ -267,7 +455,7 @@
 			<!-- Status Controls -->
 			<div style="{cardStyle} grid-column:1/-1;">
 				<h2 style={headStyle}>Update Status</h2>
-				<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+				<div style={statusGridStyle}>
 					<div>
 						<div style="{labelStyle} margin-bottom:0.625rem;">Booking Status</div>
 						<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
@@ -306,8 +494,9 @@
 			<!-- System -->
 			<div style="{cardStyle} grid-column:1/-1;background:#fafafa;">
 				<h2 style="margin:0 0 1rem;font-size:0.9375rem;font-weight:700;color:#9ca3af;padding-bottom:0.625rem;border-bottom:1px solid #f3f4f6;">Payment & System</h2>
-				<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
+				<div style={metaGridStyle}>
 					<div><div style={labelStyle}>Payment Method</div><div style={valStyle}>{booking.paymentMethod || 'N/A'}</div></div>
+					<div><div style={labelStyle}>Transaction ID</div><div style="{valStyle} font-family:monospace;font-size:0.8125rem;">{booking.transactionId || 'N/A'}</div></div>
 					{#if booking.promoCode}<div><div style={labelStyle}>Promo Code</div><div style="{valStyle} font-weight:600;color:#7c3aed;">{booking.promoCode}</div></div>{/if}
 					<div><div style={labelStyle}>Reminder Sent</div><div style={valStyle}>{booking.reminderSent ? 'Yes' : 'No'}</div></div>
 				</div>

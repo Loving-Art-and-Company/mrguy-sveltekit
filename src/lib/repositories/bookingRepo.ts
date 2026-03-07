@@ -56,7 +56,7 @@ export async function countPending(): Promise<number> {
     .select({ count: count() })
     .from(bookings)
     .where(
-      and(eq(bookings.brandId, MRGUY_BRAND_ID), eq(bookings.paymentStatus, 'pending'))
+      and(eq(bookings.brandId, MRGUY_BRAND_ID), eq(bookings.paymentStatus, 'unpaid'))
     );
   return Number(result[0]?.count ?? 0);
 }
@@ -199,7 +199,22 @@ export async function insert(data: BookingInsert): Promise<BookingRow | null> {
 /** Update a booking by ID (any editable field) */
 export async function update(
   id: string,
-  data: Partial<Pick<BookingRow, 'clientName' | 'serviceName' | 'price' | 'date' | 'time' | 'contact' | 'status' | 'paymentStatus' | 'notes'>>
+  data: Partial<
+    Pick<
+      BookingRow,
+      | 'clientName'
+      | 'serviceName'
+      | 'price'
+      | 'date'
+      | 'time'
+      | 'contact'
+      | 'status'
+      | 'paymentStatus'
+      | 'notes'
+      | 'transactionId'
+      | 'paymentMethod'
+    >
+  >
 ): Promise<BookingRow | null> {
   const rows = await db
     .update(bookings)

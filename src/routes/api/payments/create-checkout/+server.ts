@@ -6,17 +6,8 @@ import { env as publicEnv } from '$env/dynamic/public';
 import { isFirstTimeClient } from '$lib/server/promo';
 import { normalizePhone } from '$lib/server/phone';
 import { checkRateLimit } from '$lib/server/rateLimit';
+import { getStripe } from '$lib/server/stripe';
 import type { RequestHandler } from './$types';
-
-// Lazy-init Stripe to avoid build-time errors
-let _stripe: Stripe | null = null;
-function getStripe(): Stripe {
-  if (!_stripe) {
-    if (!env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
-    _stripe = new Stripe(env.STRIPE_SECRET_KEY);
-  }
-  return _stripe;
-}
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
