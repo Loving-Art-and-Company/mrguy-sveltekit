@@ -10,6 +10,13 @@
 		// Register service worker
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker
+				.getRegistration()
+				.then((registration) => registration?.update())
+				.catch((error) => {
+					console.error('[PWA] Service Worker update check failed:', error);
+				});
+
+			navigator.serviceWorker
 				.register('/sw.js')
 				.catch((error) => {
 					console.error('[PWA] Service Worker registration failed:', error);

@@ -1,13 +1,12 @@
 // MrGuyDetail Service Worker
-// Version: 1.0.0
+// Version: 1.1.0
 
-const CACHE_VERSION = 'mrguy-v1';
+const CACHE_VERSION = 'mrguy-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
 // Cache-first resources (static assets)
 const CACHE_FIRST = [
-  '/',
   '/manifest.json',
   '/favicons/android-chrome-192x192.png',
   '/favicons/android-chrome-512x512.png'
@@ -64,8 +63,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Only manage same-origin requests
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Skip chrome extension requests
   if (url.protocol === 'chrome-extension:') {
+    return;
+  }
+
+  // Always prefer the network for document navigations so deploys don't leave
+  // users stuck on stale HTML that references old hashed assets.
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(networkFirst(request));
     return;
   }
 
