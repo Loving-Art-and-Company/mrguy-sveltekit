@@ -8,6 +8,7 @@ import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/
 import { issueToken, requireCsrf } from '$lib/server/csrf';
 import { checkRateLimit } from '$lib/server/rateLimit';
 import { notifyError } from '$lib/server/email';
+import { MRGUY_CANONICAL_ORIGIN } from '$lib/constants/site';
 import crypto from 'node:crypto';
 
 /** CSRF: origin-based validation for API routes */
@@ -24,6 +25,14 @@ function isValidOrigin(request: Request, url: URL): boolean {
 
 const handle: Handle = async ({ event, resolve }) => {
   let sessionToken: string | undefined;
+
+  const canonicalUrl = new URL(MRGUY_CANONICAL_ORIGIN);
+  if (!building && event.url.hostname === 'mrguymobiledetail.com') {
+    const redirectUrl = new URL(event.url);
+    redirectUrl.protocol = canonicalUrl.protocol;
+    redirectUrl.host = canonicalUrl.host;
+    throw redirect(308, redirectUrl.toString());
+  }
 
   // ── CSP nonce ───────────────────────────────────────────
   const nonce = crypto.randomBytes(16).toString('base64');

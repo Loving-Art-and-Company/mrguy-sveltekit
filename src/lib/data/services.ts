@@ -32,7 +32,7 @@ export const BUSINESS_INFO = {
   name: "Mr. Guy Mobile Detail",
   tagline: "We Know a Guy.",
   subTagline: "Premium detailing, right in your driveway.",
-  website: "mrguymobiledetail.com",
+  website: "mrguydetail.com",
   location: "West Broward, South Florida",
   serviceArea: ["West Broward", "Broward County", "South Florida"],
   hours: "Mon-Sat 8AM-6PM (By appointment - We come to you!)",
