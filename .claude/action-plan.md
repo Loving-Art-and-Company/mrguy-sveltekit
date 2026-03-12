@@ -29,6 +29,7 @@
 - [x] Canonical-host redirect, smoke guard, and cache hardening
 - [x] Inline delete controls on the admin bookings calendar
 - [x] MrGuy ops agent foundation (`.claude/agents/mrguy-ops-agent.md`, spec, scripts, digest, and scheduler installer)
+- [x] Admin business suite (`/admin/business`) with mileage logging, inventory tracking, and simple bookkeeping
 
 ---
 
@@ -41,6 +42,18 @@
 - [ ] Decide the alert recipient for `MRGUY_OPS_ALERT_TO`
 - [ ] Install or verify the local `launchd` schedule where daily automation is wanted
 - [ ] Keep monitoring live payment, booking, and reschedule flows
+- [ ] Push the updated schema with `npx drizzle-kit push` before using the business suite on a live database
+
+---
+
+## Business Suite Details
+
+- [x] Mileage tracker
+  - Tracks business miles, trip purpose, optional odometer readings, notes, and optional booking links
+- [x] Supply inventory
+  - Tracks items on hand, reorder thresholds, unit cost, stock movements, and purchase spend
+- [x] Simple bookkeeping
+  - Auto-pulls paid booking revenue and layers in manual expense/tax/owner-draw entries for a cash-basis view
 
 ---
 
@@ -53,6 +66,10 @@
 - `scripts/mrguy-ops-digest.mjs`
 - `scripts/run-ops-daily.sh`
 - `scripts/ops/*.mjs`
+- `src/routes/admin/business/+page.server.ts`
+- `src/routes/admin/business/+page.svelte`
+- `src/lib/repositories/businessRepo.ts`
+- `src/lib/server/brand.ts`
 - `src/routes/admin/bookings/[id]/+page.server.ts`
 - `src/routes/api/payments/webhook/+server.ts`
 

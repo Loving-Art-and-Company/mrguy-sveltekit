@@ -8,7 +8,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 
 ## Current Status
 
-**Live in production** at `https://mrguydetail.com`. The current focus is operational reliability: post-service payment collection is live, the canonical-host/caching fixes are shipped, and the new bounded ops agent foundation is in place.
+**Live in production** at `https://mrguydetail.com`. The current focus is operational reliability: post-service payment collection is live, the canonical-host/caching fixes are shipped, the bounded ops agent foundation is in place, and the codebase now includes a new `/admin/business` suite for mileage, supply inventory, and simple bookkeeping. Before the business suite is used on a live database, run `npx drizzle-kit push` with the correct `DATABASE_URL`.
 
 ## Active Work
 
@@ -16,9 +16,11 @@ LAC-owned brand/app; optimize for leverage and growth.
 - [x] Canonical-host redirect, smoke guard, and cache-hardening fixes shipped
 - [x] Inline delete controls added to the admin bookings calendar for fast lead cleanup
 - [x] MrGuy ops agent foundation added (`.claude/agents/mrguy-ops-agent.md`, `docs/mrguy-ops-agent-spec.md`, `scripts/ops/*`, `scripts/mrguy-ops-digest.mjs`, `scripts/run-ops-daily.sh`)
+- [x] Admin business suite added at `/admin/business` for mileage logging, inventory tracking, and cash-basis bookkeeping
 - [ ] Reauthorize the connected Google account once so Gmail, GA4, and Search Console readonly scopes become available to the ops scripts
 - [ ] Install or verify the optional local `launchd` schedule on machines that should run the daily digest automatically
 - [ ] Keep monitoring booking, payment, and reschedule health in production
+- [ ] Push the updated schema with `npx drizzle-kit push` before using the business suite on a live database
 
 ## Recent Changes
 
@@ -26,6 +28,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - 2026-03-09: Added bounded ops agent docs plus the read-only ops command surface and digest pipeline
 - 2026-03-09: Shipped mobile-first Stripe payment collection for existing bookings and hardened canonical-host behavior in production
 - 2026-02-23: Implemented the "Fresh Start" first-time-client promo with server-side eligibility
+- 2026-03-12: Built `/admin/business` with mileage tracking, inventory management, and simple bookkeeping summaries/forms
 
 ## Tech Stack
 
@@ -75,6 +78,10 @@ LAC-owned brand/app; optimize for leverage and growth.
 - `scripts/mrguy-ops-digest.mjs`
 - `scripts/run-ops-daily.sh`
 - `scripts/ops/*.mjs`
+- `src/routes/admin/business/+page.server.ts`
+- `src/routes/admin/business/+page.svelte`
+- `src/lib/repositories/businessRepo.ts`
+- `src/lib/server/brand.ts`
 - `src/routes/admin/bookings/[id]/+page.server.ts`
 - `src/routes/api/payments/webhook/+server.ts`
 - `src/lib/server/db.ts`

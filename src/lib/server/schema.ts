@@ -173,6 +173,115 @@ export const clientProfiles = pgTable(
 );
 
 // ============================================================
+// BUSINESS OPERATIONS
+// ============================================================
+
+export const mileageEntries = pgTable(
+  'mileage_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    bookingId: text('booking_id').references(() => bookings.id, { onDelete: 'set null' }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    entryDate: text('entry_date').notNull(),
+    purpose: text('purpose').notNull(),
+    miles: integer('miles').notNull(),
+    startOdometer: integer('start_odometer'),
+    endOdometer: integer('end_odometer'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_mileage_entries_brand_date').on(t.brandId, t.entryDate),
+    index('idx_mileage_entries_booking_id').on(t.bookingId),
+  ]
+);
+
+export const inventoryItems = pgTable(
+  'inventory_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    name: text('name').notNull(),
+    sku: text('sku'),
+    unitLabel: text('unit_label').default('units').notNull(),
+    quantityOnHand: integer('quantity_on_hand').default(0).notNull(),
+    reorderThreshold: integer('reorder_threshold').default(0).notNull(),
+    unitCostCents: integer('unit_cost_cents').default(0).notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_inventory_items_brand_name').on(t.brandId, t.name),
+    index('idx_inventory_items_brand_active').on(t.brandId, t.isActive),
+  ]
+);
+
+export const inventoryMovements = pgTable(
+  'inventory_movements',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    itemId: uuid('item_id')
+      .notNull()
+      .references(() => inventoryItems.id, { onDelete: 'cascade' }),
+    bookingId: text('booking_id').references(() => bookings.id, { onDelete: 'set null' }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    occurredOn: text('occurred_on').notNull(),
+    movementType: text('movement_type').notNull(),
+    quantityDelta: integer('quantity_delta').notNull(),
+    totalCostCents: integer('total_cost_cents').default(0).notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_inventory_movements_brand_date').on(t.brandId, t.occurredOn),
+    index('idx_inventory_movements_item_id').on(t.itemId),
+  ]
+);
+
+export const financeEntries = pgTable(
+  'finance_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    bookingId: text('booking_id').references(() => bookings.id, { onDelete: 'set null' }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    entryDate: text('entry_date').notNull(),
+    entryType: text('entry_type').notNull(),
+    category: text('category').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_finance_entries_brand_date').on(t.brandId, t.entryDate),
+    index('idx_finance_entries_type').on(t.entryType),
+    index('idx_finance_entries_booking_id').on(t.bookingId),
+  ]
+);
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 

@@ -9,6 +9,7 @@
    const navItems = [
      { href: '/admin', label: 'Dashboard', icon: '📊', exact: true },
      { href: '/admin/bookings', label: 'Bookings', icon: '📅', exact: false },
+     { href: '/admin/business', label: 'Business', icon: '🧾', exact: false },
      { href: '/admin/crm', label: 'CRM', icon: '📣', exact: false },
      { href: '/admin/revenue', label: 'Revenue', icon: '💰', exact: false },
      { href: '/admin/drive', label: 'Drive', icon: '📁', exact: false },

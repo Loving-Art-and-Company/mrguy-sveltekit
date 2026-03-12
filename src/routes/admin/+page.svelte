@@ -71,6 +71,10 @@
 				<span class="ql-icon">📅</span>
 				Bookings & Calendar
 			</a>
+			<a href="/admin/business" class="quick-link">
+				<span class="ql-icon">🧾</span>
+				Business Ops
+			</a>
 			<a href="/admin/crm" class="quick-link">
 				<span class="ql-icon">📣</span>
 				CRM & Campaigns
