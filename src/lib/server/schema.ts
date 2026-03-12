@@ -10,6 +10,7 @@ import {
   boolean,
   timestamp,
   index,
+  uniqueIndex,
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -188,6 +189,60 @@ export const notifications = pgTable(
     read: boolean('read').default(false),
   },
   (t) => [index('idx_notifications_brand_id').on(t.brandId)]
+);
+
+// ============================================================
+// CRM CAMPAIGNS
+// ============================================================
+
+export const crmCampaignSends = pgTable(
+  'crm_campaign_sends',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    segmentId: text('segment_id').notNull(),
+    segmentName: text('segment_name').notNull(),
+    templateId: text('template_id').notNull(),
+    templateName: text('template_name').notNull(),
+    requestedRecipientCount: integer('requested_recipient_count').notNull(),
+    suppressedRecipientCount: integer('suppressed_recipient_count').default(0).notNull(),
+    sentCount: integer('sent_count').default(0).notNull(),
+    failedCount: integer('failed_count').default(0).notNull(),
+    status: text('status').default('sending').notNull(),
+    failedRecipients: jsonb('failed_recipients').$type<string[]>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('idx_crm_campaign_sends_brand_id').on(t.brandId),
+    index('idx_crm_campaign_sends_created_at').on(t.createdAt),
+  ]
+);
+
+export const crmEmailUnsubscribes = pgTable(
+  'crm_email_unsubscribes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    email: text('email').notNull(),
+    source: text('source').notNull(),
+    reason: text('reason'),
+    campaignSendId: uuid('campaign_send_id').references(() => crmCampaignSends.id, {
+      onDelete: 'set null',
+    }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_crm_email_unsubscribes_brand_id').on(t.brandId),
+    index('idx_crm_email_unsubscribes_unsubscribed_at').on(t.unsubscribedAt),
+    uniqueIndex('uidx_crm_email_unsubscribes_brand_email').on(t.brandId, t.email),
+  ]
 );
 
 // ============================================================

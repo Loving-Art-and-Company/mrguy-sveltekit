@@ -280,6 +280,10 @@ export function getCampaignTemplate(id: string): CrmCampaignTemplateDefinition |
 	return CRM_CAMPAIGN_TEMPLATES.find((template) => template.id === id);
 }
 
+export function getCrmSegmentDefinition(id: string) {
+	return CRM_SEGMENTS.find((segment) => segment.id === id);
+}
+
 export function renderCampaignSubject(templateId: string, contact: CrmContact): string {
 	const template = getCampaignTemplate(templateId);
 	if (!template) {
@@ -289,7 +293,19 @@ export function renderCampaignSubject(templateId: string, contact: CrmContact): 
 	return replaceTokens(template.subjectTemplate, buildTokens(contact));
 }
 
-export function renderCampaignHtml(templateId: string, contact: CrmContact): string {
+export function filterUnsubscribedContacts(
+	contacts: CrmContact[],
+	unsubscribedEmails: Iterable<string>
+): CrmContact[] {
+	const suppressed = new Set(Array.from(unsubscribedEmails, (email) => normalizeEmail(email)));
+	return contacts.filter((contact) => !contact.email || !suppressed.has(normalizeEmail(contact.email)));
+}
+
+export function renderCampaignHtml(
+	templateId: string,
+	contact: CrmContact,
+	options?: { unsubscribeUrl?: string }
+): string {
 	const template = getCampaignTemplate(templateId);
 	if (!template) {
 		throw new Error(`Unknown CRM template: ${templateId}`);
@@ -314,7 +330,11 @@ export function renderCampaignHtml(templateId: string, contact: CrmContact): str
 			<hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;" />
 			<p style="font-size: 12px; color: #6b7280;">
 				Mr. Guy Mobile Detail · 954-804-4747 · info@mrguymobiledetail.com<br />
-				If you’d rather not get future reminder emails, just reply and we’ll take you off the list.
+				${
+					options?.unsubscribeUrl
+						? `If you’d rather not get future reminder emails, <a href="${escapeHtml(options.unsubscribeUrl)}" style="color: #6b7280;">unsubscribe here</a>.`
+						: 'If you’d rather not get future reminder emails, just reply and we’ll take you off the list.'
+				}
 			</p>
 		</div>
 	`;
@@ -385,4 +405,8 @@ function escapeHtml(value: string): string {
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;');
+}
+
+function normalizeEmail(value: string): string {
+	return value.trim().toLowerCase();
 }

@@ -58,7 +58,7 @@
 
 	<section class="stats-grid">
 		<div class="stat-card">
-			<span class="stat-label">Contacts with email</span>
+			<span class="stat-label">Emailable contacts</span>
 			<span class="stat-value">{data.stats.emailableContacts}</span>
 		</div>
 		<div class="stat-card">
@@ -68,6 +68,10 @@
 		<div class="stat-card">
 			<span class="stat-label">Pending leads needing attention</span>
 			<span class="stat-value">{data.stats.upcomingActionNeeded}</span>
+		</div>
+		<div class="stat-card">
+			<span class="stat-label">Unsubscribed contacts</span>
+			<span class="stat-value">{data.stats.unsubscribedContacts}</span>
 		</div>
 	</section>
 
@@ -109,6 +113,9 @@
 			{#if form?.campaignResult}
 				<p class="banner success">
 					Sent {form.campaignResult.sentCount} emails for {form.campaignResult.templateName}.
+					{#if form.campaignResult.suppressedCount > 0}
+						Skipped {form.campaignResult.suppressedCount} unsubscribed contact(s).
+					{/if}
 					{#if form.campaignResult.failedCount > 0}
 						{form.campaignResult.failedCount} failed.
 					{/if}
@@ -138,6 +145,7 @@
 					<p>
 						Type <strong>SEND</strong> to send this campaign to
 						<strong>{data.recipientsBySegment[selectedSegmentId]?.count ?? 0}</strong> recipients.
+						Unsubscribe links are added automatically.
 					</p>
 					<input
 						type="text"
@@ -201,6 +209,75 @@
 					<p>No recipients currently match this segment.</p>
 				{/if}
 			</div>
+
+			<div class="preview-block">
+				<span class="preview-label">Suppression safety</span>
+				<p>
+					Anyone who unsubscribes is automatically removed from future CRM campaign sends, while
+					transactional booking emails continue normally.
+				</p>
+			</div>
+		</section>
+	</div>
+
+	<div class="history-grid">
+		<section class="history-card">
+			<div class="card-heading">
+				<h3>Recent campaign sends</h3>
+				<p>Track what went out, how many were suppressed, and whether anything failed.</p>
+			</div>
+
+			{#if data.recentCampaigns.length > 0}
+				<div class="history-list">
+					{#each data.recentCampaigns as campaign}
+						<div class="history-item">
+							<div class="history-item__topline">
+								<strong>{campaign.templateName}</strong>
+								<span class:status-pill={true} class:partial={campaign.status === 'partial'} class:failed={campaign.status === 'failed'}>
+									{campaign.status}
+								</span>
+							</div>
+							<p>
+								{campaign.segmentName} · Sent {campaign.sentCount}/{campaign.requestedRecipientCount}
+								{#if campaign.suppressedRecipientCount > 0}
+									· Skipped {campaign.suppressedRecipientCount}
+								{/if}
+							</p>
+							<small>
+								Started {new Date(campaign.createdAt).toLocaleString()}
+								{#if campaign.completedAt}
+									· Completed {new Date(campaign.completedAt).toLocaleString()}
+								{/if}
+							</small>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p>No CRM campaigns have been sent yet.</p>
+			{/if}
+		</section>
+
+		<section class="history-card">
+			<div class="card-heading">
+				<h3>Recent unsubscribes</h3>
+				<p>These contacts are suppressed from future CRM campaigns.</p>
+			</div>
+
+			{#if data.recentUnsubscribes.length > 0}
+				<div class="history-list">
+					{#each data.recentUnsubscribes as row}
+						<div class="history-item">
+							<div class="history-item__topline">
+								<strong>{row.email}</strong>
+								<span class="status-pill">{row.source}</span>
+							</div>
+							<small>{new Date(row.unsubscribedAt).toLocaleString()}</small>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p>No one has unsubscribed from CRM campaigns yet.</p>
+			{/if}
 		</section>
 	</div>
 
@@ -220,6 +297,7 @@
 						<th>City</th>
 						<th>Last service</th>
 						<th>Status</th>
+						<th>CRM</th>
 						<th>Completed</th>
 						<th>Revenue</th>
 					</tr>
@@ -233,6 +311,7 @@
 							<td>{contact.city ?? '—'}</td>
 							<td>{contact.lastServiceName}<br /><small>{contact.lastServiceDate}</small></td>
 							<td>{contact.lastServiceStatus}</td>
+							<td>{contact.unsubscribed ? 'Unsubscribed' : 'Subscribed'}</td>
 							<td>{contact.completedBookings}</td>
 							<td>{formatCurrency(contact.totalRevenue)}</td>
 						</tr>
@@ -267,7 +346,8 @@
 
 	.stats-grid,
 	.segments-grid,
-	.crm-grid {
+	.crm-grid,
+	.history-grid {
 		display: grid;
 		gap: 1rem;
 	}
@@ -282,11 +362,17 @@
 		margin-bottom: 1.5rem;
 	}
 
+	.history-grid {
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		margin-bottom: 1.5rem;
+	}
+
 	.stat-card,
 	.segments-card,
 	.campaign-card,
 	.preview-card,
-	.contacts-card {
+	.contacts-card,
+	.history-card {
 		background: white;
 		border-radius: 0.75rem;
 		padding: 1.25rem;
@@ -406,6 +492,54 @@
 
 	.preview-block + .preview-block {
 		margin-top: 1rem;
+	}
+
+	.history-list {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.history-item {
+		border: 1px solid #e5e7eb;
+		border-radius: 0.75rem;
+		padding: 0.9rem 1rem;
+		background: #f9fafb;
+	}
+
+	.history-item p,
+	.history-item small {
+		margin: 0.35rem 0 0;
+		color: #6b7280;
+	}
+
+	.history-item__topline {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.status-pill {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		background: #eef2ff;
+		color: #4338ca;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: capitalize;
+	}
+
+	.status-pill.partial {
+		background: #fff7ed;
+		color: #c2410c;
+	}
+
+	.status-pill.failed {
+		background: #fef2f2;
+		color: #b91c1c;
 	}
 
 	.preview-block ul {

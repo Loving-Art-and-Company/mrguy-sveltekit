@@ -30,6 +30,44 @@
       priceCurrency: 'USD'
     }
   }));
+  const citySchemaJson = $derived(
+    JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'AutoDetailing',
+      name: BUSINESS_INFO.name,
+      description: data.city.metaDescription,
+      url: `${MRGUY_CANONICAL_ORIGIN}${pagePath}`,
+      telephone: '+19548044747',
+      priceRange: BUSINESS_INFO.priceRange,
+      image: `${MRGUY_CANONICAL_ORIGIN}/images/og-image.png`,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: data.city.name,
+        addressRegion: 'FL',
+        addressCountry: 'US'
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: data.city.latitude,
+        longitude: data.city.longitude
+      },
+      areaServed: [
+        { '@type': 'City', name: data.city.name },
+        ...data.relatedCities.map((city) => ({ '@type': 'City', name: city.name }))
+      ],
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '08:00',
+        closes: '18:00'
+      },
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: `Detailing services in ${data.city.name}, FL`,
+        itemListElement: offerCatalog
+      }
+    })
+  );
 
   function handlePackageSelect(pkg: ServicePackage) {
     selectedService = pkg;
@@ -76,42 +114,7 @@
   <meta name="twitter:title" content={pageTitle} />
   <meta name="twitter:description" content={data.city.metaDescription} />
   <meta name="twitter:image" content={`${MRGUY_CANONICAL_ORIGIN}/images/og-image.png`} />
-  {@html `<script type="application/ld+json">${JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'AutoDetailing',
-    name: BUSINESS_INFO.name,
-    description: data.city.metaDescription,
-    url: `${MRGUY_CANONICAL_ORIGIN}${pagePath}`,
-    telephone: '+19548044747',
-    priceRange: BUSINESS_INFO.priceRange,
-    image: `${MRGUY_CANONICAL_ORIGIN}/images/og-image.png`,
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: data.city.name,
-      addressRegion: 'FL',
-      addressCountry: 'US'
-    },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: data.city.latitude,
-      longitude: data.city.longitude
-    },
-    areaServed: [
-      { '@type': 'City', name: data.city.name },
-      ...data.relatedCities.map((city) => ({ '@type': 'City', name: city.name }))
-    ],
-    openingHoursSpecification: {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-      opens: '08:00',
-      closes: '18:00'
-    },
-    hasOfferCatalog: {
-      '@type': 'OfferCatalog',
-      name: `Detailing services in ${data.city.name}, FL`,
-      itemListElement: offerCatalog
-    }
-  })}</script>`}
+  <script type="application/ld+json">{citySchemaJson}</script>
 </svelte:head>
 
 <main class="city-page">
