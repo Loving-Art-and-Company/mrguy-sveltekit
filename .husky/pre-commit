@@ -1,0 +1,28 @@
+# Prevent committing secrets
+echo "🔍 Checking for hardcoded secrets..."
+
+if git diff --cached -p | grep -E "(sk_live_|sk_test_|pk_live_|pk_test_|AKIA[0-9A-Z]{16})" | grep -v ".env.example"; then
+  echo "❌ ERROR: Found hardcoded API key in staged files!"
+  exit 1
+fi
+
+if git diff --cached -p | grep -E "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+" | grep -v ".env.example"; then
+  echo "❌ ERROR: Found hardcoded JWT token in staged files!"
+  exit 1
+fi
+
+echo "✅ Security check passed!"
+
+echo "🔍 Running type check..."
+npm run check || {
+  echo "❌ Type check failed. Fix errors before committing."
+  exit 1
+}
+echo "✅ Type check passed!"
+
+echo "🔍 Running ESLint..."
+npm run lint -- --quiet || {
+  echo "❌ ESLint errors found. Fix before committing."
+  exit 1
+}
+echo "✅ ESLint passed!"

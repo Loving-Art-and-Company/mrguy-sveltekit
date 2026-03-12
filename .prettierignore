@@ -1,0 +1,11 @@
+# Package
+node_modules
+package-lock.json
+
+# Build
+.svelte-kit
+build
+.vercel
+
+# Generated
+static/

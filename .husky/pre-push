@@ -1,0 +1,14 @@
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
+    echo ""
+    echo "🚀 Pushing to $current_branch — running pre-flight..."
+    echo ""
+
+    npm run check || { echo "❌ Type check failed. Push aborted."; exit 1; }
+    npm run build || { echo "❌ Build failed. Push aborted."; exit 1; }
+
+    echo "✅ Pre-flight passed — clear for deployment"
+else
+    echo "📦 Pushing to feature branch ($current_branch) — skipping pre-flight"
+fi
