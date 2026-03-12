@@ -48,6 +48,11 @@ export const BUSINESS_INFO = {
     discount: 25,
     description: "25% off your first booking"
   },
+  socialMedia: {
+    instagram: "https://www.instagram.com/mrguymobiledetailing",
+    tiktok: "https://www.tiktok.com/@mr.guy.detailing",
+    youtube: "https://www.youtube.com/@mrguydetail"
+  },
   valueProps: [
     "We come to you",
     "Satisfaction guaranteed",

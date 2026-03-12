@@ -3,6 +3,12 @@
   import { BUSINESS_INFO } from '$lib/data/services';
   import { Phone, Mail, MapPin, Clock } from 'lucide-svelte';
   import { track } from '$lib/analytics';
+
+  const socialLinks = [
+    { label: 'Instagram', href: BUSINESS_INFO.socialMedia.instagram, platform: 'instagram' },
+    { label: 'TikTok', href: BUSINESS_INFO.socialMedia.tiktok, platform: 'tiktok' },
+    { label: 'YouTube', href: BUSINESS_INFO.socialMedia.youtube, platform: 'youtube' },
+  ] as const;
 </script>
 
 <footer class="footer">
@@ -15,6 +21,28 @@
           <span class="footer-logo-text">{BUSINESS_INFO.name}</span>
         </a>
         <p class="footer-tagline">{BUSINESS_INFO.subTagline}</p>
+        <div class="footer-socials">
+          <p class="footer-social-heading">Follow Mr. Guy</p>
+          <div class="footer-social-links">
+            {#each socialLinks as social}
+              <a
+                href={social.href}
+                target="_blank"
+                rel="noreferrer"
+                class="footer-social-link"
+                aria-label={`Follow Mr. Guy on ${social.label}`}
+                onclick={() =>
+                  track('cta_clicked', {
+                    cta_type: 'social',
+                    location: 'footer',
+                    platform: social.platform,
+                  })}
+              >
+                {social.label}
+              </a>
+            {/each}
+          </div>
+        </div>
       </div>
 
       <!-- Contact -->
@@ -140,6 +168,41 @@
     color: rgba(255, 255, 255, 0.6);
     margin: 0;
     line-height: 1.5;
+  }
+
+  .footer-socials {
+    margin-top: 1rem;
+  }
+
+  .footer-social-heading {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .footer-social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .footer-social-link {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+    padding: 0.35rem 0.7rem;
+    text-decoration: none;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+
+  .footer-social-link:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--text-primary);
   }
 
   .footer-list {
