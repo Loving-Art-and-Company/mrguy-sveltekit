@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import * as businessRepo from '$lib/repositories/businessRepo';
 import { requireAuth } from '$lib/server/auth';
+import { ensureBusinessSchema } from '$lib/server/businessSchema';
 import type { Actions, PageServerLoad } from './$types';
 
 type Period = 'month' | 'quarter' | 'year';
@@ -195,6 +196,8 @@ async function ensureLinkedBookingExists(bookingId: string | null): Promise<bool
 }
 
 export const load: PageServerLoad = async ({ url }) => {
+  await ensureBusinessSchema();
+
   const periodParam = url.searchParams.get('period');
   const period: Period = PERIODS.includes(periodParam as Period) ? (periodParam as Period) : 'month';
   const range = getPeriodRange(period);
@@ -346,6 +349,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 export const actions = {
   addMileage: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     const user = requireAuth(locals);
     const formData = await request.formData();
     const raw = Object.fromEntries(formData);
@@ -381,6 +385,7 @@ export const actions = {
   },
 
   deleteMileage: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     requireAuth(locals);
     const formData = await request.formData();
     const mileageId = formData.get('mileageId');
@@ -398,6 +403,7 @@ export const actions = {
   },
 
   addInventoryItem: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     const user = requireAuth(locals);
     const formData = await request.formData();
     const raw = Object.fromEntries(formData);
@@ -426,6 +432,7 @@ export const actions = {
   },
 
   updateInventoryItem: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     requireAuth(locals);
     const formData = await request.formData();
     const raw = Object.fromEntries(formData);
@@ -452,6 +459,7 @@ export const actions = {
   },
 
   recordInventoryMovement: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     const user = requireAuth(locals);
     const formData = await request.formData();
     const raw = Object.fromEntries(formData);
@@ -510,6 +518,7 @@ export const actions = {
   },
 
   addFinanceEntry: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     const user = requireAuth(locals);
     const formData = await request.formData();
     const raw = Object.fromEntries(formData);
@@ -544,6 +553,7 @@ export const actions = {
   },
 
   deleteFinanceEntry: async ({ request, locals }) => {
+    await ensureBusinessSchema();
     requireAuth(locals);
     const formData = await request.formData();
     const financeId = formData.get('financeId');

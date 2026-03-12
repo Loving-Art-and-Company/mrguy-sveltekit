@@ -42,7 +42,6 @@
 - [ ] Decide the alert recipient for `MRGUY_OPS_ALERT_TO`
 - [ ] Install or verify the local `launchd` schedule where daily automation is wanted
 - [ ] Keep monitoring live payment, booking, and reschedule flows
-- [ ] Push the updated schema with `npx drizzle-kit push` before using the business suite on a live database
 
 ---
 
@@ -54,6 +53,7 @@
   - Tracks items on hand, reorder thresholds, unit cost, stock movements, and purchase spend
 - [x] Simple bookkeeping
   - Auto-pulls paid booking revenue and layers in manual expense/tax/owner-draw entries for a cash-basis view
+  - Business tables self-bootstrap on first `/admin/business` request in production
 
 ---
 
@@ -70,6 +70,7 @@
 - `src/routes/admin/business/+page.svelte`
 - `src/lib/repositories/businessRepo.ts`
 - `src/lib/server/brand.ts`
+- `src/lib/server/businessSchema.ts`
 - `src/routes/admin/bookings/[id]/+page.server.ts`
 - `src/routes/api/payments/webhook/+server.ts`
 

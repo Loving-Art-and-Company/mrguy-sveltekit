@@ -8,7 +8,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 
 ## Current Status
 
-**Live in production** at `https://mrguydetail.com`. The current focus is operational reliability: post-service payment collection is live, the canonical-host/caching fixes are shipped, the bounded ops agent foundation is in place, and the codebase now includes a new `/admin/business` suite for mileage, supply inventory, and simple bookkeeping. Before the business suite is used on a live database, run `npx drizzle-kit push` with the correct `DATABASE_URL`.
+**Live in production** at `https://mrguydetail.com`. The current focus is operational reliability: post-service payment collection is live, the canonical-host/caching fixes are shipped, the bounded ops agent foundation is in place, and the codebase now includes a new `/admin/business` suite for mileage, supply inventory, and simple bookkeeping. The business route now bootstraps its own tables on first request using the existing app database connection so it can go live without a separate schema-push step.
 
 ## Active Work
 
@@ -20,7 +20,6 @@ LAC-owned brand/app; optimize for leverage and growth.
 - [ ] Reauthorize the connected Google account once so Gmail, GA4, and Search Console readonly scopes become available to the ops scripts
 - [ ] Install or verify the optional local `launchd` schedule on machines that should run the daily digest automatically
 - [ ] Keep monitoring booking, payment, and reschedule health in production
-- [ ] Push the updated schema with `npx drizzle-kit push` before using the business suite on a live database
 
 ## Recent Changes
 
@@ -29,6 +28,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - 2026-03-09: Shipped mobile-first Stripe payment collection for existing bookings and hardened canonical-host behavior in production
 - 2026-02-23: Implemented the "Fresh Start" first-time-client promo with server-side eligibility
 - 2026-03-12: Built `/admin/business` with mileage tracking, inventory management, and simple bookkeeping summaries/forms
+- 2026-03-12: Added runtime business-table bootstrap so `/admin/business` can initialize its own schema on first request in production
 
 ## Tech Stack
 
@@ -82,6 +82,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - `src/routes/admin/business/+page.svelte`
 - `src/lib/repositories/businessRepo.ts`
 - `src/lib/server/brand.ts`
+- `src/lib/server/businessSchema.ts`
 - `src/routes/admin/bookings/[id]/+page.server.ts`
 - `src/routes/api/payments/webhook/+server.ts`
 - `src/lib/server/db.ts`
