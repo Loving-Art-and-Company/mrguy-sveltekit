@@ -20,10 +20,17 @@ jobs:
 
       - name: Check booking page
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://mrguydetail.com/book" || echo "000")
+          RESPONSE=$(curl -I -s --max-time 30 "https://mrguydetail.com/book" || true)
+          STATUS=$(printf "%s" "$RESPONSE" | awk 'NR==1 {print $2}')
+          LOCATION=$(printf "%s" "$RESPONSE" | awk 'BEGIN{IGNORECASE=1} /^location:/ {print $2}' | tr -d '\r')
           echo "Booking: $STATUS"
-          if [ "$STATUS" != "200" ]; then
+          echo "Location: ${LOCATION:-<none>}"
+          if [ "$STATUS" != "302" ] && [ "$STATUS" != "301" ] && [ "$STATUS" != "308" ]; then
             echo "::error::Booking page returned HTTP $STATUS"
+            exit 1
+          fi
+          if [ "$LOCATION" != "/#services" ] && [ "$LOCATION" != "https://mrguydetail.com/#services" ]; then
+            echo "::error::Booking redirect location was ${LOCATION:-<none>}"
             exit 1
           fi
 
