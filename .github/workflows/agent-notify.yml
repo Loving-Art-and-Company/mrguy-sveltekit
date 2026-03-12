@@ -1,0 +1,94 @@
+# agent-notify.yml — Post to agent queue when CI fails or PR is opened
+# Copy this to .github/workflows/ in any LAC repo
+name: Agent Notifications
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  pull_request:
+    types: [opened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  notify-on-failure:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue for agent queue
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const title = `[Agent] CI failure: ${run.name} on ${run.head_branch}`;
+            const body = [
+              `## CI Failure Detected`,
+              ``,
+              `| Field | Value |`,
+              `|-------|-------|`,
+              `| **Workflow** | ${run.name} |`,
+              `| **Branch** | ${run.head_branch} |`,
+              `| **Commit** | ${run.head_sha.substring(0, 7)} |`,
+              `| **Run** | [#${run.run_number}](${run.html_url}) |`,
+              `| **Triggered by** | ${run.triggering_actor?.login || 'unknown'} |`,
+              `| **Failed at** | ${run.updated_at} |`,
+              ``,
+              `### Agent Routing`,
+              `- **Primary**: CTO (tech health)`,
+              `- **Escalate to**: COO if unresolved after 24h`,
+              ``,
+              `### Action Required`,
+              `Review the [failed run](${run.html_url}) and determine:`,
+              `1. Is this a flaky test or real failure?`,
+              `2. Does this block deployment?`,
+              `3. Who should fix it?`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['agent-queue', 'ci-failure']
+            });
+
+  notify-on-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add review checklist
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = [
+              `## 🤖 Agent Review Checklist`,
+              ``,
+              `PR **${pr.title}** opened by @${pr.user.login}`,
+              ``,
+              `### Automated Checks`,
+              `- [ ] CI passes`,
+              `- [ ] No secrets in diff`,
+              `- [ ] Type check clean`,
+              `- [ ] ESLint clean`,
+              ``,
+              `### Agent Review (CTO)`,
+              `- [ ] Architecture alignment`,
+              `- [ ] Performance implications`,
+              `- [ ] Security review (if auth/data changes)`,
+              ``,
+              `### Deployment`,
+              `- [ ] Preview deployment verified`,
+              `- [ ] No breaking changes to API`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });
