@@ -1,21 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://mrguymobiledetail.com/</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://mrguydetail.com/</loc>
+    <lastmod>2026-03-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mrguymobiledetail.com/book</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://mrguydetail.com/book</loc>
+    <lastmod>2026-03-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mrguymobiledetail.com/reschedule</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://mrguydetail.com/reschedule</loc>
+    <lastmod>2026-03-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/weston</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/pembroke-pines</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/miramar</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/davie</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/southwest-ranches</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/cooper-city</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrguydetail.com/cities/plantation</loc>
+    <lastmod>2026-03-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

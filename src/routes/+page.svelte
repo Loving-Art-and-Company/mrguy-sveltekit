@@ -3,6 +3,7 @@
   import { PackageMenu, BUSINESS_INFO, type ServicePackage } from '$lib';
   import BentoSlideshow from '$lib/components/BentoSlideshow.svelte';
   import BookingModal from '$lib/components/BookingModal.svelte';
+  import { SERVICE_CITIES } from '$lib/data/cities';
   import { track } from '$lib/analytics';
   import { MRGUY_CANONICAL_ORIGIN } from '$lib/constants/site';
 
@@ -81,13 +82,7 @@
       "latitude": 26.1003,
       "longitude": -80.3997
     },
-    "areaServed": [
-      { "@type": "City", "name": "Weston" },
-      { "@type": "City", "name": "Pembroke Pines" },
-      { "@type": "City", "name": "Miramar" },
-      { "@type": "City", "name": "Davie" },
-      { "@type": "City", "name": "Southwest Ranches" }
-    ],
+      "areaServed": SERVICE_CITIES.map((city) => ({ "@type": "City", "name": city.name })),
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
@@ -138,6 +133,24 @@
       {/each}
     </div>
     <p class="location">Serving {BUSINESS_INFO.location}</p>
+  </section>
+
+  <section class="service-areas">
+    <h2>Explore mobile detailing by city</h2>
+    <p class="service-areas-copy">
+      Looking for service near you? Browse our city pages for the main West Broward areas we serve.
+    </p>
+    <div class="service-area-links">
+      {#each SERVICE_CITIES as city}
+        <a
+          href={`/cities/${city.slug}`}
+          class="service-area-link"
+          onclick={() => track('cta_clicked', { cta_type: 'service_area', location: 'homepage', city: city.slug })}
+        >
+          {city.name}
+        </a>
+      {/each}
+    </div>
   </section>
 </main>
 
@@ -257,6 +270,53 @@
       0 20px 60px rgba(14, 165, 233, 0.1),
       0 8px 24px rgba(0, 0, 0, 0.06),
       inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  }
+
+  .service-areas {
+    max-width: 1200px;
+    margin: 0 auto 6rem;
+    padding: 0 2rem;
+    text-align: center;
+  }
+
+  .service-areas h2 {
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+  }
+
+  .service-areas-copy {
+    max-width: 640px;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .service-area-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .service-area-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .service-area-link:hover {
+    transform: translateY(-1px);
+    background: rgba(14, 165, 233, 0.16);
   }
 
   .why-us h2 {

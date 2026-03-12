@@ -13,14 +13,19 @@
     service: ServicePackage;
     isOpen: boolean;
     showPromo?: boolean;
+    initialCity?: string;
     onClose: () => void;
     onEditService: () => void;
   }
 
-  let { service, isOpen, showPromo = false, onClose, onEditService }: Props = $props();
+  let { service, isOpen, showPromo = false, initialCity = 'Weston', onClose, onEditService }: Props = $props();
 
   const displayPrice = $derived(showPromo ? getPromoPrice(service.priceHigh) : service.priceHigh);
   const stepNames = ['schedule', 'location', 'contact'] as const;
+
+  function createAddress(city: string) {
+    return { street: '', city, state: 'FL', zip: '', instructions: '' };
+  }
 
   // Step management (0=Date/Time, 1=Location, 2=Contact)
   let currentStep = $state(0);
@@ -31,8 +36,14 @@
 
   // Form data
   let schedule = $state({ date: '', time: '' });
-  let address = $state({ street: '', city: 'Weston', state: 'FL', zip: '', instructions: '' });
+  let address = $state(createAddress('Weston'));
   let contact = $state({ name: '', phone: '', email: '' });
+
+  $effect(() => {
+    if (!isOpen) {
+      address = createAddress(initialCity);
+    }
+  });
 
   const availableDates = buildBookableDates();
   let availabilityLoading = $state(false);
@@ -250,7 +261,7 @@
     currentStep = 0;
     showSuccess = false;
     schedule = { date: '', time: '' };
-    address = { street: '', city: 'Weston', state: 'FL', zip: '', instructions: '' };
+    address = createAddress(initialCity);
     contact = { name: '', phone: '', email: '' };
     availabilityLoading = false;
     availabilityError = '';

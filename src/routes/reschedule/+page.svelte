@@ -34,6 +34,10 @@
   let availabilityError = $state('');
   let availableTimes = $state<AvailabilitySlot[]>([]);
 
+  function getFirstAvailableTime(slots: AvailabilitySlot[]): string {
+    return slots.find((slot) => slot.available)?.value || '';
+  }
+
   async function sendVerificationCode() {
     if (phone.length !== 10) {
       errorMessage = 'Please enter a valid 10-digit phone number';
@@ -148,11 +152,14 @@
       }
 
       if (!availableTimes.some((slot) => slot.value === newTime && slot.available)) {
-        newTime = availableTimes.find((slot) => slot.available)?.value || '';
+        newTime = getFirstAvailableTime(availableTimes);
       }
     } catch (err) {
       availableTimes = buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
       availabilityError = err instanceof Error ? err.message : 'Could not load availability.';
+      if (!newTime) {
+        newTime = getFirstAvailableTime(availableTimes);
+      }
     } finally {
       availabilityLoading = false;
     }
@@ -160,8 +167,8 @@
 
   function selectNewDate(date: string) {
     newDate = date;
-    newTime = '';
     availableTimes = buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+    newTime = getFirstAvailableTime(availableTimes);
     void loadAvailability(date);
   }
 
@@ -441,6 +448,9 @@
         <div class="form-group">
           <label for="new-time">Preferred Time</label>
           <select id="new-time" bind:value={newTime} class="select-input" disabled={availabilityLoading || !newDate}>
+            {#if !newTime}
+              <option value="">Select a time...</option>
+            {/if}
             {#each availableTimes.filter((slot) => slot.available) as slot}
               <option value={slot.value}>{slot.label}</option>
             {/each}
@@ -457,7 +467,7 @@
           <p class="error">{errorMessage}</p>
         {/if}
 
-        <button type="submit" class="btn primary" disabled={isLoading || !newDate}>
+        <button type="submit" class="btn primary" disabled={isLoading || availabilityLoading || !newDate || !newTime}>
           {#if isLoading}
             <Loader2 size={18} class="spinner" />
             Sending request...

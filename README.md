@@ -291,7 +291,7 @@ Optional env vars:
 
 ```bash
 # Deliver urgent digest alerts by email
-MRGUY_OPS_ALERT_TO=you@example.com
+MRGUY_OPS_ALERT_TO=you@example.com # optional; falls back to the MrGuy business email if omitted
 SEND_ALERTS=1
 
 # Override target environment

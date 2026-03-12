@@ -6,14 +6,15 @@
 
   const isLoginPage = $derived($page.url.pathname === '/admin/login');
 
-  const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: '📊', exact: true },
-    { href: '/admin/bookings', label: 'Bookings', icon: '📅', exact: false },
-    { href: '/admin/revenue', label: 'Revenue', icon: '💰', exact: false },
-    { href: '/admin/drive', label: 'Drive', icon: '📁', exact: false },
-    { href: '/admin/sheets', label: 'Sheets', icon: '📗', exact: false },
-    { href: '/admin/docs', label: 'Docs', icon: '📄', exact: false },
-  ];
+   const navItems = [
+     { href: '/admin', label: 'Dashboard', icon: '📊', exact: true },
+     { href: '/admin/bookings', label: 'Bookings', icon: '📅', exact: false },
+     { href: '/admin/crm', label: 'CRM', icon: '📣', exact: false },
+     { href: '/admin/revenue', label: 'Revenue', icon: '💰', exact: false },
+     { href: '/admin/drive', label: 'Drive', icon: '📁', exact: false },
+     { href: '/admin/sheets', label: 'Sheets', icon: '📗', exact: false },
+     { href: '/admin/docs', label: 'Docs', icon: '📄', exact: false },
+   ];
 
   // Check if nav item is active (exact match for dashboard, prefix match for others)
   function isActive(item: typeof navItems[0]): boolean {

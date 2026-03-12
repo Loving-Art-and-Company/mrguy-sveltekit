@@ -1,17 +1,8 @@
 <script lang="ts">
+  import { SERVICE_CITIES } from '$lib/data/cities';
   import { BUSINESS_INFO } from '$lib/data/services';
   import { Phone, Mail, MapPin, Clock } from 'lucide-svelte';
   import { track } from '$lib/analytics';
-
-  const serviceCities = [
-    'Weston',
-    'Pembroke Pines',
-    'Miramar',
-    'Davie',
-    'Cooper City',
-    'Southwest Ranches',
-    'Plantation'
-  ];
 </script>
 
 <footer class="footer">
@@ -53,10 +44,15 @@
       <div class="footer-section">
         <h4>Service Area</h4>
         <ul class="footer-list cities">
-          {#each serviceCities as city}
+          {#each SERVICE_CITIES as city}
             <li>
               <MapPin size={14} />
-              <span>{city}, FL</span>
+              <a
+                href={`/cities/${city.slug}`}
+                onclick={() => track('cta_clicked', { cta_type: 'service_area', location: 'footer', city: city.slug })}
+              >
+                {city.name}, FL
+              </a>
             </li>
           {/each}
         </ul>

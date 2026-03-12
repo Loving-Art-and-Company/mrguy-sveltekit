@@ -31,6 +31,7 @@ export async function getBookingOpsSnapshot() {
   try {
     const today = startOfTodayLocal();
     const nextWeek = addDays(today, 7);
+    const nextTwoDays = addDays(today, 2);
 
     const [todayCountRow] = await sql`
       select count(*)::int as count
@@ -53,6 +54,27 @@ export async function getBookingOpsSnapshot() {
         and status in ('pending', 'rescheduled')
         and created_at < now() - interval '24 hours'
       order by created_at asc
+      limit 20
+    `;
+
+    const awaitingResponse = await sql`
+      select id, "clientName" as client_name, "serviceName" as service_name, date, time, status, "paymentStatus" as payment_status, created_at
+      from bookings
+      where brand_id = ${BRAND_ID}
+        and status in ('pending', 'rescheduled')
+        and created_at < now() - interval '2 hours'
+      order by created_at asc
+      limit 20
+    `;
+
+    const upcomingNeedsConfirmation = await sql`
+      select id, "clientName" as client_name, "serviceName" as service_name, date, time, status, "paymentStatus" as payment_status, created_at
+      from bookings
+      where brand_id = ${BRAND_ID}
+        and status in ('pending', 'rescheduled')
+        and date >= ${today}
+        and date <= ${nextTwoDays}
+      order by date asc, time asc nulls last
       limit 20
     `;
 
@@ -87,6 +109,22 @@ export async function getBookingOpsSnapshot() {
 
     const actions = [];
 
+    if (awaitingResponse.length > 0) {
+      actions.push({
+        severity: 'high',
+        type: 'awaiting_response',
+        message: `${awaitingResponse.length} booking leads have been pending for more than 2 hours and need follow-up`,
+      });
+    }
+
+    if (upcomingNeedsConfirmation.length > 0) {
+      actions.push({
+        severity: 'high',
+        type: 'upcoming_confirmation',
+        message: `${upcomingNeedsConfirmation.length} upcoming bookings still need confirmation within the next 48 hours`,
+      });
+    }
+
     if (stalePending.length > 0) {
       actions.push({
         severity: 'high',
@@ -118,11 +156,15 @@ export async function getBookingOpsSnapshot() {
         today: Number(todayCountRow?.count ?? 0),
         next7Days: Number(upcomingCountRow?.count ?? 0),
         recent24Hours: recentBookings.length,
+        awaitingResponse: awaitingResponse.length,
+        upcomingNeedsConfirmation: upcomingNeedsConfirmation.length,
         stalePending: stalePending.length,
         paidPending: paidPending.length,
       },
       recentBookings,
       upcomingBookings,
+      awaitingResponse,
+      upcomingNeedsConfirmation,
       stalePending,
       paidPending,
       actions,
@@ -144,6 +186,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`Today bookings: ${snapshot.counts.today}`);
     console.log(`Next 7 days: ${snapshot.counts.next7Days}`);
     console.log(`Recent 24 hours: ${snapshot.counts.recent24Hours}`);
+    console.log(`Awaiting response: ${snapshot.counts.awaitingResponse}`);
+    console.log(`Upcoming needs confirmation: ${snapshot.counts.upcomingNeedsConfirmation}`);
     console.log(`Stale pending: ${snapshot.counts.stalePending}`);
     console.log(`Paid pending: ${snapshot.counts.paidPending}`);
   }

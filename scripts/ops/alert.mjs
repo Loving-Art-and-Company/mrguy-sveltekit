@@ -2,9 +2,11 @@ const RESEND_API_URL = 'https://api.resend.com/emails';
 
 export async function sendOpsAlert({ subject, html, text }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.MRGUY_OPS_ALERT_TO;
+  const to = process.env.MRGUY_OPS_ALERT_TO
+    ?? process.env.MRGUY_BUSINESS_EMAIL
+    ?? 'info@mrguymobiledetail.com';
 
-  if (!apiKey || !to) {
+  if (!apiKey) {
     return {
       delivered: false,
       reason: 'missing_config',

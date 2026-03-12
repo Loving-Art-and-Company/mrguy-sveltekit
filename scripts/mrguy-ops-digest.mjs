@@ -45,6 +45,12 @@ function rankActions(smoke, bookings, sections) {
 function toMarkdown({ smoke, bookings, inquiries, analytics, seo, actions }) {
   const smokeLines = smoke.checks.map((check) => `- ${check.name}: ${check.status} - ${check.detail}`).join('\n');
   const actionLines = actions.map((item) => `- [${item.severity}] ${item.owner}: ${item.action}`).join('\n');
+  const awaitingResponseLines = bookings.awaitingResponse.slice(0, 5).map((item) =>
+    `- ${item.id}: ${item.client_name} • ${item.service_name} • ${item.date} ${item.time ?? 'TBD'}`
+  ).join('\n') || '- none';
+  const upcomingConfirmationLines = bookings.upcomingNeedsConfirmation.slice(0, 5).map((item) =>
+    `- ${item.id}: ${item.client_name} • ${item.service_name} • ${item.date} ${item.time ?? 'TBD'}`
+  ).join('\n') || '- none';
   const staleLines = bookings.stalePending.slice(0, 5).map((item) =>
     `- ${item.id}: ${item.client_name} • ${item.service_name} • ${item.date} ${item.time ?? 'TBD'}`
   ).join('\n') || '- none';
@@ -63,6 +69,8 @@ Generated: ${new Date().toISOString()}
 - Bookings today: ${bookings.counts.today}
 - Next 7 days: ${bookings.counts.next7Days}
 - Recent 24 hours: ${bookings.counts.recent24Hours}
+- Awaiting response (>2h): ${bookings.counts.awaitingResponse}
+- Upcoming needs confirmation (48h): ${bookings.counts.upcomingNeedsConfirmation}
 - Paid pending: ${bookings.counts.paidPending}
 - Stale pending: ${bookings.counts.stalePending}
 
@@ -71,6 +79,12 @@ Generated: ${new Date().toISOString()}
 ${smokeLines}
 
 ## Lead / Booking Queue
+### Needs Response Now
+${awaitingResponseLines}
+
+### Upcoming Needs Confirmation
+${upcomingConfirmationLines}
+
 ### Stale Pending
 ${staleLines}
 

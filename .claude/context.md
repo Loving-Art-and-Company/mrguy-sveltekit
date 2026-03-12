@@ -52,7 +52,7 @@ LAC-owned brand/app; optimize for leverage and growth.
   - `npm run ops:daily`
   - `npm run ops:schedule:install`
 - Digests write to `output/ops/latest-digest.md` and archive copies under `output/ops/`
-- Alerts only send when `SEND_ALERTS=1`, `RESEND_API_KEY`, and `MRGUY_OPS_ALERT_TO` are configured
+- Alerts send when `SEND_ALERTS=1` and `RESEND_API_KEY` are configured; `MRGUY_OPS_ALERT_TO` is optional and falls back to the MrGuy business email
 - Gmail, GA4, and Search Console stay degraded until the Google reconnect adds:
   - `gmail.readonly`
   - `analytics.readonly`
