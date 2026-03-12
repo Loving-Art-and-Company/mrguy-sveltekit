@@ -1,6 +1,7 @@
+import { error, fail, redirect } from '@sveltejs/kit';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import type { BookingRow } from '$lib/repositories/bookingRepo';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const status = url.searchParams.get('status');
@@ -37,15 +38,25 @@ export const load: PageServerLoad = async ({ url }) => {
 		]);
 
 		// Group calendar bookings by date
-		const calendarByDate: Record<string, Pick<BookingRow, 'id' | 'time' | 'clientName' | 'serviceName' | 'status'>[]> = {};
+		const calendarByDate: Record<
+			string,
+			Pick<
+				BookingRow,
+				'id' | 'date' | 'time' | 'clientName' | 'serviceName' | 'status' | 'price' | 'contact' | 'paymentStatus'
+			>[]
+		> = {};
 		for (const b of calendarBookings) {
 			if (!calendarByDate[b.date]) calendarByDate[b.date] = [];
 			calendarByDate[b.date].push({
 				id: b.id,
+				date: b.date,
 				time: b.time,
 				clientName: b.clientName,
 				serviceName: b.serviceName,
 				status: b.status,
+				price: b.price,
+				contact: b.contact,
+				paymentStatus: b.paymentStatus,
 			});
 		}
 
@@ -60,11 +71,46 @@ export const load: PageServerLoad = async ({ url }) => {
 		return {
 			bookings: [],
 			filters: { status, from, to, search },
-			calendarByDate: {} as Record<string, Pick<BookingRow, 'id' | 'time' | 'clientName' | 'serviceName' | 'status'>[]>,
+			calendarByDate: {} as Record<
+				string,
+				Pick<
+					BookingRow,
+					'id' | 'date' | 'time' | 'clientName' | 'serviceName' | 'status' | 'price' | 'contact' | 'paymentStatus'
+				>[]
+			>,
 			currentMonth: `${year}-${String(month + 1).padStart(2, '0')}`,
 		};
 	}
 };
+
+export const actions = {
+	deleteBooking: async ({ request, url }) => {
+		const formData = await request.formData();
+		const bookingId = formData.get('bookingId');
+		const redirectTo = formData.get('redirectTo');
+
+		if (typeof bookingId !== 'string' || bookingId.length === 0) {
+			return fail(400, { deleteError: 'Missing booking ID.' });
+		}
+
+		const booking = await bookingRepo.getById(bookingId);
+		if (!booking) {
+			throw error(404, 'Booking not found');
+		}
+
+		const deleted = await bookingRepo.deleteById(bookingId);
+		if (!deleted) {
+			return fail(500, { deleteError: 'Could not delete booking.' });
+		}
+
+		const safeRedirect =
+			typeof redirectTo === 'string' && redirectTo.startsWith('/admin/bookings')
+				? redirectTo
+				: `/admin/bookings${url.search}`;
+
+		throw redirect(303, safeRedirect);
+	},
+} satisfies Actions;
 
 function fmtDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

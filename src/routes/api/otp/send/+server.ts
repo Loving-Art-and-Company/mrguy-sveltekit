@@ -1,9 +1,19 @@
 import { json, error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-import { normalizePhone, normalizePhoneE164 } from '$lib/server/phone';
+import { normalizePhone } from '$lib/server/phone';
+import { clearOtpSession, createOtpSession } from '$lib/server/otp';
+import { sendEmail } from '$lib/server/email';
+import { getRescheduleEmailByPhone } from '$lib/repositories/bookingRepo';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
+const RESCHEDULE_STATUSES = ['pending', 'confirmed', 'rescheduled'];
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return email;
+  return `${local.slice(0, 1)}***@${domain}`;
+}
+
+export const POST: RequestHandler = async ({ request, cookies }) => {
   try {
     const { phone } = await request.json();
 
@@ -11,42 +21,45 @@ export const POST: RequestHandler = async ({ request }) => {
       throw error(400, 'Phone number is required');
     }
 
-    if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_VERIFY_SERVICE_SID) {
-      throw error(503, 'OTP service not configured');
-    }
-
-    const normalizedPhone = normalizePhoneE164(phone);
     const canonicalPhone = normalizePhone(phone);
-
-    if (!canonicalPhone) {
+    if (!canonicalPhone || canonicalPhone.length !== 10) {
       throw error(400, 'Invalid phone number');
     }
 
-    // Send OTP via Twilio Verify
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SERVICE_SID}/Verifications`;
-
-    const response = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`)}`,
-      },
-      body: new URLSearchParams({
-        To: normalizedPhone,
-        Channel: 'sms',
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Twilio error:', errorData);
-      throw error(400, 'Failed to send verification code');
+    const emailLookup = await getRescheduleEmailByPhone(canonicalPhone, RESCHEDULE_STATUSES);
+    if (!emailLookup.ok) {
+      if (emailLookup.reason === 'multiple') {
+        throw error(400, 'We found multiple emails for this phone number. Please call 954-804-4747 for help.');
+      }
+      throw error(400, 'We could not find an email address for this booking. Please call 954-804-4747 for help.');
     }
 
-    return json({ success: true, message: 'Verification code sent' });
+    const code = createOtpSession(cookies, canonicalPhone);
+    const sent = await sendEmail({
+      to: emailLookup.email,
+      subject: 'Your Mr. Guy Detail verification code',
+      html: `
+        <h2>Your verification code</h2>
+        <p>Use this code to view your booking and request a reschedule:</p>
+        <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px;">${code}</p>
+        <p>This code expires in 10 minutes.</p>
+        <p>If you did not request this, you can ignore this email.</p>
+      `,
+    });
+
+    if (!sent) {
+      clearOtpSession(cookies);
+      throw error(503, 'Failed to send verification code');
+    }
+
+    return json({
+      success: true,
+      message: 'Verification code sent',
+      maskedDestination: maskEmail(emailLookup.email),
+    });
   } catch (err) {
     console.error('OTP send error:', err);
-    if (err instanceof Error && 'status' in err) {
+    if (typeof err === 'object' && err !== null && 'status' in err) {
       throw err;
     }
     throw error(500, 'Failed to send verification code');

@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
 
   let { children, data } = $props();
+  let menuOpen = $state(false);
 
   const isLoginPage = $derived($page.url.pathname === '/admin/login');
 
@@ -26,15 +27,29 @@
   const pageTitle = $derived(
     navItems.find((i) => isActive(i))?.label || 'Admin'
   );
+
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('admin-menu-open', menuOpen);
+
+    return () => {
+      document.body.classList.remove('admin-menu-open');
+    };
+  });
 </script>
 
 {#if isLoginPage}
   {@render children()}
 {:else}
   <div class="admin-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" class:open={menuOpen} aria-hidden={!menuOpen}>
       <div class="logo">
         <h2>Mr. Guy Admin</h2>
+      </div>
+
+      <div class="mobile-header">
+        <p>Mr. Guy Admin</p>
+        <button type="button" class="close-btn" onclick={() => (menuOpen = false)}>Close</button>
       </div>
 
       <nav>
@@ -43,6 +58,7 @@
             href={item.href}
             class="nav-item"
             class:active={isActive(item)}
+            onclick={() => (menuOpen = false)}
           >
             <span class="icon">{item.icon}</span>
             {item.label}
@@ -58,8 +74,24 @@
       </div>
     </aside>
 
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      class:visible={menuOpen}
+      onclick={() => (menuOpen = false)}
+      aria-label="Close navigation"
+    ></button>
+
     <main class="main-content">
       <header class="top-bar">
+        <button
+          class="menu-btn"
+          type="button"
+          onclick={() => (menuOpen = !menuOpen)}
+          aria-label="Toggle navigation"
+        >
+          ☰
+        </button>
         <h1 class="page-title">
           {pageTitle}
         </h1>
@@ -76,22 +108,46 @@
 {/if}
 
 <style>
+  :global(html) {
+    min-height: 100%;
+  }
+
+  :global(body) {
+    min-height: 100dvh;
+    background: #f3f4f6;
+    overscroll-behavior-y: none;
+  }
+
+  :global(body.admin-menu-open) {
+    overflow: hidden;
+    touch-action: none;
+  }
+
   .admin-layout {
     display: flex;
-    min-height: 100vh;
+    min-height: 100dvh;
     background: #f3f4f6;
+    flex-direction: column;
   }
 
   .sidebar {
-    width: 250px;
+    width: min(82vw, 320px);
     background: #1a1a2e;
     color: white;
     display: flex;
     flex-direction: column;
     position: fixed;
-    height: 100vh;
+    height: 100dvh;
     left: 0;
     top: 0;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 20;
+    box-shadow: 18px 0 48px rgba(15, 23, 42, 0.28);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
   }
 
   .logo {
@@ -103,6 +159,25 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
+  }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+  }
+
+  .close-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f3f4f6;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    min-width: 72px;
+    min-height: 40px;
   }
 
   nav {
@@ -168,23 +243,43 @@
     border-color: rgba(255, 255, 255, 0.3);
   }
 
+  .sidebar-backdrop {
+    display: none;
+    border: none;
+    padding: 0;
+    background: transparent;
+  }
+
   .main-content {
     flex: 1;
-    margin-left: 250px;
+    margin-left: 0;
     display: flex;
     flex-direction: column;
+    min-height: 100dvh;
+    overflow-x: clip;
   }
 
   .top-bar {
     background: white;
-    padding: 1rem 2rem;
+    padding: 1rem 1.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e5e7eb;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 15;
+    gap: 1rem;
+  }
+
+  .menu-btn {
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
   }
 
   .page-title {
@@ -199,25 +294,55 @@
   }
 
   .content {
-    padding: 2rem;
+    padding: 1.5rem;
     flex: 1;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 
-  @media (max-width: 768px) {
+  @media (min-width: 1024px) {
+    .admin-layout {
+      flex-direction: row;
+    }
+
     .sidebar {
-      width: 200px;
+      position: fixed;
+      width: 250px;
+      transform: translateX(0);
     }
 
     .main-content {
-      margin-left: 200px;
+      margin-left: 250px;
     }
 
+    .sidebar-backdrop {
+      display: none;
+    }
+  }
+
+  @media (max-width: 1023px) {
     .top-bar {
-      padding: 1rem;
+      position: static;
     }
 
     .content {
       padding: 1rem;
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 10;
+      display: block;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
   }
 </style>

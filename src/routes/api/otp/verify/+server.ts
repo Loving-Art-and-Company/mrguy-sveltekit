@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-import { normalizePhone, normalizePhoneE164 } from '$lib/server/phone';
+import { normalizePhone } from '$lib/server/phone';
+import { verifyOtpSession } from '$lib/server/otp';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -11,35 +11,17 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       throw error(400, 'Phone and verification code are required');
     }
 
-    if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_VERIFY_SERVICE_SID) {
-      throw error(503, 'OTP service not configured');
-    }
-
-    const normalizedPhone = normalizePhoneE164(phone);
     const canonicalPhone = normalizePhone(phone);
 
-    if (!canonicalPhone) {
+    if (!canonicalPhone || canonicalPhone.length !== 10) {
       throw error(400, 'Invalid phone number');
     }
 
-    // Verify OTP via Twilio Verify
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
+    if (!/^\d{6}$/.test(String(code))) {
+      throw error(400, 'Invalid or expired verification code');
+    }
 
-    const response = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`)}`,
-      },
-      body: new URLSearchParams({
-        To: normalizedPhone,
-        Code: code,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || result.status !== 'approved') {
+    if (!verifyOtpSession(cookies, canonicalPhone, String(code))) {
       throw error(400, 'Invalid or expired verification code');
     }
 
@@ -60,7 +42,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     return json({ success: true, verified: true });
   } catch (err) {
     console.error('OTP verify error:', err);
-    if (err instanceof Error && 'status' in err) {
+    if (typeof err === 'object' && err !== null && 'status' in err) {
       throw err;
     }
     throw error(500, 'Verification failed');

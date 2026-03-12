@@ -1,5 +1,5 @@
 // src/lib/repositories/clientProfileRepo.ts
-// Client profile data access layer — replaces supabaseAdmin.from('client_profiles') calls
+// Client profile data access layer
 
 import { db } from '$lib/server/db';
 import { clientProfiles } from '$lib/server/schema';

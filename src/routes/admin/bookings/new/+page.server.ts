@@ -6,6 +6,8 @@ import { normalizePhone } from '$lib/server/phone';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
 import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
 import { createCalendarEvent } from '$lib/server/calendar';
+import { buildBookableTimeSlots, findConflictingHold, formatTimeLabel, isBookableDate } from '$lib/scheduling';
+import { bookings } from '$lib/server/schema';
 import type { Actions, PageServerLoad } from './$types';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
@@ -38,6 +40,7 @@ export const load: PageServerLoad = async () => {
 export const actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
+		const returnTo = formData.get('returnTo') as string | null;
 
 		const raw = {
 			clientName: formData.get('clientName') as string,
@@ -62,6 +65,21 @@ export const actions = {
 		}
 
 		const data = result.data;
+		const validTimeValues = new Set(buildBookableTimeSlots(data.date).map((slot) => slot.value));
+
+		if (!isBookableDate(data.date)) {
+			return fail(400, {
+				errors: { date: ['Service is not available on Sundays.'] },
+				values: raw,
+			});
+		}
+
+		if (!validTimeValues.has(data.time)) {
+			return fail(400, {
+				errors: { time: ['Selected time is outside booking hours for that day.'] },
+				values: raw,
+			});
+		}
 
 		// Look up service package server-side
 		const pkg = SERVICE_PACKAGES.find((p) => p.id === data.serviceId);
@@ -78,34 +96,56 @@ export const actions = {
 		const finalPrice = pkg.priceHigh;
 
 		// Build notes with address info (matches existing pattern — no address columns in schema)
-		const notes = [
-			`Address: ${data.street}, ${data.city}, ${data.state} ${data.zip}`,
-			data.notes ? `Admin notes: ${data.notes}` : null,
-			'Created by admin',
-		]
+			const notes = [
+				`Address: ${data.street}, ${data.city}, ${data.state} ${data.zip}`,
+				data.email ? `Email: ${data.email}` : null,
+				data.notes ? `Admin notes: ${data.notes}` : null,
+				'Created by admin',
+			]
 			.filter(Boolean)
 			.join('\n');
 
 		const bookingId = bookingRepo.generateBookingId(data.date);
 
-		try {
-			const newBooking = await bookingRepo.insert({
-				id: bookingId,
-				brandId: MRGUY_BRAND_ID,
-				clientName: data.clientName,
-				serviceName: pkg.name,
-				price: finalPrice,
-				date: data.date,
-				time: data.time,
-				contact: cleanPhone,
-				promoCode: null,
-				notes,
-				status: 'confirmed',
-				paymentStatus: 'unpaid',
-			});
+			try {
+				const newBooking = await bookingRepo.withScheduleLock(data.date, async (tx) => {
+					const holds = await bookingRepo.listScheduleHoldsByDate(data.date, { executor: tx });
+					const conflict = findConflictingHold(holds, data.time);
 
-			if (!newBooking) {
-				return fail(500, {
+					if (conflict) {
+						return { conflict };
+					}
+
+					const rows = await tx
+						.insert(bookings)
+						.values({
+							id: bookingId,
+							brandId: MRGUY_BRAND_ID,
+							clientName: data.clientName,
+							serviceName: pkg.name,
+							price: finalPrice,
+							date: data.date,
+							time: data.time,
+							contact: cleanPhone,
+							promoCode: null,
+							notes,
+							status: 'confirmed',
+							paymentStatus: 'unpaid',
+						})
+						.returning();
+
+					return rows[0] ?? null;
+				});
+
+				if (newBooking && 'conflict' in newBooking) {
+					return fail(409, {
+						errors: { _form: [`That ${formatTimeLabel(data.time)} slot is no longer available. Choose another time.`] },
+						values: raw,
+					});
+				}
+
+				if (!newBooking) {
+					return fail(500, {
 					errors: { _form: ['Failed to create booking. Please try again.'] },
 					values: raw,
 				});
@@ -148,6 +188,11 @@ export const actions = {
 			});
 		}
 
-		redirect(303, '/admin/bookings');
+		redirect(
+			303,
+			typeof returnTo === 'string' && returnTo.startsWith('/admin/bookings')
+				? returnTo
+				: '/admin/bookings'
+		);
 	},
 } satisfies Actions;

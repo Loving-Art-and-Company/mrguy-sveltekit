@@ -1,14 +1,16 @@
 // src/lib/repositories/bookingRepo.ts
-// Booking data access layer — replaces all supabaseAdmin.from('bookings') calls
+// Booking data access layer
 
 import { db } from '$lib/server/db';
 import { bookings } from '$lib/server/schema';
-import { eq, and, gte, lte, or, ilike, desc, asc, sql, count, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, or, ilike, desc, asc, sql, count, inArray, ne } from 'drizzle-orm';
+import { BLOCKING_BOOKING_STATUSES, type ScheduleHold } from '$lib/scheduling';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 
 export type BookingRow = typeof bookings.$inferSelect;
 export type BookingInsert = typeof bookings.$inferInsert;
+export type BookingScheduleHold = Pick<BookingRow, 'id' | 'date' | 'time' | 'status'>;
 
 // ============================================================
 // QUERIES
@@ -169,21 +171,114 @@ export async function listByContact(
     .orderBy(asc(bookings.date));
 }
 
+function parseEmailFromNotes(notes: string | null): string | null {
+  const match = notes?.match(/Email:\s*(\S+)/i);
+  return match?.[1]?.trim().toLowerCase() ?? null;
+}
+
+export async function getRescheduleEmailByPhone(
+  phone: string,
+  statuses: string[]
+): Promise<
+  | { ok: true; email: string }
+  | { ok: false; reason: 'missing' | 'multiple' }
+> {
+  const rows = await db
+    .select({
+      notes: bookings.notes,
+      createdAt: bookings.createdAt,
+    })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.brandId, MRGUY_BRAND_ID),
+        eq(bookings.contact, phone),
+        inArray(bookings.status, statuses)
+      )
+    )
+    .orderBy(desc(bookings.createdAt));
+
+  const emails = new Set<string>();
+
+  for (const row of rows) {
+    const email = parseEmailFromNotes(row.notes);
+    if (email) {
+      emails.add(email);
+    }
+  }
+
+  if (emails.size === 0) {
+    return { ok: false, reason: 'missing' };
+  }
+
+  if (emails.size > 1) {
+    return { ok: false, reason: 'multiple' };
+  }
+
+  return { ok: true, email: Array.from(emails)[0] };
+}
+
 /** Get a booking for reschedule verification */
 export async function getForReschedule(
   bookingId: string
-): Promise<Pick<BookingRow, 'id' | 'contact' | 'status' | 'date'> | null> {
+): Promise<Pick<BookingRow, 'id' | 'contact' | 'status' | 'date' | 'time'> | null> {
   const rows = await db
     .select({
       id: bookings.id,
       contact: bookings.contact,
       status: bookings.status,
       date: bookings.date,
+      time: bookings.time,
     })
     .from(bookings)
     .where(and(eq(bookings.id, bookingId), eq(bookings.brandId, MRGUY_BRAND_ID)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/** List bookings that should block public availability for a given date */
+export async function listScheduleHoldsByDate(
+  date: string,
+  options?: {
+    statuses?: readonly string[];
+    excludeBookingId?: string;
+    executor?: typeof db;
+  }
+): Promise<BookingScheduleHold[]> {
+  const executor = options?.executor ?? db;
+  const statuses = options?.statuses ?? BLOCKING_BOOKING_STATUSES;
+
+  const conditions = [
+    eq(bookings.brandId, MRGUY_BRAND_ID),
+    eq(bookings.date, date),
+    inArray(bookings.status, [...statuses]),
+  ];
+
+  if (options?.excludeBookingId) {
+    conditions.push(ne(bookings.id, options.excludeBookingId));
+  }
+
+  return executor
+    .select({
+      id: bookings.id,
+      date: bookings.date,
+      time: bookings.time,
+      status: bookings.status,
+    })
+    .from(bookings)
+    .where(and(...conditions));
+}
+
+export async function withScheduleLock<T>(
+  date: string,
+  callback: (tx: typeof db) => Promise<T>
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${`booking-schedule:${MRGUY_BRAND_ID}:${date}`}))`
+    );
+    return callback(tx as unknown as typeof db);
+  });
 }
 
 // ============================================================
@@ -229,4 +324,10 @@ export function generateBookingId(date: string): string {
   const dateStr = date.replace(/-/g, '');
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `BK-${dateStr}-${randomSuffix}`;
+}
+
+/** Delete a booking */
+export async function deleteById(id: string): Promise<boolean> {
+  const result = await db.delete(bookings).where(eq(bookings.id, id)).returning();
+  return result.length > 0;
 }

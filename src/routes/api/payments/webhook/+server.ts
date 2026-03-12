@@ -6,6 +6,18 @@ import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
 import { normalizePhone } from '$lib/server/phone';
 import { getStripe } from '$lib/server/stripe';
 import { SERVICE_PACKAGES } from '$lib/data/services';
+import { bookings } from '$lib/server/schema';
+import { findConflictingHold } from '$lib/scheduling';
+import {
+  notifyOwnerOfBookingRequest,
+  sendCustomerBookingRequestReceived,
+  sendEmail,
+} from '$lib/server/email';
+import {
+  notifyOwnerOfBookingRequestSMS,
+  sendCustomerBookingRequestReceivedSMS,
+  sendSMS,
+} from '$lib/server/sms';
 import { bookingSchema, type BookingData } from '$lib/types/booking';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
@@ -30,6 +42,7 @@ interface ParsedCheckoutData {
   packageId: string;
   customerName: string | null;
   customerPhone: string | null;
+  customerEmail: string | null;
   promoCode: string | null;
 }
 
@@ -95,7 +108,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return;
   }
 
-  const { bookingData, packageId, customerName, customerPhone, promoCode } = parsed;
+  const { bookingData, packageId, customerName, customerPhone, customerEmail, promoCode } = parsed;
 
   const phone = normalizePhone(customerPhone || bookingData.contact.phone);
   if (!phone) {
@@ -139,37 +152,87 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     bookingData.vehicle.color ? `Color: ${bookingData.vehicle.color}` : null,
     bookingData.vehicle.notes ? `Notes: ${bookingData.vehicle.notes}` : null,
     `Address: ${bookingData.address.street}, ${bookingData.address.city}, ${bookingData.address.state} ${bookingData.address.zip}`,
+    customerEmail ? `Email: ${customerEmail}` : null,
     bookingData.address.instructions ? `Instructions: ${bookingData.address.instructions}` : null,
   ]
     .filter(Boolean)
     .join('\n');
 
-  // Create booking
-  const booking = await bookingRepo.insert({
-    id: bookingId,
-    brandId: MRGUY_BRAND_ID,
-    clientName,
-    serviceName: pkg.name,
-    price: amountCents / 100,
-    date: bookingData.schedule.date,
-    time: bookingData.schedule.time,
-    contact: phone,
-    transactionId: session.id,
-    paymentMethod: 'stripe_checkout',
-    promoCode,
-    notes,
-    status: 'confirmed',
-    paymentStatus: 'paid',
-    reminderSent: false,
+  const booking = await bookingRepo.withScheduleLock(bookingData.schedule.date, async (tx) => {
+    const holds = await bookingRepo.listScheduleHoldsByDate(bookingData.schedule.date, {
+      executor: tx,
+    });
+    const conflict = findConflictingHold(holds, bookingData.schedule.time);
+
+    if (conflict) {
+      return { conflict: true };
+    }
+
+    const rows = await tx
+      .insert(bookings)
+      .values({
+        id: bookingId,
+        brandId: MRGUY_BRAND_ID,
+        clientName,
+        serviceName: pkg.name,
+        price: amountCents / 100,
+        date: bookingData.schedule.date,
+        time: bookingData.schedule.time,
+        contact: phone,
+        transactionId: session.id,
+        paymentMethod: 'stripe_checkout',
+        promoCode,
+        notes,
+        status: 'pending',
+        paymentStatus: 'paid',
+        reminderSent: false,
+      })
+      .returning();
+
+    return rows[0] ?? null;
   });
 
-  if (!booking) {
-    console.error('Failed to create booking');
+  if (booking && 'conflict' in booking) {
+    await handleCheckoutConflict(session, packageId, bookingData, customerEmail);
     return;
   }
 
-  // Booking created successfully
-  // TODO: Send confirmation SMS via Twilio
+  if (!booking) {
+    console.error('Failed to create booking from checkout session');
+    return;
+  }
+
+  const notificationPayload = {
+    service: { name: pkg.name, price: amountCents / 100 },
+    schedule: bookingData.schedule,
+    address: bookingData.address,
+    contact: {
+      name: clientName,
+      phone,
+      email: customerEmail ?? undefined,
+    },
+  };
+
+  Promise.allSettled([
+    notifyOwnerOfBookingRequest(notificationPayload),
+    sendCustomerBookingRequestReceived(notificationPayload),
+    notifyOwnerOfBookingRequestSMS(notificationPayload),
+    sendCustomerBookingRequestReceivedSMS(notificationPayload),
+  ]).then((results) => {
+    const [ownerEmail, customerEmailResult, ownerSMS, customerSMS] = results;
+    if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
+      console.warn('Failed to send paid booking request email to owner');
+    }
+    if (customerEmailResult.status === 'rejected' || !customerEmailResult.value) {
+      console.warn('Failed to send paid booking request email to customer');
+    }
+    if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
+      console.warn('Failed to send paid booking request SMS to owner');
+    }
+    if (customerSMS.status === 'rejected' || !customerSMS.value) {
+      console.warn('Failed to send paid booking request SMS to customer');
+    }
+  });
 }
 
 async function handleExistingBookingCheckout(
@@ -236,6 +299,67 @@ function parseCheckoutMetadata(session: Stripe.Checkout.Session): ParsedCheckout
     packageId: validatedMetadata.data.package_id,
     customerName: validatedMetadata.data.customer_name || null,
     customerPhone: validatedMetadata.data.customer_phone || null,
+    customerEmail:
+      session.customer_details?.email ||
+      session.customer_email ||
+      bookingData.contact.email ||
+      null,
     promoCode: validatedMetadata.data.promo_code || null,
   };
+}
+
+async function handleCheckoutConflict(
+  session: Stripe.Checkout.Session,
+  packageId: string,
+  bookingData: BookingData,
+  customerEmail: string | null
+) {
+  const paymentIntentId =
+    typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id;
+
+  if (!paymentIntentId) {
+    console.error('Paid checkout slot conflict without payment_intent:', session.id);
+    return;
+  }
+
+  try {
+    await getStripe().refunds.create({
+      payment_intent: paymentIntentId,
+      reason: 'requested_by_customer',
+      metadata: {
+        conflict: 'schedule_slot_unavailable',
+        package_id: packageId,
+        requested_date: bookingData.schedule.date,
+        requested_time: bookingData.schedule.time,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to refund conflicted checkout session:', session.id, err);
+    return;
+  }
+
+  const subject = 'Payment Refunded: Selected Time No Longer Available';
+  const message = `A paid booking request for ${bookingData.schedule.date} at ${bookingData.schedule.time} was automatically refunded because the slot was no longer available.`;
+
+  await Promise.allSettled([
+    sendEmail({
+      to: 'info@mrguymobiledetail.com',
+      cc: 'info@lovingartandcompany.com',
+      subject,
+      html: `<p>${message}</p><p>Session: ${session.id}</p>`,
+    }),
+    customerEmail
+      ? sendEmail({
+          to: customerEmail,
+          subject,
+          html: `<p>Your payment was automatically refunded because the requested appointment time was no longer available.</p><p>Please book again and choose another time, or reply to this email for help.</p>`,
+        })
+      : Promise.resolve(false),
+    sendSMS({
+      to: '9548044747',
+      message: `Auto-refunded a paid booking request because ${bookingData.schedule.date} ${bookingData.schedule.time} was no longer available. Session: ${session.id}`,
+    }),
+  ]);
 }

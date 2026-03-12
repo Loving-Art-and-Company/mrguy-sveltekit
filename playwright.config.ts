@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.BASE_URL || 'http://localhost:5180';
+const skipWebServer =
+  process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1' ||
+  /^https?:\/\//.test(baseURL) && !baseURL.includes('localhost') && !baseURL.includes('127.0.0.1');
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run sequentially for booking tests
@@ -12,7 +17,7 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:5180',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -22,10 +27,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev -- --port 5180 --host',
-    url: 'http://localhost:5180',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: 'npm run dev -- --port 5180 --host',
+        url: 'http://localhost:5180',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      },
 });

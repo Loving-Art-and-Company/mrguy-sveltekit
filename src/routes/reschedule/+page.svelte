@@ -1,10 +1,12 @@
 <script lang="ts">
   import { BUSINESS_INFO } from '$lib/data/services';
   import PhoneInput from '$lib/components/PhoneInput.svelte';
+  import OtpInput from '$lib/components/OtpInput.svelte';
   import { Phone, Calendar, ChevronLeft, Check, Loader2, AlertCircle, PartyPopper } from 'lucide-svelte';
   import { track } from '$lib/analytics';
+  import { buildBookableDates, buildBookableTimeSlots, type AvailabilitySlot } from '$lib/scheduling';
 
-  type Step = 'phone' | 'bookings' | 'date_select' | 'confirmation';
+  type Step = 'phone' | 'verify' | 'bookings' | 'date_select' | 'confirmation';
 
   interface Booking {
     id: string;
@@ -18,6 +20,8 @@
   // State
   let step = $state<Step>('phone');
   let phone = $state('');
+  let verificationCode = $state('');
+  let verificationDestination = $state('');
   let isLoading = $state(false);
   let errorMessage = $state('');
 
@@ -26,9 +30,11 @@
   let newDate = $state('');
   let newTime = $state('');
   let rescheduledBooking = $state<Booking | null>(null);
+  let availabilityLoading = $state(false);
+  let availabilityError = $state('');
+  let availableTimes = $state<AvailabilitySlot[]>([]);
 
-  // Look up bookings by phone number
-  async function lookupBookings() {
+  async function sendVerificationCode() {
     if (phone.length !== 10) {
       errorMessage = 'Please enter a valid 10-digit phone number';
       return;
@@ -39,7 +45,7 @@
     track('reschedule_lookup_submitted');
 
     try {
-      const response = await fetch('/api/bookings/lookup', {
+      const response = await fetch('/api/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
@@ -51,11 +57,50 @@
       }
 
       const data = await response.json();
+      verificationCode = '';
+      verificationDestination = data.maskedDestination || '';
+      step = 'verify';
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : 'Failed to look up bookings';
+      track('reschedule_lookup_failed');
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function verifyCodeAndLoadBookings() {
+    if (verificationCode.length !== 6) {
+      errorMessage = 'Please enter the 6-digit verification code';
+      return;
+    }
+
+    isLoading = true;
+    errorMessage = '';
+
+    try {
+      const verifyResponse = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code: verificationCode }),
+      });
+
+      if (!verifyResponse.ok) {
+        const data = await verifyResponse.json().catch(() => ({}));
+        throw new Error(data.message || 'Invalid or expired verification code');
+      }
+
+      const bookingsResponse = await fetch('/api/bookings/mine');
+      if (!bookingsResponse.ok) {
+        const data = await bookingsResponse.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to load your bookings');
+      }
+
+      const data = await bookingsResponse.json();
       bookings = data.bookings || [];
       track('reschedule_lookup_success', { booking_count: bookings.length });
       step = 'bookings';
     } catch (err) {
-      errorMessage = err instanceof Error ? err.message : 'Failed to look up bookings';
+      errorMessage = err instanceof Error ? err.message : 'Verification failed';
       track('reschedule_lookup_failed');
     } finally {
       isLoading = false;
@@ -66,13 +111,58 @@
   function selectBookingForReschedule(booking: Booking) {
     selectedBooking = booking;
     newDate = '';
-    newTime = booking.time || '10:00';
+    newTime = booking.time || '';
+    availabilityError = '';
+    availableTimes = [];
     track('reschedule_booking_selected', {
       booking_id: booking.id,
       service_name: booking.serviceName,
       booking_status: booking.status,
     });
     step = 'date_select';
+  }
+
+  async function loadAvailability(date: string) {
+    availabilityLoading = true;
+    availabilityError = '';
+
+    try {
+      const params = new URLSearchParams({ date });
+      if (selectedBooking) {
+        params.set('excludeBookingId', selectedBooking.id);
+      }
+
+      const response = await fetch(`/api/bookings/availability?${params.toString()}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not load available times right now.');
+      }
+
+      availableTimes = Array.isArray(data.slots)
+        ? data.slots
+        : buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+
+      if (!availableTimes.some((slot) => slot.available)) {
+        availabilityError = 'That day is fully booked. Please pick another date.';
+      }
+
+      if (!availableTimes.some((slot) => slot.value === newTime && slot.available)) {
+        newTime = availableTimes.find((slot) => slot.available)?.value || '';
+      }
+    } catch (err) {
+      availableTimes = buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+      availabilityError = err instanceof Error ? err.message : 'Could not load availability.';
+    } finally {
+      availabilityLoading = false;
+    }
+  }
+
+  function selectNewDate(date: string) {
+    newDate = date;
+    newTime = '';
+    availableTimes = buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+    void loadAvailability(date);
   }
 
   // Reschedule booking
@@ -128,12 +218,17 @@
     track('reschedule_flow_reset', { from_step: step });
     step = 'phone';
     phone = '';
+    verificationCode = '';
+    verificationDestination = '';
     bookings = [];
     selectedBooking = null;
     newDate = '';
     newTime = '';
     rescheduledBooking = null;
     errorMessage = '';
+    availabilityLoading = false;
+    availabilityError = '';
+    availableTimes = [];
   }
 
   // Go back to bookings list
@@ -144,6 +239,9 @@
     newDate = '';
     newTime = '';
     errorMessage = '';
+    availabilityLoading = false;
+    availabilityError = '';
+    availableTimes = [];
   }
 
   // Formatting helpers
@@ -173,34 +271,14 @@
     }).format(price);
   }
 
-  // Available times for rescheduling (8 AM - 5 PM)
-  const availableTimes = Array.from({ length: 10 }, (_, i) => {
-    const hour = 8 + i;
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
+  const availableDates = buildBookableDates();
 
-  // Get available dates (next 30 days, excluding Sundays)
-  function getAvailableDates(): string[] {
-    const dates: string[] = [];
-    const today = new Date();
-
-    for (let i = 1; i <= 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      if (date.getDay() !== 0) {
-        // Exclude Sundays
-        dates.push(date.toISOString().split('T')[0]);
-      }
-    }
-    return dates;
+  function bookingStatusLabel(status: string): string {
+    if (status === 'pending') return 'Awaiting Pablo';
+    if (status === 'confirmed') return 'Confirmed';
+    if (status === 'rescheduled') return 'Reschedule Requested';
+    return status;
   }
-
-  // Get min date (tomorrow)
-  const minDate = (() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  })();
 </script>
 
 <svelte:head>
@@ -218,7 +296,7 @@
 
   <!-- Step indicators -->
   <div class="steps">
-    <div class="step-dot" class:active={step === 'phone'} class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
+    <div class="step-dot" class:active={step === 'phone' || step === 'verify'} class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
     <div class="step-line" class:completed={['bookings', 'date_select', 'confirmation'].includes(step)}></div>
     <div class="step-dot" class:active={step === 'bookings' || step === 'date_select'} class:completed={step === 'confirmation'}></div>
     <div class="step-line" class:completed={step === 'confirmation'}></div>
@@ -232,9 +310,9 @@
         <Phone size={32} />
       </div>
       <h2>Enter Your Phone Number</h2>
-      <p class="desc">We'll look up your bookings using the phone number on file.</p>
+      <p class="desc">Start with the phone number on your booking. We’ll use it to find the email address on file, then send your verification code there.</p>
 
-      <form onsubmit={(e) => { e.preventDefault(); lookupBookings(); }}>
+      <form onsubmit={(e) => { e.preventDefault(); sendVerificationCode(); }}>
         <PhoneInput bind:value={phone} error={errorMessage && phone.length > 0 && phone.length < 10 ? errorMessage : ''} />
 
         {#if errorMessage && (phone.length === 0 || phone.length === 10)}
@@ -246,8 +324,38 @@
             <Loader2 size={18} class="spinner" />
             Sending...
           {:else}
-            Look Up My Booking
+            Send Verification Code
           {/if}
+        </button>
+      </form>
+    </section>
+
+  {:else if step === 'verify'}
+    <section class="card">
+      <div class="icon">
+        <Check size={32} />
+      </div>
+      <h2>Enter Verification Code</h2>
+      <p class="desc">We found the email linked to that phone number and sent a 6-digit code to {verificationDestination || 'the email on file'}. Enter it to view your bookings.</p>
+
+      <form onsubmit={(e) => { e.preventDefault(); verifyCodeAndLoadBookings(); }}>
+        <OtpInput bind:value={verificationCode} error={errorMessage} disabled={isLoading} />
+
+        <button type="submit" class="btn primary" disabled={isLoading || verificationCode.length !== 6}>
+          {#if isLoading}
+            <Loader2 size={18} class="spinner" />
+            Verifying...
+          {:else}
+            Verify and Continue
+          {/if}
+        </button>
+
+        <button type="button" class="btn secondary" onclick={sendVerificationCode} disabled={isLoading}>
+          Resend Code
+        </button>
+
+        <button type="button" class="btn secondary" onclick={startOver} disabled={isLoading}>
+          Use a Different Number
         </button>
       </form>
     </section>
@@ -259,7 +367,7 @@
         <Check size={32} />
       </div>
       <h2>Your Bookings</h2>
-      <p class="desc">Select a booking to reschedule</p>
+      <p class="desc">Select the booking request you want Pablo to review again.</p>
 
       {#if bookings.length === 0}
         <div class="empty">
@@ -270,7 +378,7 @@
       {:else}
         <div class="bookings-list">
           {#each bookings as booking (booking.id)}
-            {@const canReschedule = booking.status === 'confirmed' || booking.status === 'pending'}
+            {@const canReschedule = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'rescheduled'}
             <button
               class="booking-card"
               disabled={!canReschedule}
@@ -282,14 +390,14 @@
                   <Calendar size={14} />
                   {formatDate(booking.date)} at {formatTime(booking.time)}
                 </span>
-                <span class="price">{formatPrice(booking.price)} (paid)</span>
+                <span class="price">{formatPrice(booking.price)} paid</span>
               </div>
               <div class="booking-actions">
                 <span class="status" class:confirmed={booking.status === 'confirmed'} class:pending={booking.status === 'pending'}>
-                  {booking.status}
+                  {bookingStatusLabel(booking.status)}
                 </span>
                 {#if canReschedule}
-                  <span class="reschedule-hint">Tap to reschedule</span>
+                  <span class="reschedule-hint">Tap to request a new time</span>
                 {/if}
               </div>
             </button>
@@ -309,6 +417,7 @@
         <Calendar size={32} />
       </div>
       <h2>Select New Date</h2>
+      <p class="desc">Choose a new preferred time. Pablo still needs to confirm the reschedule request.</p>
 
       {#if selectedBooking}
         <div class="current-booking">
@@ -321,21 +430,27 @@
       <form onsubmit={(e) => { e.preventDefault(); rescheduleBooking(); }}>
         <div class="form-group">
           <label for="new-date">New Date</label>
-          <select id="new-date" bind:value={newDate} class="select-input">
+          <select id="new-date" bind:value={newDate} class="select-input" onchange={(e) => selectNewDate((e.currentTarget as HTMLSelectElement).value)}>
             <option value="">Select a date...</option>
-            {#each getAvailableDates() as date}
-              <option value={date}>{formatDate(date)}</option>
+            {#each availableDates as date}
+              <option value={date.value}>{formatDate(date.value)}</option>
             {/each}
           </select>
         </div>
 
         <div class="form-group">
           <label for="new-time">Preferred Time</label>
-          <select id="new-time" bind:value={newTime} class="select-input">
-            {#each availableTimes as time}
-              <option value={time}>{formatTime(time)}</option>
+          <select id="new-time" bind:value={newTime} class="select-input" disabled={availabilityLoading || !newDate}>
+            {#each availableTimes.filter((slot) => slot.available) as slot}
+              <option value={slot.value}>{slot.label}</option>
             {/each}
           </select>
+          {#if availabilityLoading}
+            <p class="helper">Checking the latest availability...</p>
+          {/if}
+          {#if availabilityError}
+            <p class="error">{availabilityError}</p>
+          {/if}
         </div>
 
         {#if errorMessage}
@@ -345,9 +460,9 @@
         <button type="submit" class="btn primary" disabled={isLoading || !newDate}>
           {#if isLoading}
             <Loader2 size={18} class="spinner" />
-            Rescheduling...
+            Sending request...
           {:else}
-            Confirm Reschedule
+            Request Reschedule
           {/if}
         </button>
 
@@ -363,8 +478,8 @@
       <div class="icon success">
         <PartyPopper size={32} />
       </div>
-      <h2>Booking Rescheduled!</h2>
-      <p class="desc">Your appointment has been updated.</p>
+      <h2>Reschedule Request Received!</h2>
+      <p class="desc">Your new preferred time is being held while Pablo reviews it.</p>
 
       {#if rescheduledBooking}
         <div class="confirmation-details">
@@ -373,11 +488,11 @@
             <span class="value">{rescheduledBooking.serviceName}</span>
           </div>
           <div class="detail-row">
-            <span class="label">New Date</span>
+            <span class="label">Requested Date</span>
             <span class="value highlight">{formatDate(rescheduledBooking.date)}</span>
           </div>
           <div class="detail-row">
-            <span class="label">Time</span>
+            <span class="label">Requested Time</span>
             <span class="value highlight">{formatTime(rescheduledBooking.time)}</span>
           </div>
           <div class="detail-row">
@@ -387,7 +502,7 @@
         </div>
       {/if}
 
-      <p class="note">We'll send you a confirmation text shortly.</p>
+      <p class="note">Pablo will send you a confirmation once the new time is approved.</p>
 
       <a href="/" class="btn primary">Done</a>
     </section>
@@ -680,6 +795,12 @@
   .reschedule-hint {
     font-size: 0.7rem;
     color: var(--color-primary);
+  }
+
+  .helper {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    color: #6b7280;
   }
 
   /* Empty state */

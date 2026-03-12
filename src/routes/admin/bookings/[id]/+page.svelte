@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { buildBookableTimeSlots } from '$lib/scheduling';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -8,6 +9,7 @@
 	let editing = $state(false);
 	let saving = $state(false);
 	let updating = $state(false);
+	let deleting = $state(false);
 	let creatingPaymentLink = $state(false);
 	let paymentLink = $state<string | null>(null);
 	let paymentLinkError = $state<string | null>(null);
@@ -87,6 +89,17 @@
 		}
 	}
 
+	function handleDelete(event: SubmitEvent) {
+		if (typeof window !== 'undefined') {
+			const confirmed = window.confirm('Delete this lead permanently? This cannot be undone.');
+			if (!confirmed) {
+				event.preventDefault();
+				return;
+			}
+		}
+		deleting = true;
+	}
+
 	// Close edit mode on successful save
 	$effect(() => {
 		if (form && 'edited' in form && form.edited) {
@@ -131,6 +144,22 @@
 	function parseAddr(notes: string | null) { return notes?.match(/Address:\s*([^\n]+)/)?.[1]?.trim() ?? null; }
 	function parseEmail(notes: string | null) { return notes?.match(/Email:\s*(\S+)/)?.[1] ?? null; }
 
+	const statuses = [
+		{ value: 'pending', label: 'Awaiting Pablo Confirmation', bg: '#fef3c7', fg: '#92400e', ring: '#f59e0b' },
+		{ value: 'confirmed', label: 'Confirmed', bg: '#dbeafe', fg: '#1e40af', ring: '#3b82f6' },
+		{ value: 'rescheduled', label: 'Reschedule Requested', bg: '#e0e7ff', fg: '#3730a3', ring: '#6366f1' },
+		{ value: 'cancelled', label: 'Cancelled', bg: '#fee2e2', fg: '#991b1b', ring: '#ef4444' },
+		{ value: 'completed', label: 'Completed', bg: '#d1fae5', fg: '#065f46', ring: '#10b981' },
+	];
+	const paymentStatuses = [
+		{ value: 'unpaid', label: 'Unpaid', bg: '#f3f4f6', fg: '#4b5563', ring: '#9ca3af' },
+		{ value: 'paid', label: 'Paid', bg: '#d1fae5', fg: '#065f46', ring: '#10b981' },
+		{ value: 'refunded', label: 'Refunded', bg: '#fee2e2', fg: '#991b1b', ring: '#ef4444' },
+	];
+
+	function getSt(s: string | null) { return statuses.find(x => x.value === s) ?? statuses[0]; }
+	function getPs(s: string | null) { return paymentStatuses.find(x => x.value === s) ?? paymentStatuses[0]; }
+
 	const addr = $derived(parseAddr(booking.notes));
 	const clientEmail = $derived(parseEmail(booking.notes));
 	const statusBadge = $derived(getSt(booking.status));
@@ -146,26 +175,7 @@
 				: 'Finish the detail before collecting payment'
 	);
 
-	const timeSlots = Array.from({ length: 11 }, (_, i) => {
-		const h = i + 8;
-		return { value: `${String(h).padStart(2, '0')}:00`, label: `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}` };
-	});
-
-	const statuses = [
-		{ value: 'pending', label: 'Pending', bg: '#fef3c7', fg: '#92400e', ring: '#f59e0b' },
-		{ value: 'confirmed', label: 'Confirmed', bg: '#dbeafe', fg: '#1e40af', ring: '#3b82f6' },
-		{ value: 'rescheduled', label: 'Rescheduled', bg: '#e0e7ff', fg: '#3730a3', ring: '#6366f1' },
-		{ value: 'cancelled', label: 'Cancelled', bg: '#fee2e2', fg: '#991b1b', ring: '#ef4444' },
-		{ value: 'completed', label: 'Completed', bg: '#d1fae5', fg: '#065f46', ring: '#10b981' },
-	];
-	const paymentStatuses = [
-		{ value: 'unpaid', label: 'Unpaid', bg: '#f3f4f6', fg: '#4b5563', ring: '#9ca3af' },
-		{ value: 'paid', label: 'Paid', bg: '#d1fae5', fg: '#065f46', ring: '#10b981' },
-		{ value: 'refunded', label: 'Refunded', bg: '#fee2e2', fg: '#991b1b', ring: '#ef4444' },
-	];
-
-	function getSt(s: string | null) { return statuses.find(x => x.value === s) ?? statuses[0]; }
-	function getPs(s: string | null) { return paymentStatuses.find(x => x.value === s) ?? paymentStatuses[0]; }
+	const timeSlots = $derived(buildBookableTimeSlots(date || booking.date));
 
 	const inputStyle = 'width:100%;padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:0.875rem;background:white;color:#1f2937;font-family:inherit;';
 	const labelStyle = 'display:block;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-bottom:0.25rem;';
@@ -193,10 +203,18 @@
 <div style="max-width:900px;">
 	<!-- Back + Actions -->
 	<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-		<a href="/admin/bookings" style="display:inline-flex;align-items:center;gap:0.375rem;color:#6b7280;text-decoration:none;font-size:0.875rem;">&#8592; Back to Bookings</a>
+		<a href={data.returnTo} style="display:inline-flex;align-items:center;gap:0.375rem;color:#6b7280;text-decoration:none;font-size:0.875rem;">&#8592; Back to Bookings</a>
 		{#if !editing}
-			<button onclick={startEdit} style="padding:0.5rem 1.25rem;background:#1a1a2e;color:white;border:none;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;cursor:pointer;">Edit Booking</button>
+				<button onclick={startEdit} style="padding:0.5rem 1.25rem;background:#1a1a2e;color:white;border:none;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;cursor:pointer;">Edit Booking</button>
 		{/if}
+		<form method="POST" action="?/delete" onsubmit={handleDelete} style="margin-left:0.5rem;">
+			<input type="hidden" name="returnTo" value={data.returnTo} />
+			<button
+				type="submit"
+				style="padding:0.5rem 1rem;background:#b91c1c;color:white;border:none;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;cursor:pointer;"
+				disabled={deleting}
+			>{deleting ? 'Deleting...' : 'Delete Lead'}</button>
+		</form>
 	</div>
 
 	<!-- Header -->
@@ -206,7 +224,7 @@
 			<p style="margin:0;color:#9ca3af;font-size:0.8125rem;">{booking.id} &middot; Created {fmtTs(booking.createdAt)}</p>
 		</div>
 		<div style="display:flex;gap:0.5rem;">
-			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{booking.status || 'pending'}</span>
+			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{statusBadge.label}</span>
 			<span style="padding:0.3125rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{paymentStatusBadge.bg};color:{paymentStatusBadge.fg};">{booking.paymentStatus || 'unpaid'}</span>
 		</div>
 	</div>
@@ -247,7 +265,17 @@
 					<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
 						<div>
 							<label for="dt" style={labelStyle}>Date *</label>
-							<input id="dt" name="date" type="date" bind:value={date} required style={inputStyle} />
+							<input
+								id="dt"
+								name="date"
+								type="date"
+								bind:value={date}
+								required
+								onchange={() => {
+									time = '';
+								}}
+								style={inputStyle}
+							/>
 						</div>
 						<div>
 							<label for="tm" style={labelStyle}>Time *</label>
@@ -300,8 +328,8 @@
 			</div>
 
 			<!-- Actions -->
-			<div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.25rem;">
-				<button type="button" onclick={cancelEdit} style="padding:0.625rem 1.25rem;background:white;border:1px solid #d1d5db;border-radius:0.375rem;color:#374151;font-weight:500;font-size:0.875rem;cursor:pointer;">Cancel</button>
+					<div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.25rem;">
+						<button type="button" onclick={cancelEdit} style="padding:0.625rem 1.25rem;background:white;border:1px solid #d1d5db;border-radius:0.375rem;color:#374151;font-weight:500;font-size:0.875rem;cursor:pointer;">Cancel</button>
 				<button type="submit" disabled={saving} style="padding:0.625rem 1.5rem;background:#e94560;color:white;border:none;border-radius:0.375rem;font-weight:700;font-size:0.875rem;cursor:pointer;opacity:{saving ? '0.6' : '1'};">
 					{saving ? 'Saving...' : 'Save Changes'}
 				</button>
@@ -325,7 +353,7 @@
 							The fastest driveway flow is: finish the detail, tap one button, hand the phone to the client, then come back here after Stripe confirms payment.
 						</div>
 						<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-							<span style="padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{booking.status || 'pending'}</span>
+							<span style="padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{statusBadge.bg};color:{statusBadge.fg};">{statusBadge.label}</span>
 							<span style="padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:700;text-transform:capitalize;background:{paymentStatusBadge.bg};color:{paymentStatusBadge.fg};">{booking.paymentStatus || 'unpaid'}</span>
 						</div>
 					</div>

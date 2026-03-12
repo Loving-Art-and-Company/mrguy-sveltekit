@@ -33,7 +33,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 
   // Fetch bookings for this phone via repository
   try {
-    const bookings = await bookingRepo.listByContact(phone, ['pending', 'confirmed']);
+    const bookings = await bookingRepo.listByContact(phone, ['pending', 'confirmed', 'rescheduled']);
 
     return json({
       bookings: bookings.map((b) => ({

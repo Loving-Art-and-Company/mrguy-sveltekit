@@ -1,83 +1,88 @@
 # Mr. Guy Mobile Detail - Project Context
 
-> Last Updated: 2026-02-23 by Claude Opus 4
+> Last Updated: 2026-03-10
+
+## Ownership
+
+LAC-owned brand/app; optimize for leverage and growth.
 
 ## Current Status
-**Live in production** at mrguydetail.com. Platform stable and operational. All core features complete.
+
+**Live in production** at `https://mrguydetail.com`. The current focus is operational reliability: post-service payment collection is live, the canonical-host/caching fixes are shipped, and the new bounded ops agent foundation is in place.
 
 ## Active Work
-- [x] Initial development complete (all 6 Ralph Loop phases)
-- [x] Removed Model 3/Y Kit service package
-- [x] 25% first-time client promo ("Fresh Start") — full-stack implementation
-- [ ] Set PROMO_ENABLED=true in Vercel environment variables
-- [ ] Monitoring production metrics
-- [ ] Optimization based on real user data (when needed)
+
+- [x] Post-service Stripe Checkout payment collection shipped for completed unpaid bookings
+- [x] Canonical-host redirect, smoke guard, and cache-hardening fixes shipped
+- [x] Inline delete controls added to the admin bookings calendar for fast lead cleanup
+- [x] MrGuy ops agent foundation added (`.claude/agents/mrguy-ops-agent.md`, `docs/mrguy-ops-agent-spec.md`, `scripts/ops/*`, `scripts/mrguy-ops-digest.mjs`, `scripts/run-ops-daily.sh`)
+- [ ] Reauthorize the connected Google account once so Gmail, GA4, and Search Console readonly scopes become available to the ops scripts
+- [ ] Install or verify the optional local `launchd` schedule on machines that should run the daily digest automatically
+- [ ] Keep monitoring booking, payment, and reschedule health in production
 
 ## Recent Changes
-- 2026-02-23: Implemented 25% first-time client promo with server-side eligibility (ea27f9f)
-  - New: `src/lib/server/promo.ts` (isFirstTimeClient), `src/lib/server/phone.ts` (normalizePhone), `src/routes/+page.server.ts` (promoEnabled toggle)
-  - Fixed: phone format inconsistency (10-digit vs E.164), missing brandId on booking inserts, promoCode column in Drizzle schema
-  - Env-driven: PROMO_ENABLED toggle (defaults to enabled, set 'false' to disable)
-  - Codex-reviewed: 4 rounds, all findings addressed
-- 2026-02-23: Removed Model 3/Y Kit (tesla_3y_special) service package (dc110fc)
-- 2026-01-29: Added promo_code column to bookings table (DB migration)
-- 2026-01-25: SMS notifications wired into booking flow
-- 2026-01-22: Completed all 6 Ralph Loop implementation phases
-- 2026-01-21: Deployed to Vercel production
-- 2026-01-21: Set up Stripe webhooks and Twilio Verify
+
+- 2026-03-09: Added inline delete controls to `src/routes/admin/bookings/+page.svelte` and `src/routes/admin/bookings/+page.server.ts`
+- 2026-03-09: Added bounded ops agent docs plus the read-only ops command surface and digest pipeline
+- 2026-03-09: Shipped mobile-first Stripe payment collection for existing bookings and hardened canonical-host behavior in production
+- 2026-02-23: Implemented the "Fresh Start" first-time-client promo with server-side eligibility
 
 ## Tech Stack
-- Framework: SvelteKit 2.50+ (Svelte 5 with runes)
-- Database: Supabase (PostgreSQL + realtime)
-- Payments: Stripe Checkout (redirect mode)
-- Auth: Twilio Verify (SMS OTP for clients), Supabase Auth (admin)
+
+- Framework: SvelteKit 2.50+ with Svelte 5 runes
+- Database: Drizzle ORM + `postgres.js` over `DATABASE_URL`
+- Auth:
+  - Admin: custom bcrypt + DB-backed sessions
+  - Client: Twilio Verify OTP
+  - Integrations/reporting: Google OAuth
+- Payments: Stripe Checkout + webhook reconciliation
+- Analytics and monitoring: PostHog, optional GA4/Search Console via Google reconnect, Sentry
+- Email and alerts: Resend
 - Deployment: Vercel
-- Validation: Zod 4.3+
 
-## Blockers / Issues
-- PROMO_ENABLED env var needs to be set in Vercel to activate the promo in production
+## Ops Agent Notes
 
-## Next Steps
-1. Set PROMO_ENABLED=true in Vercel environment variables
-2. Monitor promo usage — watch for abuse (multiple phone numbers, etc.)
-3. Future: add race condition protection on first-time check (Codex suggestion)
-4. Future: add regression tests for promo eligibility and pricing
-5. Future: centralize MRGUY_BRAND_ID constant (currently duplicated in 4+ files)
-6. Future: backfill old phone formats in bookings table for consistent lookups
+- Command surface:
+  - `npm run ops:bookings`
+  - `npm run ops:smoke`
+  - `npm run ops:inquiries`
+  - `npm run ops:analytics`
+  - `npm run ops:seo`
+  - `npm run ops:digest`
+  - `npm run ops:daily`
+  - `npm run ops:schedule:install`
+- Digests write to `output/ops/latest-digest.md` and archive copies under `output/ops/`
+- Alerts only send when `SEND_ALERTS=1`, `RESEND_API_KEY`, and `MRGUY_OPS_ALERT_TO` are configured
+- Gmail, GA4, and Search Console stay degraded until the Google reconnect adds:
+  - `gmail.readonly`
+  - `analytics.readonly`
+  - `webmasters.readonly`
 
 ## Quick Reference
-- Dev server: `npm run dev` (port 5173)
-- Build: `npm run build`
+
+- Dev server: `npm run dev`
 - Type check: `npm run check`
-- Deploy: Auto-deploy on push to main branch
-- Logs: Check Vercel dashboard
+- Build: `npm run build`
+- Tests: `npm test`
+- Production smoke: `npm run ops:smoke`
+- Daily digest: `npm run ops:digest`
 
 ## Important Files
-- `src/routes/+page.svelte`: Landing page with service packages + promo banner
-- `src/routes/+page.server.ts`: Server load — passes promoEnabled flag
-- `src/routes/book/+page.svelte`: Multi-step booking flow
-- `src/routes/reschedule/+page.svelte`: Client OTP reschedule portal
-- `src/routes/admin/+layout.svelte`: Admin dashboard auth wrapper
-- `src/routes/api/bookings/create/+server.ts`: Booking creation with server-side pricing + promo eligibility
-- `src/routes/api/payments/create-checkout/+server.ts`: Stripe checkout with promo pricing
-- `src/routes/api/payments/webhook/+server.ts`: Stripe webhook handler
-- `src/lib/server/promo.ts`: First-time client eligibility check
-- `src/lib/server/phone.ts`: Shared phone normalization utility
-- `CLAUDE.md`: Comprehensive architecture documentation
-- `SECURITY.md`: Security policies and RLS setup
 
-## Environment
-- Local: http://localhost:5173
-- Production: https://mrguydetail.com
-- Supabase: Project at qtskudtsfbwdahjhpphh
-- Stripe: Live mode connected
+- `.claude/agents/mrguy-ops-agent.md`
+- `.claude/action-plan.md`
+- `docs/mrguy-ops-agent-spec.md`
+- `scripts/mrguy-ops-digest.mjs`
+- `scripts/run-ops-daily.sh`
+- `scripts/ops/*.mjs`
+- `src/routes/admin/bookings/[id]/+page.server.ts`
+- `src/routes/api/payments/webhook/+server.ts`
+- `src/lib/server/db.ts`
+- `src/lib/server/auth.ts`
 
 ## Business Context
-- Target Market: West Broward County families (South Florida)
-- Service Area: Mobile detailing (comes to customer)
-- Revenue Target: $10k/month
-- Key Promo: "Fresh Start" 25% off first booking
-- Packages: 4 tiers from $45 (Quick Refresh) to $2000 (Ceramic Coating) — Model 3/Y Kit removed
 
-## Model Handoff Notes
-- 2026-02-23 (Opus 4): Promo system is code-complete but needs PROMO_ENABLED=true in Vercel. Stripe checkout endpoint exists but is not wired to UI — BookingModal submits to /api/bookings/create (unpaid bookings). Phone normalization was inconsistent (now fixed with shared normalizer). npm install has NOT been run on this machine.
+- Target market: West Broward County families in South Florida
+- Service area: mobile detailing (driveway-first workflow)
+- Revenue target: $10k/month
+- Platform thesis: prove the white-label service-business stack with MrGuy, then reuse it for additional tenants

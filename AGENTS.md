@@ -18,7 +18,7 @@ Port from React version at `~/Projects/06_ARCHIVE/mrguy-react-archived-*`
 
 Mobile detailing booking platform for West Broward, South Florida.
 
-**Stack:** SvelteKit + Supabase + Stripe + Twilio Verify
+**Stack:** SvelteKit + Neon Postgres + Stripe + Twilio Verify
 
 ## Quick Commands
 
@@ -61,21 +61,18 @@ const schema = z.object({
 const result = schema.safeParse(data);
 ```
 
-### Supabase RLS (All Tables Protected)
+### Database Access
 ```javascript
-// Use service role server-side only
-import { supabase } from '$lib/server/supabase';
-
-// Browser client has RLS restrictions
-import { supabase } from '$lib/supabase';
+// Keep database access server-side through repositories
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 ```
 
 ## Security Rules
 
 - Never commit `.env.local` (already in .gitignore)
-- Supabase service role key = server-only
+- `DATABASE_URL` stays server-only
 - Validate all inputs server-side with Zod
-- All Supabase tables have RLS policies
+- Validate all access through server routes and repository boundaries
 
 ## Reference Docs
 

@@ -3,8 +3,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vitest/config';
 
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
+
 export default defineConfig({
-	plugins: [sentrySvelteKit(), sveltekit(), svelteTesting()],
+	plugins: [
+		...(sentryAuthToken ? [sentrySvelteKit()] : []),
+		sveltekit(),
+		svelteTesting()
+	],
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		environment: 'jsdom',

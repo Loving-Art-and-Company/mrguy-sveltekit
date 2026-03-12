@@ -142,7 +142,7 @@ export const initAnalytics = ({ key, host, disable, sessionRecording }: InitOpti
   if (!key) return;
 
   posthog.init(key, {
-    api_host: host || 'https://app.posthog.com',
+    api_host: host || 'https://us.i.posthog.com',
     autocapture: false,
     capture_pageview: false,
   });

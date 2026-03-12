@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-  <title>Booking Confirmed | {BUSINESS_INFO.name}</title>
+  <title>Booking Request Received | {BUSINESS_INFO.name}</title>
 </svelte:head>
 
 <main>
@@ -21,12 +21,12 @@
       <CheckCircle size={64} />
     </div>
 
-    <h1>Booking Confirmed!</h1>
-    <p class="tagline">We know a guy. He's on his way.</p>
+    <h1>Booking Request Received!</h1>
+    <p class="tagline">You picked a preferred time. Pablo still needs to confirm it.</p>
 
     <div class="details">
       <p>
-        Thank you for choosing {BUSINESS_INFO.name}! You'll receive a confirmation text shortly with your appointment details.
+        Thank you for choosing {BUSINESS_INFO.name}. Your selected time is being held while Pablo reviews it. You’ll get a confirmation text once it’s approved.
       </p>
     </div>
 
@@ -35,11 +35,11 @@
       <ul>
         <li>
           <Calendar size={20} />
-          <span>You'll get an SMS reminder 24 hours before your appointment</span>
+          <span>Pablo will text you after he confirms your requested time</span>
         </li>
         <li>
           <Phone size={20} />
-          <span>Our detailer will call when they're on the way</span>
+          <span>Once confirmed, you’ll still get the usual reminder before your appointment</span>
         </li>
       </ul>
     </div>

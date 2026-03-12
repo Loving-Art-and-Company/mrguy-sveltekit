@@ -27,7 +27,6 @@ declare module '$env/static/private' {
 	export const RESEND_API_KEY: string;
 	export const TWILIO_ACCOUNT_SID: string;
 	export const TWILIO_AUTH_TOKEN: string;
-	export const TWILIO_VERIFY_SERVICE_SID: string;
 }
 
 declare module '$env/static/public' {

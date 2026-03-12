@@ -4,7 +4,7 @@
 
 ## Overview
 
-**Mr. Guy Mobile Detail** is a SvelteKit-based booking platform for mobile car detailing services. Customers can book appointments, make payments via Stripe, and reschedule via SMS OTP authentication.
+**Mr. Guy Mobile Detail** is a SvelteKit-based booking platform for mobile car detailing services. Customers can book appointments, make payments via Stripe, and reschedule via email verification.
 
 **Domain:** mrguydetail.com  
 **Market:** West Broward / Broward County families  
@@ -14,9 +14,9 @@
 
 - ✓ **Service Booking** - Multi-step booking flow with vehicle details
 - ✓ **Stripe Payments** - Secure checkout with Stripe integration
-- ✓ **SMS OTP Reschedule** - Twilio Verify for customer authentication
+- ✓ **Email Verification Reschedule** - Email-based customer verification
 - ✓ **Admin Dashboard** - Booking management and analytics
-- ✓ **Supabase Backend** - Real-time database with RLS policies
+- ✓ **Neon Postgres Backend** - Dedicated Postgres database via Drizzle ORM
 - ✓ **Mobile-First Design** - Responsive across all devices
 
 ## Tech Stack
@@ -25,8 +25,8 @@
 |-------|------------|---------|
 | **Framework** | SvelteKit | 2.50+ |
 | **UI Library** | Svelte | 5.47+ |
-| **Database** | Supabase | Latest |
-| **Auth** | Twilio Verify (OTP) | Latest |
+| **Database** | Neon Postgres | Latest |
+| **Auth** | Email verification | Latest |
 | **Payments** | Stripe Checkout | Latest |
 | **Deployment** | Vercel | Latest |
 | **Validation** | Zod | 4.3+ |
@@ -36,9 +36,8 @@
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account
 - Stripe account (test mode)
-- Twilio account (Verify service)
+- Resend account (email delivery)
 
 ### Installation
 
@@ -60,20 +59,16 @@ cp .env.example .env.local
 Create `.env.local` with:
 
 ```env
-# Supabase
-PUBLIC_SUPABASE_URL=your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Database
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
 PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Twilio
-TWILIO_ACCOUNT_SID=AC...
-TWILIO_AUTH_TOKEN=...
-TWILIO_VERIFY_SERVICE_SID=VA...
+# Email
+RESEND_API_KEY=re_...
 
 # App
 PUBLIC_BASE_URL=http://localhost:5173
@@ -96,6 +91,7 @@ npm run dev
 - **Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
 - **Security Policies:** [`SECURITY.md`](./SECURITY.md)
 - **Analytics Tracking Plan:** [`docs/tracking-plan.md`](./docs/tracking-plan.md)
+- **Ops Agent Spec:** [`docs/mrguy-ops-agent-spec.md`](./docs/mrguy-ops-agent-spec.md)
 
 ## Project Structure
 
@@ -105,7 +101,7 @@ mrguy-sveltekit/
 │   ├── lib/
 │   │   ├── components/    # Reusable UI components
 │   │   ├── stores/        # Svelte stores (if used)
-│   │   └── services/      # Supabase, Stripe clients
+│   │   └── server/        # Database, email, SMS, lead sink
 │   ├── routes/
 │   │   ├── +page.svelte   # Homepage
 │   │   ├── book/          # Booking flow
@@ -116,7 +112,8 @@ mrguy-sveltekit/
 │   └── app.css            # Global styles
 ├── static/                # Static assets
 ├── tests/                 # Vitest tests
-└── supabase/              # Database migrations (if local dev)
+├── scripts/               # Utility and verification scripts
+└── drizzle.config.ts      # Drizzle configuration
 ```
 
 ## Development
@@ -132,6 +129,16 @@ npm run preview          # Preview production build
 # Quality
 npm run check            # SvelteKit sync + type checking
 npm run check:watch      # Watch mode
+
+# Ops agent foundation
+npm run ops:bookings     # Booking/pending queue snapshot
+npm run ops:smoke        # Safe non-mutating production smoke
+npm run ops:inquiries    # Gmail inbox triage snapshot
+npm run ops:analytics    # GA4 funnel snapshot
+npm run ops:seo          # Search Console + technical SEO snapshot
+npm run ops:digest       # Daily ops digest to output/ops/
+npm run ops:daily        # Wrapped daily digest with logs
+npm run ops:schedule:install # Install local macOS daily run
 
 # Testing
 npm run test             # Run all tests
@@ -153,6 +160,9 @@ git push origin main
 ### Manual Deployment
 
 ```bash
+# Optional: verify Vercel auth + DNS before deploying
+npm run deploy:preflight
+
 # Build locally
 npm run build
 
@@ -165,7 +175,7 @@ vercel --prod
 Set in Vercel dashboard:
 - All variables from `.env.example`
 - Use production keys (not test keys)
-- Ensure `SUPABASE_SERVICE_ROLE_KEY` is kept secret
+- Ensure `DATABASE_URL` is kept server-only
 
 **See `CLAUDE.md` for complete deployment checklist.**
 
@@ -180,8 +190,8 @@ Set in Vercel dashboard:
 ## Security
 
 - **Stripe Checkout** - PCI-compliant payment processing
-- **Twilio Verify** - SMS OTP for client authentication
-- **Supabase RLS** - Row-level security on all tables
+- **Email verification** - customer verification for reschedule access
+- **Server-side Drizzle access** - Database access stays on the server
 - **Zod Validation** - Input validation on all forms
 - **Environment Variables** - Secrets in Vercel, not in code
 
@@ -197,10 +207,123 @@ npm run test
 npm run test:watch
 ```
 
+### Production E2E
+
+Production Playwright runs skip the local dev server automatically.
+
+One-command full production suite:
+
+```bash
+npm run test:prod:headed
+```
+
+Booking flow:
+
+```bash
+# Full booking loop against production
+npm run test:booking:prod:headed
+
+# Faster production smoke run (2 bookings)
+npm run test:booking:prod:smoke:headed
+```
+
+Reschedule flow:
+
+```bash
+# Requires a real inbox for the booking created by the test
+RESCHEDULE_TEST_EMAIL=you@example.com npm run test:reschedule:prod:headed
+```
+
+Optional support-path env vars for the reschedule suite:
+
+```bash
+# A production booking phone with no email on file
+RESCHEDULE_MISSING_EMAIL_PHONE=9545550001
+
+# A production phone linked to bookings under multiple different emails
+RESCHEDULE_MULTI_EMAIL_PHONE=9545550002
+```
+
+What the reschedule suite covers:
+- Create a fresh production booking and reach the masked-email verification step
+- Reject an invalid 6-digit verification code
+- Show the support message when no email is on file
+- Show the support message when multiple emails are linked to one phone
+
+Combined production suite examples:
+
+```bash
+# Full headed run across booking + reschedule
+RESCHEDULE_TEST_EMAIL=you@example.com npm run test:prod:headed
+
+# Faster booking smoke + reschedule checks
+BOOKING_LIMIT=2 RESCHEDULE_TEST_EMAIL=you@example.com npm run test:prod:headed
+```
+
+### Daily Ops Agent Commands
+
+These are the first implementation layer for the MrGuy ops agent:
+
+```bash
+# Read booking queue state from production data
+npm run ops:bookings
+
+# Run safe production smoke without creating bookings or sending reschedule codes
+npm run ops:smoke
+
+# Read inbox / customer inquiry queue
+npm run ops:inquiries
+
+# Read analytics funnel state
+npm run ops:analytics
+
+# Read SEO / webmaster state
+npm run ops:seo
+
+# Generate a daily digest in output/ops/latest-digest.md
+npm run ops:digest
+
+# Wrapped daily run with log output
+npm run ops:daily
+```
+
+Optional env vars:
+
+```bash
+# Deliver urgent digest alerts by email
+MRGUY_OPS_ALERT_TO=you@example.com
+SEND_ALERTS=1
+
+# Override target environment
+BASE_URL=https://mrguydetail.com
+
+# Google-backed reporting
+GOOGLE_ANALYTICS_PROPERTY_ID=123456789
+GOOGLE_SEARCH_CONSOLE_SITE_URL=https://mrguydetail.com/
+```
+
+Important:
+- Gmail, GA4, and Search Console snapshots reuse the app's connected Google account.
+- Reconnect Google once from the admin flow so the stored refresh token includes the new readonly scopes:
+  - `gmail.readonly`
+  - `analytics.readonly`
+  - `webmasters.readonly`
+- Until that reconnect happens, those connectors will report `degraded`.
+
+Local daily scheduler on macOS:
+
+```bash
+# Install a launchd job that runs daily at 7:00 AM local by default
+npm run ops:schedule:install
+
+# Override the schedule at install time
+OPS_RUN_HOUR=8 OPS_RUN_MINUTE=30 npm run ops:schedule:install
+```
+
 **Test Coverage:**
 - Booking flow validation
 - Payment integration (mocked)
-- OTP authentication flow
+- Email-based reschedule verification
 - Component rendering
 
 ## License

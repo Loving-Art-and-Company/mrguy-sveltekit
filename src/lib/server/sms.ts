@@ -5,6 +5,13 @@ interface SMSParams {
   message: string;
 }
 
+interface BookingNotification {
+  service: { name: string; price?: number };
+  schedule: { date: string; time: string };
+  address: { street: string; city: string; state?: string; zip?: string };
+  contact: { name?: string; phone: string; email?: string };
+}
+
 /**
  * Send SMS via Twilio
  * Fails silently - booking should succeed even if SMS fails
@@ -79,6 +86,24 @@ Note: Vehicle details not collected - follow up via SMS`;
   return sendSMS({ to: PABLO_PHONE, message });
 }
 
+export async function notifyOwnerOfBookingRequestSMS(booking: BookingNotification): Promise<boolean> {
+  const PABLO_PHONE = '9548044747';
+
+  const message = `New booking request - approval needed
+
+Service: ${booking.service.name}${typeof booking.service.price === 'number' ? ` - $${booking.service.price}` : ''}
+Requested: ${formatDate(booking.schedule.date)} at ${formatTime(booking.schedule.time)}
+Location: ${booking.address.street}, ${booking.address.city}${booking.address.state ? ` ${booking.address.state}` : ''}${booking.address.zip ? ` ${booking.address.zip}` : ''}
+
+Customer: ${booking.contact.name ?? 'N/A'}
+Phone: ${booking.contact.phone}
+${booking.contact.email ? `Email: ${booking.contact.email}` : ''}
+
+The requested time is now being held on the site until you confirm it.`;
+
+  return sendSMS({ to: PABLO_PHONE, message });
+}
+
 /**
  * Send confirmation SMS to customer
  */
@@ -95,6 +120,21 @@ ${formatDate(booking.schedule.date)} at ${formatTime(booking.schedule.time)}
 ${booking.address.street}, ${booking.address.city}
 
 We'll text you 24 hours before to confirm your vehicle details (make, model, year).
+
+Questions? Reply to this text or call 954-804-4747.
+
+- Mr. Guy Team`;
+
+  return sendSMS({ to: booking.contact.phone, message });
+}
+
+export async function sendCustomerBookingRequestReceivedSMS(booking: BookingNotification): Promise<boolean> {
+  const message = `Mr. Guy Detail received your booking request.
+
+Requested service: ${booking.service.name}
+Requested time: ${formatDate(booking.schedule.date)} at ${formatTime(booking.schedule.time)}
+
+Pablo still needs to confirm this time. We’re holding it for now and will text you once it’s approved.
 
 Questions? Reply to this text or call 954-804-4747.
 

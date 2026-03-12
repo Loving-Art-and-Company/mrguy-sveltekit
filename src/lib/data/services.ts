@@ -28,6 +28,12 @@ export interface MembershipTier {
 /** Alias for PackageMenu compatibility */
 export type SubscriptionTier = MembershipTier;
 
+export interface BookableServiceSelection {
+  id: string;
+  name: string;
+  priceHigh: number;
+}
+
 export const BUSINESS_INFO = {
   name: "Mr. Guy Mobile Detail",
   tagline: "We Know a Guy.",
@@ -100,6 +106,27 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
   },
 ];
 
+const LEGACY_SERVICE_SELECTIONS: BookableServiceSelection[] = [
+  { id: 'exterior_wash', name: 'Exterior Wash', priceHigh: 47 },
+  { id: 'interior_wash', name: 'Interior Wash', priceHigh: 47 },
+  { id: 'full_wax', name: 'Full Wax', priceHigh: 147 },
+  { id: 'clay_bar', name: 'Clay Bar Treatment', priceHigh: 67 },
+  { id: 'paint_correction_clay', name: 'Paint Correction + Clay Bar', priceHigh: 167 },
+  { id: 'two_step_correction', name: '2-Step Paint Correction', priceHigh: 267 },
+  { id: 'window_ceramic', name: 'Window Ceramic Coat', priceHigh: 97 },
+  { id: 'tire_ceramic', name: 'Tire Ceramic Coat', priceHigh: 97 },
+  { id: 'full_ceramic', name: 'Full Body Ceramic Coat', priceHigh: 747 },
+  { id: 'tesla_3y_special', name: 'The "Model 3/Y" Kit', priceHigh: 250 },
+];
+
+const BOOKABLE_SERVICE_SELECTIONS = new Map<string, BookableServiceSelection>([
+  ...SERVICE_PACKAGES.map((service) => [
+    service.id,
+    { id: service.id, name: service.name, priceHigh: service.priceHigh },
+  ] as const),
+  ...LEGACY_SERVICE_SELECTIONS.map((service) => [service.id, service] as const),
+]);
+
 export const MEMBERSHIP_TIERS: MembershipTier[] = [
   {
     id: "basic_membership",
@@ -139,6 +166,10 @@ export const EXTRA_FEES: any[] = [];
 
 export function getAddOnsForTier(tierId: string): any[] {
   return [];
+}
+
+export function resolveServiceSelection(serviceId: string): BookableServiceSelection | null {
+  return BOOKABLE_SERVICE_SELECTIONS.get(serviceId) ?? null;
 }
 
 /**

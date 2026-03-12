@@ -1,21 +1,23 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { buildBookableTimeSlots } from '$lib/scheduling';
 
 	let { data, form } = $props();
 
 	let submitting = $state(false);
 
-	let clientName = $state(form?.values?.clientName ?? '');
-	let phone = $state(form?.values?.phone ?? '');
-	let email = $state(form?.values?.email ?? '');
-	let serviceId = $state(form?.values?.serviceId ?? '');
-	let date = $state(form?.values?.date ?? '');
-	let time = $state(form?.values?.time ?? '');
-	let street = $state(form?.values?.street ?? '');
-	let city = $state(form?.values?.city ?? '');
-	let addressState = $state(form?.values?.state ?? 'FL');
-	let zip = $state(form?.values?.zip ?? '');
-	let notes = $state(form?.values?.notes ?? '');
+	let clientName = $state('');
+	let phone = $state('');
+	let email = $state('');
+	let serviceId = $state('');
+	let date = $state('');
+	let time = $state('');
+	let street = $state('');
+	let city = $state('');
+	let addressState = $state('FL');
+	let zip = $state('');
+	let notes = $state('');
 
 	$effect(() => {
 		if (form?.values) {
@@ -30,6 +32,13 @@
 			addressState = form.values.state ?? 'FL';
 			zip = form.values.zip ?? '';
 			notes = form.values.notes ?? '';
+			return;
+		}
+
+		const prefilledDate = page.url.searchParams.get('date');
+		if (prefilledDate && !date) {
+			date = prefilledDate;
+			fetchDayBookings(prefilledDate);
 		}
 	});
 
@@ -57,13 +66,7 @@
 		loadingDay = false;
 	}
 
-	const timeSlots = Array.from({ length: 11 }, (_, i) => {
-		const hour = i + 8;
-		const value = `${String(hour).padStart(2, '0')}:00`;
-		const period = hour >= 12 ? 'PM' : 'AM';
-		const displayHour = hour > 12 ? hour - 12 : hour;
-		return { value, label: `${displayHour}:00 ${period}` };
-	});
+	const timeSlots = $derived(buildBookableTimeSlots(date));
 
 	function formatTime(t: string | null): string {
 		if (!t) return 'TBD';
@@ -118,6 +121,7 @@
 			};
 		}}
 	>
+		<input type="hidden" name="returnTo" value={page.url.searchParams.get('returnTo') ?? '/admin/bookings'} />
 		<!-- Client Info -->
 		<div style={cardStyle}>
 			<h3 style="margin: 0 0 1rem; font-size: 1rem; color: #1a1a2e; font-weight: 700;">Client Information</h3>
@@ -190,7 +194,10 @@
 						bind:value={date}
 						min={today}
 						required
-						onchange={(e) => fetchDayBookings(e.currentTarget.value)}
+						onchange={(e) => {
+							time = '';
+							fetchDayBookings(e.currentTarget.value);
+						}}
 						style={inputStyle}
 					/>
 					{#each getFieldErrors('date') as err}

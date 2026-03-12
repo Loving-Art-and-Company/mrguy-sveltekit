@@ -3,6 +3,11 @@
   import type { ServicePackage } from '$lib/data/services';
   import { getPromoPrice } from '$lib/data/services';
   import { track } from '$lib/analytics';
+  import {
+    buildBookableDates,
+    buildBookableTimeSlots,
+    type AvailabilitySlot,
+  } from '$lib/scheduling';
 
   interface Props {
     service: ServicePackage;
@@ -29,41 +34,10 @@
   let address = $state({ street: '', city: 'Weston', state: 'FL', zip: '', instructions: '' });
   let contact = $state({ name: '', phone: '', email: '' });
 
-  // Generate available dates (next 30 days, no Sundays)
-  function getAvailableDates(): { value: string; label: string }[] {
-    const dates: { value: string; label: string }[] = [];
-    const today = new Date();
-    for (let i = 1; i <= 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      if (date.getDay() !== 0) { // Skip Sundays
-        const value = date.toISOString().split('T')[0];
-        const label = date.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric'
-        });
-        dates.push({ value, label });
-      }
-    }
-    return dates;
-  }
-
-  const availableDates = getAvailableDates();
-
-  // Time slots
-  const timeSlots = [
-    { value: '08:00', label: '8:00 AM' },
-    { value: '09:00', label: '9:00 AM' },
-    { value: '10:00', label: '10:00 AM' },
-    { value: '11:00', label: '11:00 AM' },
-    { value: '12:00', label: '12:00 PM' },
-    { value: '13:00', label: '1:00 PM' },
-    { value: '14:00', label: '2:00 PM' },
-    { value: '15:00', label: '3:00 PM' },
-    { value: '16:00', label: '4:00 PM' },
-    { value: '17:00', label: '5:00 PM' },
-  ];
+  const availableDates = buildBookableDates();
+  let availabilityLoading = $state(false);
+  let availabilityError = $state('');
+  let availableTimeSlots = $state<AvailabilitySlot[]>([]);
 
   // Format date for display
   function formatDate(dateStr: string): string {
@@ -78,8 +52,44 @@
 
   // Format time for display
   function formatTime(timeStr: string): string {
-    const slot = timeSlots.find(t => t.value === timeStr);
+    if (!schedule.date) return timeStr;
+    const slot = buildBookableTimeSlots(schedule.date).find((t) => t.value === timeStr);
     return slot?.label || timeStr;
+  }
+
+  async function loadAvailability(date: string) {
+    availabilityLoading = true;
+    availabilityError = '';
+
+    try {
+      const response = await fetch(`/api/bookings/availability?date=${date}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not load available times right now.');
+      }
+
+      availableTimeSlots = Array.isArray(data.slots)
+        ? data.slots
+        : buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+
+      if (!availableTimeSlots.some((slot) => slot.available)) {
+        availabilityError = 'That day is fully booked. Please choose another date.';
+      }
+    } catch (err) {
+      availableTimeSlots = buildBookableTimeSlots(date).map((slot) => ({ ...slot, available: true }));
+      availabilityError = err instanceof Error ? err.message : 'Could not load availability.';
+    } finally {
+      availabilityLoading = false;
+    }
+  }
+
+  function selectDate(value: string) {
+    schedule.date = value;
+    schedule.time = '';
+    errors.time = '';
+    availableTimeSlots = buildBookableTimeSlots(value).map((slot) => ({ ...slot, available: true }));
+    void loadAvailability(value);
   }
 
   // Format phone number as user types
@@ -183,6 +193,13 @@
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        if (response.status === 409) {
+          schedule.time = '';
+          errors.time = data.message || 'That time is no longer available. Please choose another time.';
+          await loadAvailability(schedule.date);
+          currentStep = 0;
+          return;
+        }
         throw new Error(data.message || 'Booking failed');
       }
 
@@ -235,6 +252,9 @@
     schedule = { date: '', time: '' };
     address = { street: '', city: 'Weston', state: 'FL', zip: '', instructions: '' };
     contact = { name: '', phone: '', email: '' };
+    availabilityLoading = false;
+    availabilityError = '';
+    availableTimeSlots = [];
     errors = {};
     onClose();
   }
@@ -283,8 +303,8 @@
           <div class="success-icon">
             <Check size={48} />
           </div>
-          <h2>Booking Confirmed!</h2>
-          <p>We've sent a confirmation to your phone. Check your texts!</p>
+          <h2>Booking Request Received!</h2>
+          <p>Pablo will review your selected time and text you once it’s confirmed.</p>
           <div class="countdown">Closing in {successCountdown}...</div>
         </div>
       {:else}
@@ -349,7 +369,7 @@
                         type="button"
                         class="date-btn"
                         class:selected={schedule.date === date.value}
-                        onclick={() => schedule.date = date.value}
+                        onclick={() => selectDate(date.value)}
                       >
                         {date.label}
                       </button>
@@ -361,18 +381,24 @@
                 {#if schedule.date}
                   <fieldset class="form-section">
                     <legend class="form-label">Select Time *</legend>
+                    {#if availabilityLoading}
+                      <p class="helper-text">Checking the latest availability...</p>
+                    {/if}
                     <div class="time-grid">
-                      {#each timeSlots as slot}
+                      {#each availableTimeSlots as slot}
                         <button
                           type="button"
                           class="time-btn"
                           class:selected={schedule.time === slot.value}
+                          class:unavailable={!slot.available}
+                          disabled={!slot.available || availabilityLoading}
                           onclick={() => schedule.time = slot.value}
                         >
                           {slot.label}
                         </button>
                       {/each}
                     </div>
+                    {#if availabilityError}<span class="error">{availabilityError}</span>{/if}
                     {#if errors.time}<span class="error">{errors.time}</span>{/if}
                   </fieldset>
                 {/if}
@@ -549,7 +575,7 @@
                 </div>
 
                 <p class="sms-note">
-                  We'll text you to confirm vehicle details before your appointment
+                  Pablo will review this request, confirm the timing, and text you once it’s approved.
                 </p>
 
                 {#if errors.submit}
@@ -564,7 +590,7 @@
                   {#if isSubmitting}
                     Processing...
                   {:else}
-                    Book Appointment - ${displayPrice}
+                    Request Appointment - ${displayPrice}
                   {/if}
                 </button>
               </div>
@@ -687,6 +713,12 @@
     font-weight: 500;
   }
 
+  .helper-text {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
   /* Service Summary */
   .service-summary {
     padding: 1rem 1.5rem;
@@ -740,6 +772,12 @@
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
+  }
+
+  .time-btn.unavailable {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
   }
 
   .edit-service-btn:hover {

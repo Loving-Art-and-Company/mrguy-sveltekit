@@ -1,14 +1,53 @@
 import { env } from '$env/dynamic/private';
-import { Resend } from 'resend';
 
 const BUSINESS_EMAIL = 'info@mrguymobiledetail.com';
 const MONITOR_EMAIL = 'info@lovingartandcompany.com';
+const RESEND_API_URL = 'https://api.resend.com/emails';
 
 interface EmailParams {
   to: string;
   subject: string;
   html: string;
   cc?: string | string[];
+}
+
+interface BookingNotification {
+  service: { name: string; price?: number };
+  schedule: { date: string; time: string };
+  address: { street: string; city: string; state?: string; zip?: string };
+  contact: { name?: string; phone?: string; email?: string };
+}
+
+async function sendViaResendApi(params: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  cc?: string[];
+}): Promise<boolean> {
+  const response = await fetch(RESEND_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${params.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: params.from,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      ...(params.cc?.length ? { cc: params.cc } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Resend email failed:', errorText);
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -24,22 +63,14 @@ export async function sendEmail({ to, subject, html, cc }: EmailParams): Promise
   }
 
   try {
-    const resend = new Resend(apiKey);
-    
-    const { data, error } = await resend.emails.send({
+    return await sendViaResendApi({
+      apiKey,
       from: 'Mr. Guy Detail <info@mrguymobiledetail.com>',
       to,
       subject,
       html,
-      ...(cc ? { cc: Array.isArray(cc) ? cc : [cc] } : {}),
+      cc: cc ? (Array.isArray(cc) ? cc : [cc]) : undefined,
     });
-
-    if (error) {
-      console.error('Resend email failed:', error);
-      return false;
-    }
-
-    return true;
   } catch (error) {
     console.error('Email send error:', error);
     return false;
@@ -87,6 +118,40 @@ export async function notifyOwnerOfBooking(booking: {
   });
 }
 
+export async function notifyOwnerOfBookingRequest(booking: BookingNotification): Promise<boolean> {
+  const html = `
+    <h2>New Booking Request</h2>
+
+    <p><strong>Status:</strong> Awaiting Pablo confirmation</p>
+
+    <h3>Requested Service</h3>
+    <p><strong>Service:</strong> ${booking.service.name}${typeof booking.service.price === 'number' ? `<br><strong>Quoted Price:</strong> $${booking.service.price}` : ''}</p>
+
+    <h3>Requested Time</h3>
+    <p><strong>Date:</strong> ${formatDate(booking.schedule.date)}<br>
+    <strong>Preferred Time:</strong> ${formatTime(booking.schedule.time)}</p>
+
+    <h3>Location</h3>
+    <p>${booking.address.street}<br>
+    ${booking.address.city}${booking.address.state ? `, ${booking.address.state}` : ''}${booking.address.zip ? ` ${booking.address.zip}` : ''}</p>
+
+    <h3>Customer</h3>
+    <p><strong>Name:</strong> ${booking.contact.name ?? 'N/A'}<br>
+    <strong>Phone:</strong> ${booking.contact.phone ?? 'N/A'}${booking.contact.email ? `<br><strong>Email:</strong> ${booking.contact.email}` : ''}</p>
+
+    <p style="color: #666; margin-top: 20px;">
+      <em>The customer-selected time is being held on the site until Pablo confirms or changes it.</em>
+    </p>
+  `;
+
+  return sendEmail({
+    to: BUSINESS_EMAIL,
+    cc: MONITOR_EMAIL,
+    subject: `Booking Request: ${booking.service.name} - ${formatDate(booking.schedule.date)}`,
+    html,
+  });
+}
+
 /**
  * Send confirmation email to customer
  */
@@ -127,6 +192,43 @@ export async function sendCustomerConfirmation(booking: {
     to: booking.contact.email,
     cc: [BUSINESS_EMAIL, MONITOR_EMAIL],
     subject: `Booking Confirmed - ${booking.service.name}`,
+    html,
+  });
+}
+
+export async function sendCustomerBookingRequestReceived(booking: BookingNotification): Promise<boolean> {
+  if (!booking.contact.email) {
+    return false;
+  }
+
+  const html = `
+    <h2>Your booking request is in.</h2>
+
+    <p>We’re holding your requested time for <strong>${booking.service.name}</strong> while Pablo reviews it.</p>
+
+    <p style="font-size: 16px;">
+      <strong>Requested Date:</strong> ${formatDate(booking.schedule.date)}<br>
+      <strong>Requested Time:</strong> ${formatTime(booking.schedule.time)}<br>
+      ${booking.address.street}, ${booking.address.city}
+    </p>
+
+    <p><strong>Important:</strong> your appointment is not confirmed yet. Pablo still needs to approve this time and we’ll text or email you once it’s confirmed.</p>
+
+    <p style="margin-top: 30px;">
+      <strong>Questions?</strong><br>
+      Call or text: <a href="tel:9548044747">954-804-4747</a><br>
+      Email: <a href="mailto:info@mrguymobiledetail.com">info@mrguymobiledetail.com</a>
+    </p>
+
+    <p style="color: #666; margin-top: 20px;">
+      - Pablo & the Mr. Guy Team
+    </p>
+  `;
+
+  return sendEmail({
+    to: booking.contact.email,
+    cc: [BUSINESS_EMAIL, MONITOR_EMAIL],
+    subject: `Booking Request Received - ${booking.service.name}`,
     html,
   });
 }

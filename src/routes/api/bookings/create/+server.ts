@@ -2,16 +2,30 @@ import { json, error, isHttpError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { env } from '$env/dynamic/private';
-import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
+import { getPromoPrice, resolveServiceSelection } from '$lib/data/services';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { isFirstTimeClient } from '$lib/server/promo';
 import { normalizePhone } from '$lib/server/phone';
 import { checkRateLimit } from '$lib/server/rateLimit';
-import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
-import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
-import { createCalendarEvent } from '$lib/server/calendar';
+import { bookings } from '$lib/server/schema';
+import {
+  buildBookableTimeSlots,
+  findConflictingHold,
+  formatTimeLabel,
+  isBookableDate,
+} from '$lib/scheduling';
+import {
+  notifyOwnerOfBookingRequest,
+  sendCustomerBookingRequestReceived,
+} from '$lib/server/email';
+import {
+  notifyOwnerOfBookingRequestSMS,
+  sendCustomerBookingRequestReceivedSMS,
+} from '$lib/server/sms';
+import { sendLeadToSink } from '$lib/server/leadSink';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
+const BOOKING_ACK_TEMPLATE_ID = 'mrguy-booking-request-received-v1';
 
 // Validation schema for modal booking
 const bookingSchema = z.object({
@@ -60,9 +74,18 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     const booking = result.data;
+    const validTimeValues = new Set(buildBookableTimeSlots(booking.schedule.date).map((slot) => slot.value));
+
+    if (!isBookableDate(booking.schedule.date)) {
+      return json({ message: 'Service is not available on Sundays.' }, { status: 400 });
+    }
+
+    if (!validTimeValues.has(booking.schedule.time)) {
+      return json({ message: 'Selected time is outside booking hours for that day.' }, { status: 400 });
+    }
 
     // Derive service name and price server-side from package ID
-    const pkg = SERVICE_PACKAGES.find((p) => p.id === booking.service.id);
+    const pkg = resolveServiceSelection(booking.service.id);
     if (!pkg) {
       return json({ message: 'Invalid service selected' }, { status: 400 });
     }
@@ -79,6 +102,7 @@ export const POST: RequestHandler = async ({ request }) => {
     // Build notes with address info (no address columns in bookings schema)
     const notes = [
       `Address: ${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
+      booking.contact.email ? `Email: ${booking.contact.email}` : null,
       booking.address.instructions ? `Instructions: ${booking.address.instructions}` : null,
       'Vehicle info pending',
     ]
@@ -88,21 +112,44 @@ export const POST: RequestHandler = async ({ request }) => {
     // Generate booking ID
     const bookingId = bookingRepo.generateBookingId(booking.schedule.date);
 
-    // Create booking in database — derive all pricing server-side
-    const newBooking = await bookingRepo.insert({
-      id: bookingId,
-      brandId: MRGUY_BRAND_ID,
-      clientName: booking.contact.name,
-      serviceName: pkg.name,
-      price: finalPrice,
-      date: booking.schedule.date,
-      time: booking.schedule.time,
-      contact: cleanPhone,
-      promoCode,
-      notes,
-      status: 'pending',
-      paymentStatus: 'unpaid',
+    const newBooking = await bookingRepo.withScheduleLock(booking.schedule.date, async (tx) => {
+      const holds = await bookingRepo.listScheduleHoldsByDate(booking.schedule.date, { executor: tx });
+      const conflict = findConflictingHold(holds, booking.schedule.time);
+
+      if (conflict) {
+        return { conflict };
+      }
+
+      const rows = await tx
+        .insert(bookings)
+        .values({
+          id: bookingId,
+          brandId: MRGUY_BRAND_ID,
+          clientName: booking.contact.name,
+          serviceName: pkg.name,
+          price: finalPrice,
+          date: booking.schedule.date,
+          time: booking.schedule.time,
+          contact: cleanPhone,
+          promoCode,
+          notes,
+          status: 'pending',
+          paymentStatus: 'unpaid',
+        })
+        .returning();
+
+      return rows[0] ?? null;
     });
+
+    if (newBooking && 'conflict' in newBooking) {
+      return json(
+        {
+          message: `That ${formatTimeLabel(booking.schedule.time)} slot is no longer available. Please choose a different time.`,
+          conflict: true,
+        },
+        { status: 409 }
+      );
+    }
 
     if (!newBooking) {
       console.error('Database error creating booking');
@@ -115,19 +162,52 @@ export const POST: RequestHandler = async ({ request }) => {
       service: { id: pkg.id, name: pkg.name, price: finalPrice },
     };
 
+    await sendLeadToSink({
+      schemaVersion: '2026-03-08',
+      brand: 'mrguy',
+      leadId: newBooking.id,
+      sourceChannel: 'booking_form',
+      sourceMessageId: newBooking.id,
+      sourceThreadId: newBooking.id,
+      receivedAt: new Date().toISOString(),
+      contactName: booking.contact.name,
+      contactEmail: booking.contact.email || undefined,
+      contactPhone: cleanPhone,
+      serviceType: pkg.name,
+      requestedDate: `${booking.schedule.date}T${booking.schedule.time}:00`,
+      requestedLocation: `${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
+      freeformNotes: notes,
+      missingFields: ['vehicle_details'],
+      qualificationStatus: 'human_review',
+      escalationReasons: [
+        'booking_confirmation_requires_human',
+        'vehicle_details_pending',
+      ],
+      autoResponseSent: Boolean(booking.contact.email),
+      autoResponseTemplateId: booking.contact.email ? BOOKING_ACK_TEMPLATE_ID : undefined,
+      humanOwner: 'Pablo',
+      auditEntries: [
+        {
+          at: new Date().toISOString(),
+          kind: 'lead_received',
+          note: 'Booking request created from website form',
+        },
+        ...(booking.contact.email
+          ? [{
+              at: new Date().toISOString(),
+              kind: 'auto_response_sent' as const,
+              templateId: BOOKING_ACK_TEMPLATE_ID,
+            }]
+          : []),
+      ],
+    });
+
     // Send email + SMS notifications + calendar sync (don't block on these)
     const notificationPromises = [
-      notifyOwnerOfBooking(notificationPayload),
-      sendCustomerConfirmation(notificationPayload),
-      notifyOwnerOfBookingSMS(notificationPayload),
-      sendCustomerConfirmationSMS(notificationPayload),
-      createCalendarEvent({
-        id: bookingId,
-        service: { name: pkg.name, price: finalPrice },
-        schedule: booking.schedule,
-        address: booking.address,
-        contact: { name: booking.contact.name, phone: cleanPhone, email: booking.contact.email || undefined },
-      }),
+      notifyOwnerOfBookingRequest(notificationPayload),
+      sendCustomerBookingRequestReceived(notificationPayload),
+      notifyOwnerOfBookingRequestSMS(notificationPayload),
+      sendCustomerBookingRequestReceivedSMS(notificationPayload),
     ];
 
     // Fire and forget - don't wait for notifications to complete
@@ -137,20 +217,20 @@ export const POST: RequestHandler = async ({ request }) => {
         console.warn('Failed to notify owner of booking (email)');
       }
       if (customerEmail.status === 'rejected' || !customerEmail.value) {
-        console.warn('Failed to send customer confirmation (email)');
+        console.warn('Failed to send booking request email to customer');
       }
       if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
         console.warn('Failed to notify owner of booking (SMS)');
       }
       if (customerSMS.status === 'rejected' || !customerSMS.value) {
-        console.warn('Failed to send customer confirmation (SMS)');
+        console.warn('Failed to send booking request SMS to customer');
       }
     });
 
     return json({
       success: true,
       bookingId: newBooking?.id || 'pending',
-      message: 'Booking created successfully',
+      message: 'Booking request received. Pablo will review and confirm your selected time.',
       promoApplied: firstTime,
       price: finalPrice,
     });

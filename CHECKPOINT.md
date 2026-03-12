@@ -32,15 +32,14 @@
 - All 5 admin routes (bookings list, detail, calendar, dashboard, login)
 
 ### Cleanup
-- Deleted: `src/lib/server/supabase.ts`, `src/lib/types/database.ts`
-- Removed deps: `@supabase/ssr`, `@supabase/supabase-js`
+- Deleted: legacy hosted-database client files
+- Removed legacy hosted-database SDK deps
 - Updated Svelte imports: `Booking` → `BookingRow` from bookingRepo
 - Fixed: `booking.created_at` → `booking.createdAt`, timestamp types
-- Zero supabase imports remain in `src/` (only comments explaining migration origin)
+- Zero legacy hosted-database imports remain in `src/`
 
 ### Scripts
-- `scripts/migrate-data.ts` — Full data migration (9 tables, FK-ordered, verification)
-- `scripts/create-admin.ts` — Updated to use bcrypt + Neon (was Supabase)
+- `scripts/create-admin.ts` — Updated to use bcrypt + Neon
 
 ### svelte-check
 - 31 errors, 25 warnings — ALL pre-existing (PackageMenu, BentoSlideshow, BookingModal)
@@ -50,28 +49,21 @@
 
 1. **Provision Neon DB** — Create `mrguy` project at neon.tech, get `DATABASE_URL`
 2. **Push schema** — `npx drizzle-kit push`
-3. **Run data migration:**
-   ```bash
-   SUPABASE_DB_URL="postgresql://postgres.[ref]:[password]@..." \
-   DATABASE_URL="postgresql://..." \
-   npx tsx scripts/migrate-data.ts
-   ```
-4. **Create admin user:**
+3. **Create admin user:**
    ```bash
    DATABASE_URL="..." npx tsx scripts/create-admin.ts admin@mrguydetail.com YourPassword
    ```
-5. **Set env vars** in `.env.local` and Vercel:
+4. **Set env vars** in `.env.local` and Vercel:
    - `DATABASE_URL` (Neon)
    - `CSRF_SECRET` (32+ random chars)
    - `UPSTASH_REDIS_REST_URL`
    - `UPSTASH_REDIS_REST_TOKEN`
-6. **Test full app** — login, booking CRUD, webhook, promo flow
-7. **Merge PR** when verified
+5. **Test full app** — login, booking CRUD, webhook, promo flow
+6. **Merge PR** when verified
 
 ## Key Technical Notes
 
 - Bookings table uses mixed camelCase DB columns (`"clientName"`, `"serviceName"`) — quoted identifiers
 - Bookings use text PK format: `BK-YYYYMMDD-XXXX`
 - `MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45'` filters all queries
-- Supabase bcrypt hashes are standard — `bcryptjs.compare()` works directly, no re-hashing
 - Drizzle returns `Date` objects (not ISO strings) for timestamp columns

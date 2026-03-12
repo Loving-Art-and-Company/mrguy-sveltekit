@@ -26,17 +26,16 @@
 
 **[Choose applicable method]:**
 
-**Option 1: Supabase Auth**
-- Email/password authentication
-- OAuth providers (Google, GitHub, etc.)
-- Magic link email authentication
-- Session managed via JWT tokens
-
-**Option 2: Twilio Verify (SMS OTP)**
+**Option 1: Twilio Verify (SMS OTP)**
 - Phone number-based authentication
 - One-time password (OTP) via SMS
 - Session tokens for client authentication
 - Rate limiting: 5 OTP requests per hour per phone
+
+**Option 2: Admin Sessions**
+- Email/password authentication for admin users
+- Passwords hashed with bcrypt
+- Server-stored sessions with secure cookies
 
 **Option 3: None**
 - No user authentication required
@@ -61,11 +60,10 @@
 | `client` | View own bookings, update profile |
 | `public` | Read-only access to public content |
 
-**Row-Level Security (RLS) - Supabase:**
-- Enabled on all tables containing user data
-- Users can only access their own records
-- Admin role bypasses RLS via service role key
-- See `supabase/migrations/` for policy definitions
+**Server-Side Access Control:**
+- Database access is limited to server routes and repositories
+- Client flows operate through validated API endpoints
+- Admin capabilities require authenticated server sessions
 
 ---
 
@@ -79,7 +77,7 @@
 - ✓ HSTS headers enabled (HTTP Strict Transport Security)
 
 **At Rest:**
-- ✓ Database encryption enabled (Supabase / provider default)
+- ✓ Database encryption enabled by the managed Postgres provider
 - ✓ Backups encrypted automatically
 - ✓ API keys stored in encrypted environment variables
 
@@ -104,7 +102,7 @@
 
 **[If applicable]:**
 - **Frequency:** [Daily / Weekly / Continuous]
-- **Provider:** [Supabase automated backups / Custom]
+- **Provider:** [Managed Postgres backups / Custom]
 - **Retention:** [30 days / 90 days]
 - **Recovery Tested:** [Last test date]
 
@@ -116,15 +114,13 @@
 
 | Variable | Purpose | Client-Safe? | Location | How to Obtain |
 |----------|---------|--------------|----------|---------------|
-| `PUBLIC_SUPABASE_URL` | Database URL | ✓ Yes | Vercel env | Supabase dashboard |
-| `PUBLIC_SUPABASE_ANON_KEY` | Client DB access | ✓ Yes | Vercel env | Supabase dashboard |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin DB access | ✗ **SERVER-ONLY** | Vercel secrets | Supabase → Settings → API |
+| `DATABASE_URL` | Postgres connection string | ✗ **SERVER-ONLY** | Vercel secrets | Database provider dashboard |
 | `STRIPE_SECRET_KEY` | Payment processing | ✗ **SERVER-ONLY** | Vercel secrets | Stripe dashboard → API keys |
 | `PUBLIC_STRIPE_PUBLISHABLE_KEY` | Client Stripe | ✓ Yes | Vercel env | Stripe dashboard |
 | `STRIPE_WEBHOOK_SECRET` | Webhook verification | ✗ **SERVER-ONLY** | Vercel secrets | Stripe → Webhooks → Signing secret |
 | `TWILIO_ACCOUNT_SID` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
 | `TWILIO_AUTH_TOKEN` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
-| `TWILIO_VERIFY_SERVICE_SID` | OTP service | ✗ **SERVER-ONLY** | Vercel secrets | Twilio Verify service |
+| `TWILIO_PHONE_NUMBER` | Outbound SMS sender | ✗ **SERVER-ONLY** | Vercel secrets | Twilio phone numbers |
 
 ### Variable Naming Conventions
 
@@ -186,8 +182,8 @@
 
 ### Database Security (if applicable)
 
-- [ ] Row-Level Security (RLS) enabled on all tables with user data
-- [ ] Service role key ONLY used server-side (never exposed to client)
+- [ ] Database access limited to server-only code paths
+- [ ] `DATABASE_URL` only used server-side (never exposed to client)
 - [ ] Database connection pooling configured
 - [ ] Database backups verified and tested
 - [ ] No public tables containing PII
@@ -210,7 +206,7 @@
 - [ ] **Stripe:** Production keys (not test keys) in production
 - [ ] **Stripe:** Checkout session validates amount server-side
 - [ ] **Twilio:** Request validation enabled (signature verification)
-- [ ] **Supabase:** RLS policies reviewed and tested
+- [ ] **Database:** Access boundaries reviewed and tested
 - [ ] **All APIs:** API keys rotated to production values
 
 ### Input Validation & Sanitization
@@ -238,14 +234,14 @@
 **Current Protections:**
 
 ✓ **Stripe Checkout** - PCI-compliant payment processing (no card data stored locally)  
-✓ **Supabase Row-Level Security (RLS)** - Database-level access control (see `supabase/migrations/`)  
+✓ **Server-side repository access** - Database operations stay behind validated server routes  
 ✓ **Zod Validation** - All form inputs validated before processing  
 ✓ **DOMPurify Sanitization** - XSS prevention on user-generated content  
 ✓ **Server-Side API Key Verification** - All sensitive operations server-only  
 ✓ **HTTPS-Only Cookies** - Session cookies marked `Secure` and `HttpOnly`  
 ✓ **OTP Rate Limiting** - Max 5 SMS OTP requests per hour per phone  
 ✓ **Webhook Signature Verification** - Stripe webhooks validated before processing  
-✓ **Automated Backups** - Daily database backups via Supabase  
+✓ **Automated Backups** - Daily managed database backups  
 ✓ **Dependency Scanning** - Dependabot enabled for vulnerability detection
 
 **Framework-Specific:**
@@ -327,10 +323,10 @@
 3. Click "Publish" on last known good version
 4. Verify theme loads correctly
 
-**Database (Supabase):**
-1. Identify last clean backup (Supabase dashboard → Database → Backups)
-2. Restore from backup (creates new project)
-3. Update connection strings in application
+**Database (Postgres):**
+1. Identify last clean backup from the database provider
+2. Restore to a safe recovery target
+3. Update connection strings if failover is required
 4. Verify data integrity
 
 ---
@@ -377,7 +373,7 @@
 ## Additional Resources
 
 - **OWASP Top 10:** https://owasp.org/www-project-top-ten/
-- **Supabase Security Best Practices:** https://supabase.com/docs/guides/platform/going-into-prod#security
+- **Postgres Security Best Practices:** https://www.postgresql.org/docs/current/security.html
 - **Stripe Security:** https://stripe.com/docs/security
 - **Vercel Security:** https://vercel.com/docs/security
 

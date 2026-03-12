@@ -1,5 +1,5 @@
 // src/hooks.server.ts
-// Custom auth, CSRF, CSP, rate limiting — replaces Supabase SSR client
+// Custom auth, CSRF, CSP, and rate limiting
 // Adapted from FPP/Carolina pattern for MrGuy admin auth
 
 import { type Handle, type HandleServerError, redirect } from '@sveltejs/kit';

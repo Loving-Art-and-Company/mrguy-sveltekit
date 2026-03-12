@@ -1,6 +1,6 @@
 // src/lib/server/schema.ts
 // Drizzle ORM table definitions for Mr. Guy Mobile Detail
-// Translated from Supabase schema (database.ts types)
+// Database schema definitions for the MrGuy platform
 
 import {
   pgTable,
@@ -15,7 +15,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 // ============================================================
-// AUTH TABLES (new — replaces Supabase Auth)
+// AUTH TABLES
 // ============================================================
 
 export const users = pgTable('users', {
@@ -117,7 +117,7 @@ export const googleTokens = pgTable('google_tokens', {
 
 // ============================================================
 // BOOKINGS
-// Note: Original Supabase schema uses mixed camelCase/snake_case.
+// Note: The bookings table uses mixed camelCase/snake_case columns.
 // Drizzle maps camelCase properties to the ACTUAL column names.
 // The DB columns are: id, brand_id, "clientName", "serviceName", price,
 // date, time, contact, "transactionId", "paymentMethod", notes, signature,
