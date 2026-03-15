@@ -785,6 +785,16 @@
     {/if}
 
     <div class="stats-grid payroll-ytd-grid">
+      <article class="stat-card compact export-card">
+        <span class="stat-label">W-2 Export</span>
+        <a
+          href="/admin/business/payroll-export?year={data.payroll.ytd.year}"
+          class="export-btn"
+          download
+        >
+          Download {data.payroll.ytd.year} CSV
+        </a>
+      </article>
       <article class="stat-card compact">
         <span class="stat-label">YTD wages paid</span>
         <strong class="stat-value">{formatCurrency(data.payroll.ytd.totalWagesCents)}</strong>
@@ -1309,6 +1319,30 @@
 
   .payroll-ytd-grid {
     margin-bottom: 1rem;
+  }
+
+  .export-card {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .export-btn {
+    display: inline-block;
+    padding: 0.55rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.65rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #374151;
+    text-decoration: none;
+    background: #f9fafb;
+    text-align: center;
+  }
+
+  .export-btn:hover {
+    background: #1a1a2e;
+    color: white;
+    border-color: #1a1a2e;
   }
 
   .status-badge {

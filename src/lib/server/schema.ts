@@ -438,6 +438,21 @@ export const clientSubscriptions = pgTable(
 );
 
 // ============================================================
+// PROCESSED WEBHOOK EVENTS (idempotency guard)
+// ============================================================
+
+export const processedWebhookEvents = pgTable(
+  'processed_webhook_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    eventId: text('event_id').notNull().unique(),
+    eventType: text('event_type').notNull(),
+    processedAt: timestamp('processed_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex('uidx_processed_webhook_events_event_id').on(t.eventId)]
+);
+
+// ============================================================
 // CREDIT USAGE
 // ============================================================
 

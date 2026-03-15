@@ -79,7 +79,8 @@ export const POST: RequestHandler = async ({ request }) => {
   } catch (err) {
     console.error('Stripe checkout error:', err);
     if (err instanceof Stripe.errors.StripeError) {
-      throw error(400, err.message);
+      console.error('Stripe error detail:', err.message);
+      throw error(400, 'Payment could not be processed. Please try again.');
     }
     throw error(500, 'Failed to create checkout session');
   }

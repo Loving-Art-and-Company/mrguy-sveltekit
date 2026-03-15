@@ -554,6 +554,39 @@ export async function deletePayrollEntry(id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+export async function listPaidPayrollForYear(year: string): Promise<PayrollListItem[]> {
+  return db
+    .select({
+      id: payrollEntries.id,
+      workerName: payrollEntries.workerName,
+      payPeriodStart: payrollEntries.payPeriodStart,
+      payPeriodEnd: payrollEntries.payPeriodEnd,
+      totalJobs: payrollEntries.totalJobs,
+      grossRevenueCents: payrollEntries.grossRevenueCents,
+      payoutRatePercent: payrollEntries.payoutRatePercent,
+      payoutCents: payrollEntries.payoutCents,
+      mileageMiles: payrollEntries.mileageMiles,
+      mileageDeductionCents: payrollEntries.mileageDeductionCents,
+      supplyCostCents: payrollEntries.supplyCostCents,
+      netToBusinessCents: payrollEntries.netToBusinessCents,
+      status: payrollEntries.status,
+      paidDate: payrollEntries.paidDate,
+      paidMethod: payrollEntries.paidMethod,
+      notes: payrollEntries.notes,
+      createdAt: payrollEntries.createdAt,
+    })
+    .from(payrollEntries)
+    .where(
+      and(
+        eq(payrollEntries.brandId, MRGUY_BRAND_ID),
+        eq(payrollEntries.status, 'paid'),
+        gte(payrollEntries.payPeriodStart, `${year}-01-01`),
+        lte(payrollEntries.payPeriodStart, `${year}-12-31`)
+      )
+    )
+    .orderBy(asc(payrollEntries.payPeriodStart));
+}
+
 export async function summarizePayrollYTD(year: string): Promise<{
   totalWagesCents: number;
   totalJobs: number;

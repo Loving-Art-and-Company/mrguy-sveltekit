@@ -1,12 +1,14 @@
 import { json, error } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
+import { eq } from 'drizzle-orm';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import * as clientProfileRepo from '$lib/repositories/clientProfileRepo';
 import { normalizePhone } from '$lib/server/phone';
 import { getStripe } from '$lib/server/stripe';
+import { db } from '$lib/server/db';
 import { SERVICE_PACKAGES } from '$lib/data/services';
-import { bookings } from '$lib/server/schema';
+import { bookings, processedWebhookEvents } from '$lib/server/schema';
 import { findConflictingHold } from '$lib/scheduling';
 import {
   notifyOwnerOfBookingRequest,
@@ -64,6 +66,17 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(400, 'Invalid signature');
   }
 
+  // Idempotency check: skip already-processed events (Stripe retries)
+  const [existing] = await db
+    .select({ id: processedWebhookEvents.id })
+    .from(processedWebhookEvents)
+    .where(eq(processedWebhookEvents.eventId, event.id))
+    .limit(1);
+
+  if (existing) {
+    return json({ received: true });
+  }
+
   // Handle the event
   switch (event.type) {
     case 'checkout.session.completed': {
@@ -87,6 +100,12 @@ export const POST: RequestHandler = async ({ request }) => {
       // Ignore other event types silently
       break;
   }
+
+  // Record processed event for idempotency
+  await db
+    .insert(processedWebhookEvents)
+    .values({ eventId: event.id, eventType: event.type })
+    .onConflictDoNothing();
 
   return json({ received: true });
 };
