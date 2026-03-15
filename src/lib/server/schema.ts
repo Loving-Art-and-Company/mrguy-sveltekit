@@ -282,6 +282,43 @@ export const financeEntries = pgTable(
 );
 
 // ============================================================
+// PAYROLL
+// ============================================================
+
+export const payrollEntries = pgTable(
+  'payroll_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    brandId: uuid('brand_id')
+      .notNull()
+      .references(() => brands.id),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    workerName: text('worker_name').notNull(),
+    payPeriodStart: text('pay_period_start').notNull(),
+    payPeriodEnd: text('pay_period_end').notNull(),
+    totalJobs: integer('total_jobs').notNull(),
+    grossRevenueCents: integer('gross_revenue_cents').notNull(),
+    payoutRatePercent: integer('payout_rate_percent').notNull(),
+    payoutCents: integer('payout_cents').notNull(),
+    mileageMiles: integer('mileage_miles').default(0).notNull(),
+    mileageDeductionCents: integer('mileage_deduction_cents').default(0).notNull(),
+    supplyCostCents: integer('supply_cost_cents').default(0).notNull(),
+    netToBusinessCents: integer('net_to_business_cents').notNull(),
+    status: text('status').default('draft').notNull(),
+    paidDate: text('paid_date'),
+    paidMethod: text('paid_method'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_payroll_entries_brand_period').on(t.brandId, t.payPeriodStart),
+    index('idx_payroll_entries_status').on(t.status),
+  ]
+);
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 

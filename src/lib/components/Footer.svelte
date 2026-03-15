@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SERVICE_CITIES } from '$lib/data/cities';
   import { BUSINESS_INFO } from '$lib/data/services';
-  import { Phone, Mail, MapPin, Clock } from 'lucide-svelte';
+  import { Phone, Mail, MapPin, Clock, ExternalLink } from 'lucide-svelte';
   import { track } from '$lib/analytics';
 
   const socialLinks = [
@@ -92,6 +92,26 @@
         <ul class="footer-list">
           <li><a href="/#services" onclick={() => track('cta_clicked', { cta_type: 'book_now', location: 'footer' })}>Book a Detail</a></li>
           <li><a href="/reschedule" onclick={() => track('cta_clicked', { cta_type: 'my_booking', location: 'footer' })}>My Booking</a></li>
+        </ul>
+      </div>
+
+      <!-- Social -->
+      <div class="footer-section">
+        <h4>Follow & Review</h4>
+        <ul class="footer-list">
+          {#each BUSINESS_INFO.socialLinks as link}
+            <li>
+              <ExternalLink size={14} />
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onclick={() => track('cta_clicked', { cta_type: 'social_link', location: 'footer', platform: link.id })}
+              >
+                {link.label}
+              </a>
+            </li>
+          {/each}
         </ul>
       </div>
     </div>

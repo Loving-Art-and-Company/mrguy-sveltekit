@@ -88,6 +88,37 @@ async function createBusinessTables(): Promise<void> {
   await db.execute(
     sql`CREATE INDEX IF NOT EXISTS "idx_inventory_movements_item_id" ON "inventory_movements" ("item_id")`
   );
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "payroll_entries" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "brand_id" uuid NOT NULL REFERENCES "brands"("id"),
+      "created_by_user_id" uuid REFERENCES "users"("id") ON DELETE SET NULL,
+      "worker_name" text NOT NULL,
+      "pay_period_start" text NOT NULL,
+      "pay_period_end" text NOT NULL,
+      "total_jobs" integer NOT NULL,
+      "gross_revenue_cents" integer NOT NULL,
+      "payout_rate_percent" integer NOT NULL,
+      "payout_cents" integer NOT NULL,
+      "mileage_miles" integer DEFAULT 0 NOT NULL,
+      "mileage_deduction_cents" integer DEFAULT 0 NOT NULL,
+      "supply_cost_cents" integer DEFAULT 0 NOT NULL,
+      "net_to_business_cents" integer NOT NULL,
+      "status" text DEFAULT 'draft' NOT NULL,
+      "paid_date" text,
+      "paid_method" text,
+      "notes" text,
+      "created_at" timestamp with time zone DEFAULT now() NOT NULL
+    )
+  `);
+
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_payroll_entries_brand_period" ON "payroll_entries" ("brand_id", "pay_period_start")`
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_payroll_entries_status" ON "payroll_entries" ("status")`
+  );
+
   await db.execute(
     sql`CREATE INDEX IF NOT EXISTS "idx_finance_entries_brand_date" ON "finance_entries" ("brand_id", "entry_date")`
   );

@@ -19,6 +19,9 @@
     financeError: string;
     financeSuccess: string;
     financeValues: Record<string, string>;
+    payrollError: string;
+    payrollSuccess: string;
+    payrollValues: Record<string, string>;
   }>;
 
   let { data, form }: { data: PageData; form?: FormState } = $props();
@@ -73,8 +76,15 @@
   const inventoryItemValues = $derived(form?.inventoryItemValues ?? {});
   const movementValues = $derived(form?.movementValues ?? {});
   const financeValues = $derived(form?.financeValues ?? {});
+  const payrollValues = $derived(form?.payrollValues ?? {});
   let selectedMovementType = $derived(movementValues.movementType ?? 'purchase');
   let selectedAdjustmentDirection = $derived(movementValues.adjustmentDirection ?? 'increase');
+
+  let markPaidId = $state<string | null>(null);
+
+  const payrollEntriesWithNotes = $derived(
+    data.payroll.entries.filter((entry: { notes: string | null }) => entry.notes)
+  );
 </script>
 
 <svelte:head>
@@ -754,6 +764,200 @@
       and grounded in real inputs instead of guesses.
     </div>
   </section>
+
+  <section class="section-card">
+    <div class="section-heading">
+      <div>
+        <h3>Payroll (W-2 wages)</h3>
+        <p>Track compensation from paid bookings. Auto-calculates payout, mileage deduction, and supply costs per period.</p>
+      </div>
+      <div class="section-meta">
+        <span>{formatCurrency(data.payroll.ytd.totalWagesCents)} paid YTD</span>
+        <span>{data.payroll.ytd.entryCount} pay periods in {data.payroll.ytd.year}</span>
+      </div>
+    </div>
+
+    {#if form?.payrollError}
+      <p class="banner error">{form.payrollError}</p>
+    {/if}
+    {#if form?.payrollSuccess}
+      <p class="banner success">{form.payrollSuccess}</p>
+    {/if}
+
+    <div class="stats-grid payroll-ytd-grid">
+      <article class="stat-card compact">
+        <span class="stat-label">YTD wages paid</span>
+        <strong class="stat-value">{formatCurrency(data.payroll.ytd.totalWagesCents)}</strong>
+      </article>
+      <article class="stat-card compact">
+        <span class="stat-label">YTD jobs covered</span>
+        <strong class="stat-value">{data.payroll.ytd.totalJobs}</strong>
+      </article>
+      <article class="stat-card compact">
+        <span class="stat-label">Pay periods</span>
+        <strong class="stat-value">{data.payroll.ytd.entryCount}</strong>
+      </article>
+    </div>
+
+    <form method="POST" action="?/generatePayroll" class="data-form card-in-card">
+      <div class="card-heading">
+        <h4>Generate payroll entry</h4>
+        <p>Pulls paid bookings, mileage, and supply costs for the date range automatically.</p>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Worker name</span>
+          <input
+            type="text"
+            name="workerName"
+            value={payrollValues.workerName ?? ''}
+            required
+          />
+        </label>
+        <label class="field">
+          <span>Payout rate %</span>
+          <input
+            type="number"
+            name="payoutRate"
+            min="1"
+            max="100"
+            step="1"
+            value={payrollValues.payoutRate ?? '70'}
+            required
+          />
+        </label>
+        <label class="field">
+          <span>Period start</span>
+          <input
+            type="date"
+            name="payPeriodStart"
+            value={payrollValues.payPeriodStart ?? ''}
+            required
+          />
+        </label>
+        <label class="field">
+          <span>Period end</span>
+          <input
+            type="date"
+            name="payPeriodEnd"
+            value={payrollValues.payPeriodEnd ?? ''}
+            required
+          />
+        </label>
+      </div>
+
+      <button type="submit" class="primary-btn">Generate payroll</button>
+    </form>
+
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Worker</th>
+            <th>Jobs</th>
+            <th>Gross revenue</th>
+            <th>Payout</th>
+            <th>Mileage ded.</th>
+            <th>Supplies</th>
+            <th>Net to biz</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {#if data.payroll.entries.length === 0}
+            <tr>
+              <td colspan="10" class="empty-row">No payroll entries yet.</td>
+            </tr>
+          {:else}
+            {#each data.payroll.entries as entry (entry.id)}
+              <tr>
+                <td>
+                  <strong>{formatDate(entry.payPeriodStart)}</strong>
+                  <small>to {formatDate(entry.payPeriodEnd)}</small>
+                </td>
+                <td>{entry.workerName}</td>
+                <td>{entry.totalJobs}</td>
+                <td>{formatCurrency(entry.grossRevenueCents)}</td>
+                <td>
+                  <strong>{formatCurrency(entry.payoutCents)}</strong>
+                  <small>{entry.payoutRatePercent}%</small>
+                </td>
+                <td>
+                  {#if entry.mileageMiles > 0}
+                    {formatCurrency(entry.mileageDeductionCents)}
+                    <small>{entry.mileageMiles} mi</small>
+                  {:else}
+                    —
+                  {/if}
+                </td>
+                <td>{entry.supplyCostCents > 0 ? formatCurrency(entry.supplyCostCents) : '—'}</td>
+                <td class:profit-positive={entry.netToBusinessCents >= 0} class:profit-negative={entry.netToBusinessCents < 0}>
+                  {formatCurrency(entry.netToBusinessCents)}
+                </td>
+                <td>
+                  <span class="status-badge status-{entry.status}">{entry.status}</span>
+                  {#if entry.paidDate}
+                    <small>{formatDate(entry.paidDate)} via {entry.paidMethod}</small>
+                  {/if}
+                </td>
+                <td class="action-cell">
+                  {#if entry.status === 'draft'}
+                    <div class="action-stack">
+                      <form method="POST" action="?/updatePayrollStatus">
+                        <input type="hidden" name="payrollId" value={entry.id} />
+                        <input type="hidden" name="status" value="approved" />
+                        <button type="submit" class="ghost-btn">Approve</button>
+                      </form>
+                      <form method="POST" action="?/deletePayroll">
+                        <input type="hidden" name="payrollId" value={entry.id} />
+                        <button type="submit" class="ghost-btn danger">Delete</button>
+                      </form>
+                    </div>
+                  {:else if entry.status === 'approved'}
+                    {#if markPaidId === entry.id}
+                      <form method="POST" action="?/updatePayrollStatus" class="mark-paid-form">
+                        <input type="hidden" name="payrollId" value={entry.id} />
+                        <input type="hidden" name="status" value="paid" />
+                        <label>
+                          <span>Date</span>
+                          <input type="date" name="paidDate" value={data.today} required />
+                        </label>
+                        <label>
+                          <span>Method</span>
+                          <select name="paidMethod" required>
+                            <option value="">Select</option>
+                            <option value="zelle">Zelle</option>
+                            <option value="check">Check</option>
+                            <option value="cash">Cash</option>
+                            <option value="transfer">Transfer</option>
+                          </select>
+                        </label>
+                        <button type="submit" class="ghost-btn">Confirm</button>
+                        <button type="button" class="ghost-btn" onclick={() => markPaidId = null}>Cancel</button>
+                      </form>
+                    {:else}
+                      <button type="button" class="ghost-btn" onclick={() => markPaidId = entry.id}>Mark paid</button>
+                    {/if}
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          {/if}
+        </tbody>
+      </table>
+    </div>
+
+    {#if payrollEntriesWithNotes.length > 0}
+      <div class="callout neutral">
+        <strong>Notes:</strong>
+        {#each payrollEntriesWithNotes as entry (entry.id)}
+          <p><strong>{formatDate(entry.payPeriodStart)}:</strong> {entry.notes}</p>
+        {/each}
+      </div>
+    {/if}
+  </section>
 </div>
 
 <style>
@@ -1101,6 +1305,66 @@
 
   .low-stock-row {
     background: #fff7ed;
+  }
+
+  .payroll-ytd-grid {
+    margin-bottom: 1rem;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-draft {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .status-approved {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .status-paid {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .action-stack {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .mark-paid-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+    flex-wrap: wrap;
+  }
+
+  .mark-paid-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 100px;
+  }
+
+  .mark-paid-form span {
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .mark-paid-form input,
+  .mark-paid-form select {
+    padding: 0.5rem 0.6rem;
   }
 
   @media (max-width: 1024px) {

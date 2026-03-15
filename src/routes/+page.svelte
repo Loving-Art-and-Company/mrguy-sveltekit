@@ -71,6 +71,7 @@
     "telephone": "+19548044747",
     "priceRange": "$45 - $2,000",
     "image": `${MRGUY_CANONICAL_ORIGIN}/images/slide-1.jpg`,
+    "sameAs": BUSINESS_INFO.socialLinks.map((link) => link.url),
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Weston",

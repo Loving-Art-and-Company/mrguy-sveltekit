@@ -21,6 +21,12 @@ LAC-owned brand/app; optimize for leverage and growth.
 - [ ] Install or verify the optional local `launchd` schedule on machines that should run the daily digest automatically
 - [ ] Keep monitoring booking, payment, and reschedule health in production
 
+## Requested Future Features
+
+- [ ] Phase 1: Mileage tracker for business driving and reimbursement/tax records
+- [ ] Phase 2: Supply inventory system for tracking supplies on hand plus cost of goods
+- [ ] Phase 3: Simple bookkeeping function covering taxes, P&L, and core business-finance basics
+
 ## Recent Changes
 
 - 2026-03-09: Added inline delete controls to `src/routes/admin/bookings/+page.svelte` and `src/routes/admin/bookings/+page.server.ts`

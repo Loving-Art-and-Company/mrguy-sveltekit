@@ -156,6 +156,20 @@ const financeEntrySchema = z.object({
   notes: optionalShortText(240),
 });
 
+const generatePayrollSchema = z.object({
+  workerName: requiredShortText('Worker name', 60),
+  payPeriodStart: dateField,
+  payPeriodEnd: dateField,
+  payoutRate: positiveIntegerField('Payout rate'),
+});
+
+const payrollStatusSchema = z.object({
+  payrollId: requiredShortText('Payroll entry'),
+  status: z.enum(['approved', 'paid']),
+  paidDate: dateField.optional(),
+  paidMethod: z.enum(['zelle', 'check', 'cash', 'transfer']).optional(),
+});
+
 function getPeriodRange(period: Period): { start: string; end: string } {
   const now = new Date();
   const end = now.toISOString().split('T')[0];
@@ -202,6 +216,8 @@ export const load: PageServerLoad = async ({ url }) => {
   const period: Period = PERIODS.includes(periodParam as Period) ? (periodParam as Period) : 'month';
   const range = getPeriodRange(period);
 
+  const currentYear = new Date().getFullYear().toString();
+
   const [
     linkedBookings,
     mileageEntries,
@@ -213,6 +229,8 @@ export const load: PageServerLoad = async ({ url }) => {
     financeEntriesInRange,
     paidBookingsInRange,
     recentPaidBookings,
+    payrollEntries,
+    payrollYTD,
   ] = await Promise.all([
     businessRepo.listLinkedBookingOptions(30),
     businessRepo.listMileageEntries(12),
@@ -224,6 +242,8 @@ export const load: PageServerLoad = async ({ url }) => {
     businessRepo.listFinanceEntriesInRange(range.start, range.end),
     bookingRepo.listPaidInRange(range.start, range.end),
     bookingRepo.listRecentPaid(8),
+    businessRepo.listPayrollEntries(12),
+    businessRepo.summarizePayrollYTD(currentYear),
   ]);
 
   const bookingRevenueCents = paidBookingsInRange.reduce((sum, booking) => sum + booking.price * 100, 0);
@@ -343,6 +363,32 @@ export const load: PageServerLoad = async ({ url }) => {
         serviceName: booking.serviceName,
         amountCents: booking.price * 100,
       })),
+    },
+    payroll: {
+      entries: payrollEntries.map((entry) => ({
+        id: entry.id,
+        workerName: entry.workerName,
+        payPeriodStart: entry.payPeriodStart,
+        payPeriodEnd: entry.payPeriodEnd,
+        totalJobs: entry.totalJobs,
+        grossRevenueCents: entry.grossRevenueCents,
+        payoutRatePercent: entry.payoutRatePercent,
+        payoutCents: entry.payoutCents,
+        mileageMiles: entry.mileageMiles,
+        mileageDeductionCents: entry.mileageDeductionCents,
+        supplyCostCents: entry.supplyCostCents,
+        netToBusinessCents: entry.netToBusinessCents,
+        status: entry.status,
+        paidDate: entry.paidDate,
+        paidMethod: entry.paidMethod,
+        notes: entry.notes,
+      })),
+      ytd: {
+        totalWagesCents: payrollYTD.totalWagesCents,
+        totalJobs: payrollYTD.totalJobs,
+        entryCount: payrollYTD.entryCount,
+        year: currentYear,
+      },
     },
   };
 };
@@ -568,5 +614,101 @@ export const actions = {
     }
 
     return { financeSuccess: 'Bookkeeping entry removed.' };
+  },
+
+  generatePayroll: async ({ request, locals }) => {
+    await ensureBusinessSchema();
+    const user = requireAuth(locals);
+    const formData = await request.formData();
+    const raw = Object.fromEntries(formData);
+    const parsed = generatePayrollSchema.safeParse(raw);
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      return fail(400, {
+        payrollError: firstFieldError(fieldErrors, 'Please fix the payroll form and try again.'),
+        payrollValues: raw,
+      });
+    }
+
+    if (parsed.data.payPeriodEnd < parsed.data.payPeriodStart) {
+      return fail(400, {
+        payrollError: 'Period end must be on or after the period start.',
+        payrollValues: raw,
+      });
+    }
+
+    await businessRepo.generatePayroll({
+      createdByUserId: user.id,
+      workerName: parsed.data.workerName,
+      payPeriodStart: parsed.data.payPeriodStart,
+      payPeriodEnd: parsed.data.payPeriodEnd,
+      payoutRatePercent: parsed.data.payoutRate,
+    });
+
+    return { payrollSuccess: 'Payroll entry generated.' };
+  },
+
+  updatePayrollStatus: async ({ request, locals }) => {
+    await ensureBusinessSchema();
+    const user = requireAuth(locals);
+    const formData = await request.formData();
+    const raw = Object.fromEntries(formData);
+    const parsed = payrollStatusSchema.safeParse(raw);
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      return fail(400, {
+        payrollError: firstFieldError(fieldErrors, 'Please fix the payroll status and try again.'),
+      });
+    }
+
+    if (parsed.data.status === 'paid') {
+      if (!parsed.data.paidDate) {
+        return fail(400, { payrollError: 'Paid date is required when marking as paid.' });
+      }
+      if (!parsed.data.paidMethod) {
+        return fail(400, { payrollError: 'Payment method is required when marking as paid.' });
+      }
+    }
+
+    const updated = await businessRepo.updatePayrollStatus(
+      parsed.data.payrollId,
+      parsed.data.status,
+      parsed.data.paidDate,
+      parsed.data.paidMethod,
+      user.id
+    );
+
+    if (!updated) {
+      return fail(400, { payrollError: 'That payroll entry could not be found.' });
+    }
+
+    return {
+      payrollSuccess:
+        parsed.data.status === 'paid'
+          ? 'Payroll marked as paid and finance entry created.'
+          : 'Payroll status updated.',
+    };
+  },
+
+  deletePayroll: async ({ request, locals }) => {
+    await ensureBusinessSchema();
+    requireAuth(locals);
+    const formData = await request.formData();
+    const payrollId = formData.get('payrollId');
+
+    if (typeof payrollId !== 'string' || payrollId.length === 0) {
+      return fail(400, { payrollError: 'Missing payroll entry.' });
+    }
+
+    const deleted = await businessRepo.deletePayrollEntry(payrollId);
+    if (!deleted) {
+      return fail(400, {
+        payrollError: 'Could not delete that entry. Only draft entries can be removed.',
+      });
+    }
+
+    return { payrollSuccess: 'Payroll entry removed.' };
   },
 } satisfies Actions;

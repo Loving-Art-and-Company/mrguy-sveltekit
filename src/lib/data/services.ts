@@ -34,6 +34,12 @@ export interface BookableServiceSelection {
   priceHigh: number;
 }
 
+export interface BusinessLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export const BUSINESS_INFO = {
   name: "Mr. Guy Mobile Detail",
   tagline: "We Know a Guy.",
@@ -43,6 +49,18 @@ export const BUSINESS_INFO = {
   serviceArea: ["West Broward", "Broward County", "South Florida"],
   hours: "Mon-Sat 8AM-6PM (By appointment - We come to you!)",
   priceRange: "$45 - $2,000",
+  socialLinks: [
+    {
+      id: "instagram",
+      label: "Instagram",
+      url: "https://www.instagram.com/sir.mr.guy/"
+    },
+    {
+      id: "google",
+      label: "Google Reviews",
+      url: "https://g.page/r/CQ0H3XTwqj9eEBM"
+    }
+  ] satisfies BusinessLink[],
   promo: {
     name: "Fresh Start",
     discount: 25,

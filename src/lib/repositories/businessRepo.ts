@@ -7,7 +7,9 @@ import {
   inventoryItems,
   inventoryMovements,
   mileageEntries,
+  payrollEntries,
 } from '$lib/server/schema';
+import * as bookingRepo from '$lib/repositories/bookingRepo';
 
 export type MileageEntryRow = typeof mileageEntries.$inferSelect;
 export type InventoryItemRow = typeof inventoryItems.$inferSelect;
@@ -399,4 +401,183 @@ export async function deleteFinanceEntry(id: string): Promise<boolean> {
     .returning({ id: financeEntries.id });
 
   return rows.length > 0;
+}
+
+// ============================================================
+// PAYROLL
+// ============================================================
+
+export type PayrollEntryRow = typeof payrollEntries.$inferSelect;
+export type PayrollStatus = 'draft' | 'approved' | 'paid';
+
+export interface PayrollListItem {
+  id: string;
+  workerName: string;
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  totalJobs: number;
+  grossRevenueCents: number;
+  payoutRatePercent: number;
+  payoutCents: number;
+  mileageMiles: number;
+  mileageDeductionCents: number;
+  supplyCostCents: number;
+  netToBusinessCents: number;
+  status: string;
+  paidDate: string | null;
+  paidMethod: string | null;
+  notes: string | null;
+  createdAt: Date;
+}
+
+interface GeneratePayrollInput {
+  createdByUserId: string;
+  workerName: string;
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  payoutRatePercent: number;
+}
+
+export async function listPayrollEntries(limit: number): Promise<PayrollListItem[]> {
+  return db
+    .select({
+      id: payrollEntries.id,
+      workerName: payrollEntries.workerName,
+      payPeriodStart: payrollEntries.payPeriodStart,
+      payPeriodEnd: payrollEntries.payPeriodEnd,
+      totalJobs: payrollEntries.totalJobs,
+      grossRevenueCents: payrollEntries.grossRevenueCents,
+      payoutRatePercent: payrollEntries.payoutRatePercent,
+      payoutCents: payrollEntries.payoutCents,
+      mileageMiles: payrollEntries.mileageMiles,
+      mileageDeductionCents: payrollEntries.mileageDeductionCents,
+      supplyCostCents: payrollEntries.supplyCostCents,
+      netToBusinessCents: payrollEntries.netToBusinessCents,
+      status: payrollEntries.status,
+      paidDate: payrollEntries.paidDate,
+      paidMethod: payrollEntries.paidMethod,
+      notes: payrollEntries.notes,
+      createdAt: payrollEntries.createdAt,
+    })
+    .from(payrollEntries)
+    .where(eq(payrollEntries.brandId, MRGUY_BRAND_ID))
+    .orderBy(desc(payrollEntries.payPeriodStart))
+    .limit(limit);
+}
+
+export async function generatePayroll(input: GeneratePayrollInput): Promise<PayrollEntryRow> {
+  // 1. Query completed+paid bookings in the date range
+  const paidBookings = await bookingRepo.listPaidInRange(input.payPeriodStart, input.payPeriodEnd);
+  const totalJobs = paidBookings.length;
+  const grossRevenueCents = paidBookings.reduce((sum, b) => sum + b.price * 100, 0);
+
+  // 2. Query mileage in the range
+  const mileageSummary = await summarizeMileage(input.payPeriodStart, input.payPeriodEnd);
+  const mileageMiles = mileageSummary.totalMiles;
+  const mileageDeductionCents = mileageMiles * 70; // $0.70/mile
+
+  // 3. Query supply purchases in the range
+  const supplyCostCents = await summarizeInventoryPurchases(input.payPeriodStart, input.payPeriodEnd);
+
+  // 4. Calculate payout and net to business
+  const payoutCents = Math.round((grossRevenueCents * input.payoutRatePercent) / 100);
+  const netToBusinessCents = grossRevenueCents - payoutCents - mileageDeductionCents - supplyCostCents;
+
+  const [row] = await db
+    .insert(payrollEntries)
+    .values({
+      brandId: MRGUY_BRAND_ID,
+      createdByUserId: input.createdByUserId,
+      workerName: input.workerName,
+      payPeriodStart: input.payPeriodStart,
+      payPeriodEnd: input.payPeriodEnd,
+      totalJobs,
+      grossRevenueCents,
+      payoutRatePercent: input.payoutRatePercent,
+      payoutCents,
+      mileageMiles,
+      mileageDeductionCents,
+      supplyCostCents,
+      netToBusinessCents,
+    })
+    .returning();
+
+  return row;
+}
+
+export async function updatePayrollStatus(
+  id: string,
+  status: PayrollStatus,
+  paidDate?: string,
+  paidMethod?: string,
+  userId?: string
+): Promise<PayrollEntryRow | null> {
+  const [updated] = await db
+    .update(payrollEntries)
+    .set({
+      status,
+      paidDate: paidDate ?? null,
+      paidMethod: paidMethod ?? null,
+    })
+    .where(and(eq(payrollEntries.id, id), eq(payrollEntries.brandId, MRGUY_BRAND_ID)))
+    .returning();
+
+  if (!updated) return null;
+
+  // If marking as paid, also create a finance entry for the owner_draw
+  if (status === 'paid' && userId) {
+    await createFinanceEntry({
+      createdByUserId: userId,
+      entryDate: paidDate ?? new Date().toISOString().split('T')[0],
+      entryType: 'owner_draw',
+      category: 'Payroll',
+      amountCents: updated.payoutCents,
+      notes: `Payroll payout for ${updated.workerName} (${updated.payPeriodStart} to ${updated.payPeriodEnd})`,
+    });
+  }
+
+  return updated;
+}
+
+export async function deletePayrollEntry(id: string): Promise<boolean> {
+  const rows = await db
+    .delete(payrollEntries)
+    .where(
+      and(
+        eq(payrollEntries.id, id),
+        eq(payrollEntries.brandId, MRGUY_BRAND_ID),
+        eq(payrollEntries.status, 'draft')
+      )
+    )
+    .returning({ id: payrollEntries.id });
+
+  return rows.length > 0;
+}
+
+export async function summarizePayrollYTD(year: string): Promise<{
+  totalWagesCents: number;
+  totalJobs: number;
+  entryCount: number;
+}> {
+  const result = await db
+    .select({
+      totalWagesCents: sql<number>`coalesce(sum(${payrollEntries.payoutCents}), 0)`,
+      totalJobs: sql<number>`coalesce(sum(${payrollEntries.totalJobs}), 0)`,
+      entryCount: sql<number>`count(*)`,
+    })
+    .from(payrollEntries)
+    .where(
+      and(
+        eq(payrollEntries.brandId, MRGUY_BRAND_ID),
+        eq(payrollEntries.status, 'paid'),
+        gte(payrollEntries.payPeriodStart, `${year}-01-01`),
+        lte(payrollEntries.payPeriodStart, `${year}-12-31`)
+      )
+    );
+
+  return {
+    totalWagesCents: Number(result[0]?.totalWagesCents ?? 0),
+    totalJobs: Number(result[0]?.totalJobs ?? 0),
+    entryCount: Number(result[0]?.entryCount ?? 0),
+  };
 }

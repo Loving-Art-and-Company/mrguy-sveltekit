@@ -29,7 +29,6 @@
 - [x] Canonical-host redirect, smoke guard, and cache hardening
 - [x] Inline delete controls on the admin bookings calendar
 - [x] MrGuy ops agent foundation (`.claude/agents/mrguy-ops-agent.md`, spec, scripts, digest, and scheduler installer)
-- [x] Admin business suite (`/admin/business`) with mileage logging, inventory tracking, and simple bookkeeping
 
 ---
 
@@ -45,15 +44,25 @@
 
 ---
 
-## Business Suite Details
+## Requested Feature Backlog
 
-- [x] Mileage tracker
-  - Tracks business miles, trip purpose, optional odometer readings, notes, and optional booking links
-- [x] Supply inventory
-  - Tracks items on hand, reorder thresholds, unit cost, stock movements, and purchase spend
-- [x] Simple bookkeeping
-  - Auto-pulls paid booking revenue and layers in manual expense/tax/owner-draw entries for a cash-basis view
-  - Business tables self-bootstrap on first `/admin/business` request in production
+- [ ] Phase 1 — Mileage tracker
+  - Track business miles for tax and reimbursement records
+  - Keep the MVP narrow: date, trip purpose, miles/odometer, and job/customer link
+  - Rationale: this is the most time-sensitive data and the hardest to reconstruct later
+- [ ] Phase 2 — Supply inventory system
+  - Track supplies on hand
+  - Track supply costs / cost of goods
+  - Rationale: creates clean cost inputs and margin visibility before finance reporting
+- [ ] Phase 3 — Simple bookkeeping
+  - Automate basic taxes support
+  - Generate simple P&L visibility
+  - Cover core business-finance fundamentals
+  - Rationale: bookkeeping should sit on top of clean mileage and cost data, not guesses
+
+### Build Order Principle
+
+Capture the data that disappears first, then build cost visibility, then build reporting on top of clean inputs.
 
 ---
 
@@ -66,11 +75,6 @@
 - `scripts/mrguy-ops-digest.mjs`
 - `scripts/run-ops-daily.sh`
 - `scripts/ops/*.mjs`
-- `src/routes/admin/business/+page.server.ts`
-- `src/routes/admin/business/+page.svelte`
-- `src/lib/repositories/businessRepo.ts`
-- `src/lib/server/brand.ts`
-- `src/lib/server/businessSchema.ts`
 - `src/routes/admin/bookings/[id]/+page.server.ts`
 - `src/routes/api/payments/webhook/+server.ts`
 
