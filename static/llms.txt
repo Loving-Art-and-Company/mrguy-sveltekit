@@ -1,0 +1,73 @@
+# MrGuy Mobile Detail
+
+> Professional mobile auto detailing in the Charlotte, NC metro area.
+> We come to you. Premium detailing at your home, office, or anywhere.
+
+## About
+
+MrGuy Mobile Detail is a mobile auto detailing service based in Charlotte, NC.
+We bring professional detailing directly to our customers — at their home, office,
+or any location in the Charlotte metro area.
+
+- Website: https://mrguymobiledetail.com
+- Service Area: Charlotte, NC metro (Mecklenburg, Union, Cabarrus, Gaston counties)
+
+## Services
+
+### Exterior Detail
+Full exterior wash, clay bar treatment, polish, and wax/sealant protection.
+Includes wheels, tires, and trim restoration.
+
+### Interior Detail
+Deep interior cleaning including vacuuming, steam cleaning, leather conditioning,
+dashboard and console detailing, and odor elimination.
+
+### Full Detail (Interior + Exterior)
+Complete inside and out detailing package. Our most popular service.
+
+### Ceramic Coating
+Professional ceramic coating application for long-lasting paint protection.
+Includes paint correction and surface preparation.
+
+## How It Works
+
+1. Book online or call for an appointment
+2. We come to your location (home, office, anywhere in Charlotte metro)
+3. Professional detailing performed on-site
+4. Pay with card (Stripe) or in-person (Square)
+
+## Service Area
+
+MrGuy Mobile Detail serves the greater Charlotte, NC metropolitan area including:
+- Charlotte
+- Matthews
+- Mint Hill
+- Indian Trail
+- Huntersville
+- Concord
+- Gastonia
+- Pineville
+- Fort Mill (SC)
+
+## Frequently Asked Questions
+
+**Q: Do I need to be home during the detail?**
+A: No. As long as we have access to the vehicle and a water source, we can complete the work while you're away.
+
+**Q: How long does a full detail take?**
+A: A full interior and exterior detail typically takes 2-4 hours depending on vehicle size and condition.
+
+**Q: What payment methods do you accept?**
+A: We accept all major credit cards via Stripe (online) and Square (in-person). Cash is also accepted.
+
+**Q: Do you bring your own water and supplies?**
+A: We bring all supplies, tools, and products. We just need access to a water spigot at the location.
+
+## Contact
+
+- Website: https://mrguymobiledetail.com
+- Book online at mrguymobiledetail.com
+
+## Company
+
+MrGuy Mobile Detail is a brand of Loving Art and Company LLC.
