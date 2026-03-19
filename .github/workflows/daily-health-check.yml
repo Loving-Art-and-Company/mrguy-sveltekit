@@ -1,0 +1,52 @@
+name: Daily Health Check
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: health-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        site:
+          - name: MrGuy Mobile Detailing
+            url: https://mrguy.com
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check site availability
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${{ matrix.site.url }}")
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "✅ ${{ matrix.site.name }} is UP (HTTP $STATUS)"
+          else
+            echo "❌ ${{ matrix.site.name }} is DOWN (HTTP $STATUS)"
+            exit 1
+          fi
+
+      - name: Check SSL certificate
+        run: |
+          echo | openssl s_client -connect $(echo "${{ matrix.site.url }}" | sed 's|https://||'):443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "⚠️ Could not check SSL"
+
+      - name: Check response time
+        run: |
+          TIME=$(curl -s -o /dev/null -w "%{time_total}" --max-time 30 "${{ matrix.site.url }}")
+          echo "Response time: ${TIME}s"
+
+      - name: Create issue on failure
+        if: failure()
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "🚨 Site Down: ${{ matrix.site.name }}"
+          content-filepath: .github/health-check-failure.md
+          labels: urgent, site-down
+          assignees: abdias
