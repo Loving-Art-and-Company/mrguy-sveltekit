@@ -20,8 +20,8 @@
     "branch": "main"
   },
   "database": {
-    "provider": "supabase",
-    "project_id": "qtskudtsfbwdahjhpphh"
+    "provider": "neon",
+    "orm": "drizzle"
   },
   "payments": {
     "provider": "stripe",
@@ -29,6 +29,6 @@
   },
   "auth": {
     "client": "twilio_verify",
-    "admin": "supabase_auth"
+    "admin": "email_otp"
   }
 }
