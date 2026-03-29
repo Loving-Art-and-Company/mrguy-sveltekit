@@ -2,8 +2,10 @@
 // Custom auth, CSRF, CSP, and rate limiting
 // Adapted from FPP/Carolina pattern for MrGuy admin auth
 
+import { sequence } from '@sveltejs/kit';
 import { type Handle, type HandleServerError, redirect } from '@sveltejs/kit';
 import { building } from '$app/environment';
+import * as Sentry from '@sentry/sveltekit';
 import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/server/auth';
 import { issueToken, requireCsrf } from '$lib/server/csrf';
 import { checkRateLimit } from '$lib/server/rateLimit';
@@ -23,7 +25,7 @@ function isValidOrigin(request: Request, url: URL): boolean {
   }
 }
 
-const handle: Handle = async ({ event, resolve }) => {
+const securityHandle: Handle = async ({ event, resolve }) => {
   let sessionToken: string | undefined;
 
   const canonicalUrl = new URL(MRGUY_CANONICAL_ORIGIN);
@@ -135,8 +137,8 @@ const handle: Handle = async ({ event, resolve }) => {
   });
 };
 
-/** Send email notification for unhandled server errors */
-const handleError: HandleServerError = async ({ error, event, status, message }) => {
+/** Send email notification for unhandled server errors and forward to Sentry */
+const customHandleError: HandleServerError = async ({ error, event, status, message }) => {
   const err = error instanceof Error ? error : new Error(String(error));
 
   // Don't notify on 404s or expected client errors
@@ -158,4 +160,17 @@ const handleError: HandleServerError = async ({ error, event, status, message })
   return { message };
 };
 
-export { handle, handleError };
+// Export with Sentry sequence
+export const handle = sequence(Sentry.sentryHandle(), securityHandle);
+
+// Combine Sentry error handler with custom email notification
+export const handleError = async (input: Parameters<HandleServerError>[0]) => {
+  // First run custom email notification
+  const result = await customHandleError(input);
+  
+  // Then forward to Sentry
+  const sentryHandler = Sentry.handleErrorWithSentry();
+  await sentryHandler(input);
+  
+  return result;
+};

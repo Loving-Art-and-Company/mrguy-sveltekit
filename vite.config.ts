@@ -7,7 +7,14 @@ const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 
 export default defineConfig({
 	plugins: [
-		...(sentryAuthToken ? [sentrySvelteKit()] : []),
+		...(sentryAuthToken ? [
+			sentrySvelteKit({
+				sourceMapsUploadOptions: {
+					org: 'loving-art-and-company-llc',
+					project: 'mrguymobiledetail',
+				}
+			})
+		] : []),
 		sveltekit(),
 		svelteTesting()
 	],
