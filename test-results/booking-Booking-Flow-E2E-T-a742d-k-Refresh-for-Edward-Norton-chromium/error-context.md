@@ -1,0 +1,430 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Mr. Guy Mobile Detail" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: Mr. Guy Mobile Detail
+      - navigation [ref=e7]:
+        - link "Call us at 954-804-4747" [ref=e8] [cursor=pointer]:
+          - /url: tel:+19548044747
+          - img [ref=e9]
+          - generic [ref=e11]: 954-804-4747
+        - link "My Booking" [ref=e12] [cursor=pointer]:
+          - /url: /reschedule
+          - img [ref=e13]
+          - generic [ref=e16]: My Booking
+        - link "Book Now" [ref=e17] [cursor=pointer]:
+          - /url: /#services
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - img "We Come To You" [ref=e22]
+          - generic [ref=e24]:
+            - heading "We Come To You" [level=3] [ref=e25]
+            - paragraph [ref=e26]: Mobile detailing
+            - paragraph [ref=e27]: Professional detailing right in your driveway
+        - generic [ref=e28]:
+          - img "Showroom Shine" [ref=e29]
+          - generic [ref=e31]:
+            - heading "Showroom Shine" [level=3] [ref=e32]
+            - paragraph [ref=e33]: Exterior detailing
+            - paragraph [ref=e34]: Your car looking brand new, wherever you park it
+        - generic [ref=e35]:
+          - img "Detail Obsessed" [ref=e36]
+          - generic [ref=e38]:
+            - heading "Detail Obsessed" [level=3] [ref=e39]
+            - paragraph [ref=e40]: Every surface
+            - paragraph [ref=e41]: We don't miss a spot
+      - generic [ref=e42]:
+        - button "Go to slide 1" [ref=e43] [cursor=pointer]
+        - button "Go to slide 2" [ref=e44] [cursor=pointer]
+        - button "Go to slide 3" [ref=e45] [cursor=pointer]
+    - generic [ref=e46]:
+      - heading "Skip the Car Wash Line. Forever." [level=1] [ref=e47]
+      - paragraph [ref=e48]: Book in 60 seconds. We show up. You never leave home.
+      - status [ref=e49]:
+        - strong [ref=e50]: "First-Time Client Special:"
+        - text: 25% off your first booking.
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - generic [ref=e56]:
+            - strong [ref=e57]: Fresh Start
+            - text: — 25% off your first booking
+        - generic [ref=e58]:
+          - img [ref=e59]
+          - generic [ref=e61]:
+            - heading "Most Popular" [level=3] [ref=e62]
+            - paragraph [ref=e63]: One-time services
+        - generic [ref=e64]:
+          - article [ref=e65]:
+            - heading "The \"Quick Refresh\"" [level=3] [ref=e66]
+            - generic [ref=e67]:
+              - generic [ref=e68]: $75
+              - generic [ref=e69]: $56
+            - paragraph [ref=e70]: Maintain a professional image without lifting a finger. Premium pH-neutral soaps preserve your paint's integrity.
+            - list [ref=e71]:
+              - listitem [ref=e72]:
+                - img [ref=e73]
+                - text: Foam Cannon Bath
+              - listitem [ref=e75]:
+                - img [ref=e76]
+                - text: Spot-Free Rinse
+              - listitem [ref=e78]:
+                - img [ref=e79]
+                - text: Tire Shine
+              - listitem [ref=e81]:
+                - img [ref=e82]
+                - text: Interior Vacuum
+            - button "Book Now →" [ref=e84] [cursor=pointer]
+          - article [ref=e85]:
+            - heading "The \"Family Hauler\"" [level=3] [ref=e86]
+            - generic [ref=e87]:
+              - generic [ref=e88]: $220
+              - generic [ref=e89]: $165
+            - paragraph [ref=e90]: Reclaim your sanity. We eliminate the evidence of road trips and school runs—deep cleaning carpets and sanitizing surfaces.
+            - list [ref=e91]:
+              - listitem [ref=e92]:
+                - img [ref=e93]
+                - text: Deep Interior Scrub
+              - listitem [ref=e95]:
+                - img [ref=e96]
+                - text: Carpet Shampoo
+              - listitem [ref=e98]:
+                - img [ref=e99]
+                - text: Leather Wipe Down
+              - listitem [ref=e101]:
+                - img [ref=e102]
+                - text: Spray Wax Protection
+            - button "Book Now →" [ref=e104] [cursor=pointer]
+          - article [ref=e105]:
+            - generic [ref=e106]:
+              - img [ref=e107]
+              - text: TESLA FRIENDLY
+            - heading "The \"Electric\"" [level=3] [ref=e109]
+            - generic [ref=e110]:
+              - generic [ref=e111]: $250
+              - generic [ref=e112]: $188
+            - paragraph [ref=e113]: Specialized care for your high-tech investment. Sensor-safe techniques and EV-specific cleaners.
+            - list [ref=e114]:
+              - listitem [ref=e115]:
+                - img [ref=e116]
+                - text: Vegan Leather Care
+              - listitem [ref=e118]:
+                - img [ref=e119]
+                - text: Frunk Cleaning
+              - listitem [ref=e121]:
+                - img [ref=e122]
+                - text: Charge Port Detail
+              - listitem [ref=e124]:
+                - img [ref=e125]
+                - text: Scratch-Free Wash
+            - button "Book Now →" [ref=e127] [cursor=pointer]
+        - generic [ref=e128]:
+          - img [ref=e129]
+          - generic [ref=e131]:
+            - heading "Monthly Plans" [level=3] [ref=e132]
+            - paragraph [ref=e133]: For people who actually use their car
+        - generic [ref=e134]:
+          - article [ref=e135]:
+            - heading "The Regular" [level=3] [ref=e136]
+            - generic [ref=e137]:
+              - generic [ref=e138]: $69
+              - generic [ref=e139]: /month
+            - paragraph [ref=e140]: Set it and forget it. We come by once a month to keep it fresh.
+            - list [ref=e141]:
+              - listitem [ref=e142]:
+                - img [ref=e143]
+                - text: 1 Premium Wash / Month
+              - listitem [ref=e145]:
+                - img [ref=e146]
+                - text: Vacuum & Wipe Down
+              - listitem [ref=e148]:
+                - img [ref=e149]
+                - text: 10% OFF other services
+              - listitem [ref=e151]:
+                - img [ref=e152]
+                - text: Cancel anytime
+            - link "Call to Enroll →" [ref=e154] [cursor=pointer]:
+              - /url: tel:+19548044747
+          - article [ref=e155]:
+            - heading "The \"Always Clean\"" [level=3] [ref=e156]
+            - generic [ref=e157]:
+              - generic [ref=e158]: $179
+              - generic [ref=e159]: /month
+            - paragraph [ref=e160]: We stop by every two weeks. Your car never looks dirty.
+            - list [ref=e161]:
+              - listitem [ref=e162]:
+                - img [ref=e163]
+                - text: 2 Visits Per Month
+              - listitem [ref=e165]:
+                - img [ref=e166]
+                - text: 1 Full Interior Deep Clean
+              - listitem [ref=e168]:
+                - img [ref=e169]
+                - text: 1 Maintenance Wash
+              - listitem [ref=e171]:
+                - img [ref=e172]
+                - text: Priority Scheduling
+            - link "Call to Enroll →" [ref=e174] [cursor=pointer]:
+              - /url: tel:+19548044747
+          - article [ref=e175]:
+            - heading "The Enthusiast" [level=3] [ref=e176]
+            - generic [ref=e177]:
+              - generic [ref=e178]: $349
+              - generic [ref=e179]: /month
+            - paragraph [ref=e180]: For the weekend toy or the baby of the garage.
+            - list [ref=e181]:
+              - listitem [ref=e182]:
+                - img [ref=e183]
+                - text: Quarterly Detail + Ceramic Boost
+              - listitem [ref=e185]:
+                - img [ref=e186]
+                - text: Engine Bay Included
+              - listitem [ref=e188]:
+                - img [ref=e189]
+                - text: Annual Polish
+              - listitem [ref=e191]:
+                - img [ref=e192]
+                - text: Direct line to the owners
+            - link "Call to Enroll →" [ref=e194] [cursor=pointer]:
+              - /url: tel:+19548044747
+        - generic [ref=e195]:
+          - img [ref=e196]
+          - generic [ref=e198]:
+            - heading "More Services" [level=3] [ref=e199]
+            - paragraph [ref=e200]: Everything else we do
+        - generic [ref=e201]:
+          - article [ref=e202]:
+            - heading "The \"Showroom\"" [level=3] [ref=e203]
+            - generic [ref=e204]:
+              - generic [ref=e205]: $350
+              - generic [ref=e206]: $263
+            - paragraph [ref=e207]: Turn heads at the office or the valet. Comprehensive detail that restores that 'just drove off the lot' feeling.
+            - list [ref=e208]:
+              - listitem [ref=e209]:
+                - img [ref=e210]
+                - text: Clay Bar Treatment
+              - listitem [ref=e212]:
+                - img [ref=e213]
+                - text: Iron Decon
+              - listitem [ref=e215]:
+                - img [ref=e216]
+                - text: 6-Month Sealant
+              - listitem [ref=e218]:
+                - img [ref=e219]
+                - text: Engine Bay Rinse
+            - button "Book Now →" [ref=e221] [cursor=pointer]
+          - article [ref=e222]:
+            - heading "Ceramic Coating" [level=3] [ref=e223]
+            - generic [ref=e224]:
+              - generic [ref=e225]: $2000
+              - generic [ref=e226]: $1500
+            - paragraph [ref=e227]: Ultimate protection. A hardened shield that repels dirt and UV rays, making future washes effortless for years.
+            - list [ref=e228]:
+              - listitem [ref=e229]:
+                - img [ref=e230]
+                - text: Multi-Year Protection
+              - listitem [ref=e232]:
+                - img [ref=e233]
+                - text: Paint Correction
+              - listitem [ref=e235]:
+                - img [ref=e236]
+                - text: Hydrophobic Layer
+              - listitem [ref=e238]:
+                - img [ref=e239]
+                - text: Carfax Report Update
+            - button "Book Now →" [ref=e241] [cursor=pointer]
+    - generic [ref=e242]:
+      - heading "Why People Choose Us" [level=2] [ref=e243]
+      - generic [ref=e244]:
+        - generic [ref=e245]:
+          - generic [ref=e246]: ✓
+          - text: We come to you
+        - generic [ref=e247]:
+          - generic [ref=e248]: ✓
+          - text: Satisfaction guaranteed
+        - generic [ref=e249]:
+          - generic [ref=e250]: ✓
+          - text: Eco-friendly products
+        - generic [ref=e251]:
+          - generic [ref=e252]: ✓
+          - text: Insured & professional
+      - paragraph [ref=e253]: Serving West Broward, South Florida
+    - generic [ref=e254]:
+      - heading "Explore mobile detailing by city" [level=2] [ref=e255]
+      - paragraph [ref=e256]: Looking for service near you? Browse our city pages for the main West Broward areas we serve.
+      - generic [ref=e257]:
+        - link "Weston" [ref=e258] [cursor=pointer]:
+          - /url: /cities/weston
+        - link "Pembroke Pines" [ref=e259] [cursor=pointer]:
+          - /url: /cities/pembroke-pines
+        - link "Miramar" [ref=e260] [cursor=pointer]:
+          - /url: /cities/miramar
+        - link "Davie" [ref=e261] [cursor=pointer]:
+          - /url: /cities/davie
+        - link "Southwest Ranches" [ref=e262] [cursor=pointer]:
+          - /url: /cities/southwest-ranches
+        - link "Cooper City" [ref=e263] [cursor=pointer]:
+          - /url: /cities/cooper-city
+        - link "Plantation" [ref=e264] [cursor=pointer]:
+          - /url: /cities/plantation
+  - dialog "Book Appointment" [ref=e265]:
+    - generic [ref=e266]:
+      - banner [ref=e267]:
+        - button "Close" [ref=e268] [cursor=pointer]:
+          - img [ref=e269]
+        - heading "Book Appointment" [level=2] [ref=e270]
+        - generic [ref=e271]: Step 3 of 3
+      - generic [ref=e272]:
+        - generic [ref=e273]:
+          - heading "The \"Quick Refresh\"" [level=3] [ref=e274]
+          - generic [ref=e275]: $56
+        - list [ref=e276]:
+          - listitem [ref=e277]: Foam Cannon Bath
+          - listitem [ref=e278]: Spot-Free Rinse
+          - listitem [ref=e279]: Tire Shine
+        - button "Change Service" [ref=e280] [cursor=pointer]
+      - generic [ref=e281]:
+        - button "Date & Time Friday, April 3 at 2:00 PM Edit" [ref=e283] [cursor=pointer]:
+          - generic [ref=e284]:
+            - img [ref=e286]
+            - generic [ref=e287]: Date & Time
+          - generic [ref=e288]: Friday, April 3 at 2:00 PM Edit
+        - button "Service Location 888 Pine Avenue, Hollywood Edit" [ref=e290] [cursor=pointer]:
+          - generic [ref=e291]:
+            - img [ref=e293]
+            - generic [ref=e294]: Service Location
+          - generic [ref=e295]: 888 Pine Avenue, Hollywood Edit
+        - generic [ref=e296]:
+          - generic [ref=e298]:
+            - img [ref=e300]
+            - generic [ref=e301]: Your Information
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - generic [ref=e304]:
+                - generic [ref=e305]: Full Name *
+                - textbox "Full Name *" [ref=e306]:
+                  - /placeholder: John Doe
+                  - text: Edward Norton
+              - generic [ref=e307]:
+                - generic [ref=e308]: Phone Number *
+                - textbox "Phone Number *" [ref=e309]:
+                  - /placeholder: (954) 555-1234
+                  - text: (954) 666-7788
+              - generic [ref=e310]:
+                - generic [ref=e311]: Email (optional)
+                - textbox "Email (optional)" [ref=e312]:
+                  - /placeholder: you@email.com
+            - generic [ref=e313]:
+              - heading "Booking Summary" [level=4] [ref=e314]
+              - generic [ref=e315]:
+                - generic [ref=e316]: The "Quick Refresh"
+                - generic [ref=e317]: $56
+              - generic [ref=e319]: Friday, April 3 at 2:00 PM
+              - generic [ref=e321]: 888 Pine Avenue, Hollywood FL 33020
+            - paragraph [ref=e322]: Pablo will review this request, confirm the timing, and text you once it’s approved.
+            - generic [ref=e323]: Too many requests. Please wait a moment and try again.
+            - button "Request Appointment - $56" [ref=e324] [cursor=pointer]
+  - contentinfo [ref=e325]:
+    - generic [ref=e326]:
+      - generic [ref=e327]:
+        - generic [ref=e328]:
+          - link "Mr. Guy Detail Logo Mr. Guy Mobile Detail" [ref=e329] [cursor=pointer]:
+            - /url: /
+            - img "Mr. Guy Detail Logo" [ref=e330]
+            - generic [ref=e331]: Mr. Guy Mobile Detail
+          - paragraph [ref=e332]: Premium detailing, right in your driveway.
+          - generic [ref=e333]:
+            - paragraph [ref=e334]: Follow Mr. Guy
+            - generic [ref=e335]:
+              - link "Follow Mr. Guy on Instagram" [ref=e336] [cursor=pointer]:
+                - /url: https://www.instagram.com/mrguymobiledetailing
+                - text: Instagram
+              - link "Follow Mr. Guy on TikTok" [ref=e337] [cursor=pointer]:
+                - /url: https://www.tiktok.com/@mr.guy.detailing
+                - text: TikTok
+              - link "Follow Mr. Guy on YouTube" [ref=e338] [cursor=pointer]:
+                - /url: https://www.youtube.com/@mrguydetail
+                - text: YouTube
+        - generic [ref=e339]:
+          - heading "Contact" [level=4] [ref=e340]
+          - list [ref=e341]:
+            - listitem [ref=e342]:
+              - img [ref=e343]
+              - link "954-804-4747" [ref=e345] [cursor=pointer]:
+                - /url: tel:+19548044747
+            - listitem [ref=e346]:
+              - img [ref=e347]
+              - link "info@mrguymobiledetail.com" [ref=e350] [cursor=pointer]:
+                - /url: mailto:info@mrguymobiledetail.com
+            - listitem [ref=e351]:
+              - img [ref=e352]
+              - generic [ref=e355]: Mon-Sat 8AM-6PM (By appointment - We come to you!)
+        - generic [ref=e356]:
+          - heading "Service Area" [level=4] [ref=e357]
+          - list [ref=e358]:
+            - listitem [ref=e359]:
+              - img [ref=e360]
+              - link "Weston, FL" [ref=e363] [cursor=pointer]:
+                - /url: /cities/weston
+            - listitem [ref=e364]:
+              - img [ref=e365]
+              - link "Pembroke Pines, FL" [ref=e368] [cursor=pointer]:
+                - /url: /cities/pembroke-pines
+            - listitem [ref=e369]:
+              - img [ref=e370]
+              - link "Miramar, FL" [ref=e373] [cursor=pointer]:
+                - /url: /cities/miramar
+            - listitem [ref=e374]:
+              - img [ref=e375]
+              - link "Davie, FL" [ref=e378] [cursor=pointer]:
+                - /url: /cities/davie
+            - listitem [ref=e379]:
+              - img [ref=e380]
+              - link "Southwest Ranches, FL" [ref=e383] [cursor=pointer]:
+                - /url: /cities/southwest-ranches
+            - listitem [ref=e384]:
+              - img [ref=e385]
+              - link "Cooper City, FL" [ref=e388] [cursor=pointer]:
+                - /url: /cities/cooper-city
+            - listitem [ref=e389]:
+              - img [ref=e390]
+              - link "Plantation, FL" [ref=e393] [cursor=pointer]:
+                - /url: /cities/plantation
+        - generic [ref=e394]:
+          - heading "Quick Links" [level=4] [ref=e395]
+          - list [ref=e396]:
+            - listitem [ref=e397]:
+              - link "Book a Detail" [ref=e398] [cursor=pointer]:
+                - /url: /#services
+            - listitem [ref=e399]:
+              - link "My Booking" [ref=e400] [cursor=pointer]:
+                - /url: /reschedule
+        - generic [ref=e401]:
+          - heading "Follow & Review" [level=4] [ref=e402]
+          - list [ref=e403]:
+            - listitem [ref=e404]:
+              - img [ref=e405]
+              - link "Instagram" [ref=e409] [cursor=pointer]:
+                - /url: https://www.instagram.com/sir.mr.guy/
+            - listitem [ref=e410]:
+              - img [ref=e411]
+              - link "Google Reviews" [ref=e415] [cursor=pointer]:
+                - /url: https://g.page/r/CQ0H3XTwqj9eEBM
+      - generic [ref=e416]:
+        - paragraph [ref=e417]: © 2026 Mr. Guy Mobile Detail. All rights reserved.
+        - paragraph [ref=e418]:
+          - img [ref=e419]
+          - link "+1 (954) 804-4747" [ref=e421] [cursor=pointer]:
+            - /url: tel:+19548044747
+        - paragraph [ref=e422]:
+          - img [ref=e423]
+          - text: Serving West Broward, South Florida
+  - button "Toggle annotation mode (Cmd/Ctrl + Shift + A)" [ref=e427] [cursor=pointer]:
+    - img [ref=e428]
+```

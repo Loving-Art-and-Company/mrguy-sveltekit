@@ -41,7 +41,7 @@
     "test:booking:prod:smoke:headed": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com BOOKING_LIMIT=2 playwright test e2e/booking.spec.ts --headed",
     "test:reschedule:prod": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com playwright test e2e/reschedule.spec.ts",
     "test:reschedule:prod:headed": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com playwright test e2e/reschedule.spec.ts --headed",
-    "test:ralph": "npx tsx e2e/ralph-loop.ts"
+    "test:ralph": "npx tsx scripts/ralph-loop.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

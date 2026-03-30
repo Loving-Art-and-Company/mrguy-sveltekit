@@ -1,8 +1,4 @@
-// src/hooks.server.ts
-// Custom auth, CSRF, CSP, and rate limiting
-// Adapted from FPP/Carolina pattern for MrGuy admin auth
-
-import { sequence } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
 import { type Handle, type HandleServerError, redirect } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import * as Sentry from '@sentry/sveltekit';
@@ -164,13 +160,4 @@ const customHandleError: HandleServerError = async ({ error, event, status, mess
 export const handle = sequence(Sentry.sentryHandle(), securityHandle);
 
 // Combine Sentry error handler with custom email notification
-export const handleError = async (input: Parameters<HandleServerError>[0]) => {
-  // First run custom email notification
-  const result = await customHandleError(input);
-  
-  // Then forward to Sentry
-  const sentryHandler = Sentry.handleErrorWithSentry();
-  await sentryHandler(input);
-  
-  return result;
-};
+export const handleError = Sentry.handleErrorWithSentry(customHandleError);
