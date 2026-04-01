@@ -1,0 +1,70 @@
+name: Sync Env to Vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.env.enc'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Vercel environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+
+jobs:
+  sync-env:
+    name: Sync .env.enc → Vercel (${{ inputs.environment || 'production' }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decrypt .env.enc
+        env:
+          AGE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+        run: |
+          echo "$AGE_KEY" | age -d -i /dev/stdin -o .env.production .env.enc
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Pull existing Vercel env vars
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=${{ inputs.environment || 'production' }} --token=$VERCEL_TOKEN
+
+      - name: Sync env vars to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Read decrypted .env.production and sync each var to Vercel
+          while IFS= read -r line; do
+            # Skip comments and empty lines
+            [[ "$line" =~ ^#.*$ ]] && continue
+            [[ -z "$line" ]] && continue
+
+            # Parse KEY=VALUE
+            key="${line%%=*}"
+            value="${line#*=}"
+            # Remove surrounding quotes
+            value="${value%\"}"
+            value="${value#\"}"
+            # Remove trailing \n (Vercel CLI artifact)
+            value="${value%\\n}"
+
+            if [ -n "$key" ] && [ -n "$value" ]; then
+              vercel env add "$key" "${{ inputs.environment || 'production' }}" --token="$VERCEL_TOKEN" <<< "$value" 2>/dev/null || true
+            fi
+          done < .env.production
+
+      - name: Clean up
+        run: rm -f .env.production
