@@ -7,7 +7,7 @@
 <header class="header">
   <div class="header-content">
     <a href="/" class="logo">
-      <img src="/logo/mrguylogo-full-square.png" alt="" class="logo-img" />
+      <img src="/logo/mrguylogo-full-square.png" alt="Mr. Guy Detail Logo" class="logo-img" />
       <span class="logo-text">{BUSINESS_INFO.name}</span>
     </a>
 

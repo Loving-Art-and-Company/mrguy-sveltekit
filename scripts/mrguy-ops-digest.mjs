@@ -7,10 +7,11 @@ import { sendOpsAlert } from './ops/alert.mjs';
 import { getInquirySnapshot } from './ops/inquiries.mjs';
 import { getAnalyticsSnapshot } from './ops/analytics.mjs';
 import { getSeoSnapshot } from './ops/seo.mjs';
+import { getMarketingSnapshot } from './ops/marketing/marketing-digest.mjs';
 
 loadLocalEnv();
 
-function rankActions(smoke, bookings, sections) {
+function rankActions(smoke, bookings, marketing, sections) {
   const actions = [];
 
   if (!smoke.ok) {
@@ -29,6 +30,14 @@ function rankActions(smoke, bookings, sections) {
     });
   }
 
+  for (const item of marketing.actions ?? []) {
+    actions.push({
+      severity: item.severity,
+      owner: 'Marketing',
+      action: item.message,
+    });
+  }
+
   for (const section of sections) {
     for (const item of section.actions ?? []) {
       actions.push({
@@ -42,7 +51,7 @@ function rankActions(smoke, bookings, sections) {
   return actions.slice(0, 6);
 }
 
-function toMarkdown({ smoke, bookings, inquiries, analytics, seo, actions }) {
+function toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, actions }) {
   const smokeLines = smoke.checks.map((check) => `- ${check.name}: ${check.status} - ${check.detail}`).join('\n');
   const actionLines = actions.map((item) => `- [${item.severity}] ${item.owner}: ${item.action}`).join('\n');
   const awaitingResponseLines = bookings.awaitingResponse.slice(0, 5).map((item) =>
@@ -110,21 +119,36 @@ ${inquiryLines}
 - sitemap.xml: ${seo.technical?.sitemap?.status ?? 'n/a'}
 ${seoLines}
 
+## AI Marketing Agents
+### Review Harvester
+- Status: ${marketing.status}
+- Review requests sent (7d): ${marketing.reviews?.sentLast7Days ?? 'n/a'}
+- Total reviews received: ${marketing.reviews?.receivedTotal ?? 'n/a'}
+- Conversion: ${marketing.reviews?.sentTotal > 0 ? ((marketing.reviews.receivedTotal / marketing.reviews.sentTotal) * 100).toFixed(1) + '%' : 'n/a'}
+
+### GBP Bot
+- Status: ${marketing.status}
+- Draft posts queued: ${marketing.gbp?.drafts ?? 'n/a'}
+- Posts published: ${marketing.gbp?.published ?? 'n/a'}
+- Generated (7d): ${marketing.gbp?.generatedLast7Days ?? 'n/a'}
+${marketing.gbp?.recentDrafts?.length > 0 ? '- Recent drafts:\n' + marketing.gbp.recentDrafts.map(d => `  - [${d.type}] ${d.preview}`).join('\n') : ''}
+
 ## Today's Actions
 ${actionLines}
 `;
 }
 
-const [smoke, bookings, inquiries, analytics, seo] = await Promise.all([
+const [smoke, bookings, inquiries, analytics, seo, marketing] = await Promise.all([
   runSmokeSuite(),
   getBookingOpsSnapshot(),
   getInquirySnapshot(),
   getAnalyticsSnapshot(),
   getSeoSnapshot(),
+  getMarketingSnapshot(),
 ]);
 
-const actions = rankActions(smoke, bookings, [inquiries, analytics, seo]);
-const markdown = toMarkdown({ smoke, bookings, inquiries, analytics, seo, actions });
+const actions = rankActions(smoke, bookings, marketing, [inquiries, analytics, seo]);
+const markdown = toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, actions });
 
 const outputDir = path.join(process.cwd(), 'output', 'ops');
 fs.mkdirSync(outputDir, { recursive: true });
