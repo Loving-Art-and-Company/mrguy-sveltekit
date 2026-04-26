@@ -46,7 +46,8 @@ const bookingSchema = z.object({
   contact: z.object({
     name: z.string().min(2),
     phone: z.string().min(10),
-    email: z.string().email().optional().or(z.literal(''))
+    email: z.string().email().optional().or(z.literal('')),
+    vehicle: z.string().trim().min(3).max(120)
   })
 });
 
@@ -104,7 +105,7 @@ export const POST: RequestHandler = async ({ request }) => {
       `Address: ${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
       booking.contact.email ? `Email: ${booking.contact.email}` : null,
       booking.address.instructions ? `Instructions: ${booking.address.instructions}` : null,
-      'Vehicle info pending',
+      `Vehicle: ${booking.contact.vehicle}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -177,11 +178,10 @@ export const POST: RequestHandler = async ({ request }) => {
       requestedDate: `${booking.schedule.date}T${booking.schedule.time}:00`,
       requestedLocation: `${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
       freeformNotes: notes,
-      missingFields: ['vehicle_details'],
+      missingFields: [],
       qualificationStatus: 'human_review',
       escalationReasons: [
         'booking_confirmation_requires_human',
-        'vehicle_details_pending',
       ],
       autoResponseSent: Boolean(booking.contact.email),
       autoResponseTemplateId: booking.contact.email ? BOOKING_ACK_TEMPLATE_ID : undefined,

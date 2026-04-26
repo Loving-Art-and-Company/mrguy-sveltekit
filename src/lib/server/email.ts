@@ -15,7 +15,7 @@ interface BookingNotification {
   service: { name: string; price?: number };
   schedule: { date: string; time: string };
   address: { street: string; city: string; state?: string; zip?: string };
-  contact: { name?: string; phone?: string; email?: string };
+  contact: { name?: string; phone?: string; email?: string; vehicle?: string };
 }
 
 async function sendViaResendApi(params: {
@@ -119,6 +119,9 @@ export async function notifyOwnerOfBooking(booking: {
 }
 
 export async function notifyOwnerOfBookingRequest(booking: BookingNotification): Promise<boolean> {
+  const vehicleLine = booking.contact.vehicle
+    ? `<br><strong>Vehicle:</strong> ${escapeHtml(booking.contact.vehicle)}`
+    : '';
   const html = `
     <h2>New Booking Request</h2>
 
@@ -137,7 +140,7 @@ export async function notifyOwnerOfBookingRequest(booking: BookingNotification):
 
     <h3>Customer</h3>
     <p><strong>Name:</strong> ${booking.contact.name ?? 'N/A'}<br>
-    <strong>Phone:</strong> ${booking.contact.phone ?? 'N/A'}${booking.contact.email ? `<br><strong>Email:</strong> ${booking.contact.email}` : ''}</p>
+    <strong>Phone:</strong> ${booking.contact.phone ?? 'N/A'}${booking.contact.email ? `<br><strong>Email:</strong> ${escapeHtml(booking.contact.email)}` : ''}${vehicleLine}</p>
 
     <p style="color: #666; margin-top: 20px;">
       <em>The customer-selected time is being held on the site until Pablo confirms or changes it.</em>
@@ -201,6 +204,10 @@ export async function sendCustomerBookingRequestReceived(booking: BookingNotific
     return false;
   }
 
+  const vehicleLine = booking.contact.vehicle
+    ? `<strong>Vehicle:</strong> ${escapeHtml(booking.contact.vehicle)}<br>`
+    : '';
+
   const html = `
     <h2>Your booking request is in.</h2>
 
@@ -209,6 +216,7 @@ export async function sendCustomerBookingRequestReceived(booking: BookingNotific
     <p style="font-size: 16px;">
       <strong>Requested Date:</strong> ${formatDate(booking.schedule.date)}<br>
       <strong>Requested Time:</strong> ${formatTime(booking.schedule.time)}<br>
+      ${vehicleLine}
       ${booking.address.street}, ${booking.address.city}
     </p>
 

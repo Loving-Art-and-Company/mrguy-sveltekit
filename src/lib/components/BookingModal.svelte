@@ -37,7 +37,7 @@
   // Form data
   let schedule = $state({ date: '', time: '' });
   let address = $state(createAddress('Weston'));
-  let contact = $state({ name: '', phone: '', email: '' });
+  let contact = $state({ name: '', phone: '', email: '', vehicle: '' });
 
   $effect(() => {
     if (!isOpen) {
@@ -140,6 +140,9 @@
       if (!contact.name || contact.name.length < 2) errors.name = 'Please enter your name';
       const phoneDigits = contact.phone.replace(/\D/g, '');
       if (phoneDigits.length < 10) errors.phone = 'Please enter a valid 10-digit phone number';
+      if (!contact.vehicle || contact.vehicle.trim().length < 3) {
+        errors.vehicle = 'Please enter the vehicle we will be detailing';
+      }
       if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
         errors.email = 'Please enter a valid email address';
       }
@@ -181,6 +184,7 @@
       quoted_price: displayPrice,
       promo_visible: showPromo,
       has_email: Boolean(contact.email),
+      has_vehicle: Boolean(contact.vehicle),
       step_index: currentStep + 1,
       step_name: stepNames[currentStep] || 'unknown',
     });
@@ -262,7 +266,7 @@
     showSuccess = false;
     schedule = { date: '', time: '' };
     address = createAddress(initialCity);
-    contact = { name: '', phone: '', email: '' };
+    contact = { name: '', phone: '', email: '', vehicle: '' };
     availabilityLoading = false;
     availabilityError = '';
     availableTimeSlots = [];
@@ -315,7 +319,7 @@
             <Check size={48} />
           </div>
           <h2>Booking Request Received!</h2>
-          <p>Pablo will review your selected time and text you once it’s confirmed.</p>
+          <p>Pablo will review your selected time and vehicle details, then text you once it’s confirmed.</p>
           <div class="countdown">Closing in {successCountdown}...</div>
         </div>
       {:else}
@@ -324,7 +328,7 @@
           <button class="close-btn" onclick={handleClose} aria-label="Close">
             <X size={24} />
           </button>
-          <h2 id="modal-title">Book Appointment</h2>
+          <h2 id="modal-title">Request Appointment</h2>
           <div class="step-indicator">Step {currentStep + 1} of 3</div>
         </header>
 
@@ -342,6 +346,7 @@
           <button class="edit-service-btn" onclick={handleEditServiceClick}>
             Change Service
           </button>
+          <p class="request-note">No payment today. Pick a preferred time and Pablo confirms by text.</p>
         </div>
 
         <!-- Steps Container -->
@@ -556,6 +561,18 @@
                     />
                     {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
                   </label>
+
+                  <label class="form-field full-width">
+                    <span class="form-label">Vehicle *</span>
+                    <input 
+                      type="text" 
+                      bind:value={contact.vehicle} 
+                      placeholder="2021 Tesla Model Y"
+                      autocomplete="off"
+                      class:error={errors.vehicle}
+                    />
+                    {#if errors.vehicle}<span class="error">{errors.vehicle}</span>{/if}
+                  </label>
                   
                   <label class="form-field full-width">
                     <span class="form-label">Email (optional)</span>
@@ -583,10 +600,15 @@
                   <div class="summary-row light">
                     <span>{address.street}, {address.city} FL {address.zip}</span>
                   </div>
+                  {#if contact.vehicle}
+                    <div class="summary-row light">
+                      <span>{contact.vehicle}</span>
+                    </div>
+                  {/if}
                 </div>
 
-                <p class="sms-note">
-                  Pablo will review this request, confirm the timing, and text you once it’s approved.
+                <p class="review-note">
+                  No payment is due now. Pablo will review the request and confirm the timing once it’s approved.
                 </p>
 
                 {#if errors.submit}
@@ -596,7 +618,7 @@
                 <button 
                   class="submit-btn" 
                   onclick={nextStep} 
-                  disabled={isSubmitting || !contact.name || !contact.phone}
+                  disabled={isSubmitting || !contact.name || !contact.phone || !contact.vehicle}
                 >
                   {#if isSubmitting}
                     Processing...
@@ -638,14 +660,14 @@
 
   /* Modal Container */
   .modal-container {
-    background: white;
+    background: #f8fafc;
     width: 100%;
     max-width: 560px;
     max-height: calc(100vh - 2rem);
-    border-radius: 1.5rem;
+    border-radius: 1rem;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
     overflow-y: auto;
-    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   @keyframes slideUp {
@@ -668,9 +690,9 @@
 
     .modal-container {
       max-width: 100%;
-      max-height: 95vh;
-      border-radius: 1.5rem 1.5rem 0 0;
-      animation: slideUpMobile 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: min(94dvh, 760px);
+      border-radius: 1rem 1rem 0 0;
+      animation: slideUpMobile 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     @keyframes slideUpMobile {
@@ -688,7 +710,7 @@
     border-bottom: 1px solid #e5e7eb;
     position: sticky;
     top: 0;
-    background: white;
+    background: #ffffff;
     z-index: 10;
   }
 
@@ -795,9 +817,17 @@
     color: var(--color-primary-hover);
   }
 
+  .request-note {
+    margin: 0.5rem 0 0;
+    color: #0c4a6e;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
   /* Steps */
   .steps {
     padding: 0 1.5rem 1.5rem;
+    background: #ffffff;
   }
 
   .step {
@@ -1073,7 +1103,7 @@
     color: var(--color-primary);
   }
 
-  .sms-note {
+  .review-note {
     font-size: 0.8rem;
     color: #6b7280;
     text-align: center;
@@ -1168,5 +1198,111 @@
   .countdown {
     font-size: 0.875rem;
     color: #9ca3af;
+  }
+
+  @media (max-width: 640px) {
+    .modal-header {
+      padding: 0.875rem 1rem;
+    }
+
+    .modal-header h2 {
+      font-size: 1rem;
+    }
+
+    .close-btn {
+      width: 36px;
+      height: 36px;
+    }
+
+    .step-indicator {
+      font-size: 0.75rem;
+    }
+
+    .service-summary {
+      padding: 0.875rem 1rem;
+    }
+
+    .service-info {
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .service-info h3 {
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .service-info .price {
+      font-size: 1.05rem;
+      white-space: nowrap;
+    }
+
+    .includes {
+      display: none;
+    }
+
+    .request-note {
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+
+    .steps {
+      padding: 0 1rem 1rem;
+    }
+
+    .step-header {
+      padding: 0.8rem 0;
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      gap: 0.6rem;
+    }
+
+    .step-icon,
+    .step-check {
+      width: 28px;
+      height: 28px;
+    }
+
+    .step-summary-text {
+      margin-left: 2.4rem;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .step-content {
+      padding-bottom: 1rem;
+    }
+
+    .form-section {
+      margin-bottom: 1rem;
+    }
+
+    .form-grid {
+      gap: 0.75rem;
+    }
+
+    input,
+    textarea {
+      padding: 0.68rem 0.8rem;
+    }
+
+    .booking-summary {
+      display: none;
+    }
+
+    .review-note {
+      margin-top: 1rem;
+      padding: 0.65rem;
+      line-height: 1.35;
+    }
+
+    .continue-btn,
+    .submit-btn {
+      padding: 0.85rem;
+      border-radius: 0.65rem;
+      font-size: 0.95rem;
+    }
   }
 </style>
