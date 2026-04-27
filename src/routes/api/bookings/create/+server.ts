@@ -18,10 +18,6 @@ import {
   notifyOwnerOfBookingRequest,
   sendCustomerBookingRequestReceived,
 } from '$lib/server/email';
-import {
-  notifyOwnerOfBookingRequestSMS,
-  sendCustomerBookingRequestReceivedSMS,
-} from '$lib/server/sms';
 import { sendLeadToSink } from '$lib/server/leadSink';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
@@ -202,28 +198,20 @@ export const POST: RequestHandler = async ({ request }) => {
       ],
     });
 
-    // Send email + SMS notifications + calendar sync (don't block on these)
+    // Send email notifications (don't block booking creation)
     const notificationPromises = [
       notifyOwnerOfBookingRequest(notificationPayload),
       sendCustomerBookingRequestReceived(notificationPayload),
-      notifyOwnerOfBookingRequestSMS(notificationPayload),
-      sendCustomerBookingRequestReceivedSMS(notificationPayload),
     ];
 
     // Fire and forget - don't wait for notifications to complete
     Promise.allSettled(notificationPromises).then(results => {
-      const [ownerEmail, customerEmail, ownerSMS, customerSMS] = results;
+      const [ownerEmail, customerEmail] = results;
       if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
         console.warn('Failed to notify owner of booking (email)');
       }
       if (customerEmail.status === 'rejected' || !customerEmail.value) {
         console.warn('Failed to send booking request email to customer');
-      }
-      if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
-        console.warn('Failed to notify owner of booking (SMS)');
-      }
-      if (customerSMS.status === 'rejected' || !customerSMS.value) {
-        console.warn('Failed to send booking request SMS to customer');
       }
     });
 

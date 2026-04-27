@@ -18,7 +18,7 @@ Port from React version at `~/Projects/06_ARCHIVE/mrguy-react-archived-*`
 
 Mobile detailing booking platform for West Broward, South Florida.
 
-**Stack:** SvelteKit + Neon Postgres + Stripe + Twilio Verify
+**Stack:** SvelteKit + Neon Postgres + Stripe + email-based verification
 
 ## Quick Commands
 

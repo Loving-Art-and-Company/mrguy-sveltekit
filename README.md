@@ -101,7 +101,7 @@ mrguy-sveltekit/
 │   ├── lib/
 │   │   ├── components/    # Reusable UI components
 │   │   ├── stores/        # Svelte stores (if used)
-│   │   └── server/        # Database, email, SMS, lead sink
+│   │   └── server/        # Database, email, lead sink
 │   ├── routes/
 │   │   ├── +page.svelte   # Homepage
 │   │   ├── book/          # Booking flow

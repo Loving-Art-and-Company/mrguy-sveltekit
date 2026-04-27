@@ -26,11 +26,11 @@
 
 **[Choose applicable method]:**
 
-**Option 1: Twilio Verify (SMS OTP)**
-- Phone number-based authentication
-- One-time password (OTP) via SMS
+**Option 1: Email Verification for Reschedule Access**
+- Phone lookup against active bookings
+- One-time password (OTP) delivered to the booking email address
 - Session tokens for client authentication
-- Rate limiting: 5 OTP requests per hour per phone
+- Rate limiting on verification requests
 
 **Option 2: Admin Sessions**
 - Email/password authentication for admin users
@@ -118,9 +118,6 @@
 | `STRIPE_SECRET_KEY` | Payment processing | ✗ **SERVER-ONLY** | Vercel secrets | Stripe dashboard → API keys |
 | `PUBLIC_STRIPE_PUBLISHABLE_KEY` | Client Stripe | ✓ Yes | Vercel env | Stripe dashboard |
 | `STRIPE_WEBHOOK_SECRET` | Webhook verification | ✗ **SERVER-ONLY** | Vercel secrets | Stripe → Webhooks → Signing secret |
-| `TWILIO_ACCOUNT_SID` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
-| `TWILIO_AUTH_TOKEN` | SMS auth | ✗ **SERVER-ONLY** | Vercel secrets | Twilio dashboard |
-| `TWILIO_PHONE_NUMBER` | Outbound SMS sender | ✗ **SERVER-ONLY** | Vercel secrets | Twilio phone numbers |
 
 ### Variable Naming Conventions
 
@@ -205,7 +202,6 @@
 - [ ] **Stripe:** Webhook signature verification enabled
 - [ ] **Stripe:** Production keys (not test keys) in production
 - [ ] **Stripe:** Checkout session validates amount server-side
-- [ ] **Twilio:** Request validation enabled (signature verification)
 - [ ] **Database:** Access boundaries reviewed and tested
 - [ ] **All APIs:** API keys rotated to production values
 
@@ -239,7 +235,7 @@
 ✓ **DOMPurify Sanitization** - XSS prevention on user-generated content  
 ✓ **Server-Side API Key Verification** - All sensitive operations server-only  
 ✓ **HTTPS-Only Cookies** - Session cookies marked `Secure` and `HttpOnly`  
-✓ **OTP Rate Limiting** - Max 5 SMS OTP requests per hour per phone  
+✓ **Email OTP Verification** - Reschedule access codes are delivered to the booking email address  
 ✓ **Webhook Signature Verification** - Stripe webhooks validated before processing  
 ✓ **Automated Backups** - Daily managed database backups  
 ✓ **Dependency Scanning** - Dependabot enabled for vulnerability detection

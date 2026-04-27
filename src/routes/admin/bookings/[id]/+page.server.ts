@@ -7,7 +7,6 @@ import { normalizePhone } from '$lib/server/phone';
 import { getStripe } from '$lib/server/stripe';
 import { createCalendarEvent } from '$lib/server/calendar';
 import { sendCustomerConfirmation } from '$lib/server/email';
-import { sendCustomerConfirmationSMS } from '$lib/server/sms';
 import { bookings } from '$lib/server/schema';
 import { eq } from 'drizzle-orm';
 import { buildBookableTimeSlots, findConflictingHold, formatTimeLabel, isBookableDate } from '$lib/scheduling';
@@ -180,10 +179,9 @@ export const actions = {
 
 					Promise.allSettled([
 						sendCustomerConfirmation(bookingNotification),
-						sendCustomerConfirmationSMS(bookingNotification),
 						createCalendarEvent(bookingNotification),
 					]).then((results) => {
-						const labels = ['customer email', 'customer SMS', 'calendar'];
+						const labels = ['customer email', 'calendar'];
 						results.forEach((result, index) => {
 							if (result.status === 'rejected' || result.value === false) {
 								console.warn(`Failed to send ${labels[index]} for confirmed booking ${updatedBooking.id}`);
