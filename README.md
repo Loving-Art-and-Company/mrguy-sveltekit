@@ -87,8 +87,7 @@ npm run dev
 
 ## Documentation
 
-- **Architecture & Commands:** [`CLAUDE.md`](./CLAUDE.md)
-- **Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
+- **Architecture, Commands & Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
 - **Security Policies:** [`SECURITY.md`](./SECURITY.md)
 - **Analytics Tracking Plan:** [`docs/tracking-plan.md`](./docs/tracking-plan.md)
 - **Ops Agent Spec:** [`docs/mrguy-ops-agent-spec.md`](./docs/mrguy-ops-agent-spec.md)
@@ -177,7 +176,7 @@ Set in Vercel dashboard:
 - Use production keys (not test keys)
 - Ensure `DATABASE_URL` is kept server-only
 
-**See `CLAUDE.md` for complete deployment checklist.**
+**See `AGENTS.md` for complete deployment checklist.**
 
 ## Service Packages
 
@@ -332,7 +331,7 @@ OPS_RUN_HOUR=8 OPS_RUN_MINUTE=30 npm run ops:schedule:install
 
 ## Support
 
-- **Documentation:** `CLAUDE.md`, `AGENTS.md`, `SECURITY.md`
+- **Documentation:** `AGENTS.md`, `SECURITY.md`
 - **Issues:** Contact development team
 - **Production:** mrguydetail.com
 

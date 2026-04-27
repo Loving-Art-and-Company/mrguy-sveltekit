@@ -1,9 +1,9 @@
 # Mr. Guy Mobile Detail - Action Plan
 
 **Project:** mrguydetail.com  
-**Type:** SvelteKit + Drizzle ORM + `postgres.js` + Stripe + Twilio Verify + custom admin auth  
+**Type:** SvelteKit + Drizzle ORM + `postgres.js` + Stripe + email OTP + custom admin auth
 **Status:** 🟢 Production live; ops-agent rollout in progress  
-**Last Updated:** 2026-03-10
+**Last Updated:** 2026-04-26
 
 ---
 
@@ -28,7 +28,8 @@
 - [x] Mobile-first Stripe payment collection for existing bookings
 - [x] Canonical-host redirect, smoke guard, and cache hardening
 - [x] Inline delete controls on the admin bookings calendar
-- [x] MrGuy ops agent foundation (`.claude/agents/mrguy-ops-agent.md`, spec, scripts, digest, and scheduler installer)
+- [x] MrGuy ops agent foundation (`.agents/agents/mrguy-ops-agent.md`, spec, scripts, digest, and scheduler installer)
+- [x] Project guidance consolidated in `AGENTS.md`; legacy assistant-specific docs renamed under `.agents/`
 
 ---
 
@@ -68,9 +69,9 @@ Capture the data that disappears first, then build cost visibility, then build r
 
 ## Important Files
 
-- `.claude/context.md`
-- `.claude/agents/mrguy-ops-agent.md`
-- `.claude/agent-memory/mrguy-ops-agent/MEMORY.md`
+- `.agents/context.md`
+- `.agents/agents/mrguy-ops-agent.md`
+- `.agents/agent-memory/mrguy-ops-agent/MEMORY.md`
 - `docs/mrguy-ops-agent-spec.md`
 - `scripts/mrguy-ops-digest.mjs`
 - `scripts/run-ops-daily.sh`

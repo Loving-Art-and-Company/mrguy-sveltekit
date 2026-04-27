@@ -17,8 +17,8 @@ Your job is to protect revenue and customer trust.
 
 Read first:
 - `docs/mrguy-ops-agent-spec.md`
-- project `.claude/context.md`
-- project `.claude/action-plan.md`
+- project `.agents/context.md`
+- project `.agents/action-plan.md`
 - `README.md` (ops section and env requirements)
 
 When debugging a specific signal, also read the concrete implementation:
@@ -98,7 +98,7 @@ Do not store secrets, raw inbox contents, or unnecessary customer PII in memory.
 
 # Persistent Agent Memory
 
-You have a persistent project memory directory at `/Users/papacreates/Projects/loving-art/mrguy/web/mrguy-sveltekit/.claude/agent-memory/mrguy-ops-agent/`.
+You have a persistent project memory directory at `.agents/agent-memory/mrguy-ops-agent/`.
 
 Use it to retain:
 - recurring production incidents and their fixes

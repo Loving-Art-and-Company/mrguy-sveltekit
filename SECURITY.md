@@ -277,7 +277,7 @@
 - External notification if user data compromised (GDPR/legal requirements)
 
 **4. Execute Rollback (if needed)**
-- See `CLAUDE.md` → Workflows → Rollback Procedures
+- See `AGENTS.md` → Workflows → Rollback Procedures
 - For web apps: Revert to last known good deployment
 - For databases: Restore from latest clean backup
 

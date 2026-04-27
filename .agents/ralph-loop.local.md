@@ -13,7 +13,7 @@ Port from React version at `~/Projects/06_ARCHIVE/mrguy-react-archived-*`
 - Use Svelte 5 runes ($state, $effect, $props)
 - Server-side validation with Zod
 - Stripe Checkout redirect (not embedded)
-- Twilio Verify for OTP
+- Email OTP for client reschedule verification
 
 ## Exit Conditions
 - All 5 tasks in AGENTS.md pass acceptance criteria

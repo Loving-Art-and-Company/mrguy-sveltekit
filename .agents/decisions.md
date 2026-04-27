@@ -28,29 +28,28 @@
 
 ---
 
-## 2026-01-21 - Twilio Verify for OTP (Not Custom)
-**Context:** Need SMS authentication for reschedule portal without requiring passwords
-**Decision:** Use Twilio Verify service instead of building custom OTP system
+## 2026-04-26 - Email OTP for Client Reschedule Verification
+**Context:** Clients need to access reschedule flows without passwords, and the current operating model is email-based.
+**Decision:** Use email OTP tied to the booking email found from the submitted phone number.
 **Rationale:**
-- Rate limiting built-in
-- SMS delivery optimization
-- Prevents common OTP vulnerabilities (timing attacks, brute force)
-- Handles international numbers properly
-- Fraud detection included
-**Consequences:** Additional Twilio cost ($0.05/verification), but worth it for security and reliability
+- Removes the old phone-provider dependency
+- Uses the email address already captured in the booking flow
+- Keeps reschedule access passwordless
+- Avoids sending booking access codes to unknown destinations
+**Consequences:** Bookings without email require manual help, and customers with multiple emails on one phone need support fallback.
 **Status:** Active
 
 ---
 
-## 2026-01-21 - Supabase RLS for Security
-**Context:** Need to secure customer booking data in multi-tenant architecture
-**Decision:** Implement Row Level Security (RLS) policies on all Supabase tables
+## 2026-04-26 - Neon/Drizzle Server-Side Data Access
+**Context:** The production stack uses Neon Postgres with Drizzle repositories, not client-side database SDK access.
+**Decision:** Keep database access server-side through SvelteKit server routes and repository modules.
 **Rationale:**
-- Database-level security (can't bypass with API)
-- Prevents accidental data leaks even if app code has bugs
-- Required for GDPR/privacy compliance
-- Supabase service role key only used server-side
-**Consequences:** More complex queries, but security is non-negotiable
+- Prevents customer data exposure through browser-side database clients
+- Keeps auth, validation, and mutation rules in one server boundary
+- Fits the current Vercel + Neon deployment model
+- Makes tests and operational scripts use the same schema layer
+**Consequences:** Client flows must call server endpoints instead of querying the database directly.
 **Status:** Active
 
 ---

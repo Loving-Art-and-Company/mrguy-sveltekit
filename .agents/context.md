@@ -1,6 +1,6 @@
 # Mr. Guy Mobile Detail - Project Context
 
-> Last Updated: 2026-03-10
+> Last Updated: 2026-04-26
 
 ## Ownership
 
@@ -15,7 +15,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - [x] Post-service Stripe Checkout payment collection shipped for completed unpaid bookings
 - [x] Canonical-host redirect, smoke guard, and cache-hardening fixes shipped
 - [x] Inline delete controls added to the admin bookings calendar for fast lead cleanup
-- [x] MrGuy ops agent foundation added (`.claude/agents/mrguy-ops-agent.md`, `docs/mrguy-ops-agent-spec.md`, `scripts/ops/*`, `scripts/mrguy-ops-digest.mjs`, `scripts/run-ops-daily.sh`)
+- [x] MrGuy ops agent foundation added (`.agents/agents/mrguy-ops-agent.md`, `docs/mrguy-ops-agent-spec.md`, `scripts/ops/*`, `scripts/mrguy-ops-digest.mjs`, `scripts/run-ops-daily.sh`)
 - [x] Admin business suite added at `/admin/business` for mileage logging, inventory tracking, and cash-basis bookkeeping
 - [ ] Reauthorize the connected Google account once so Gmail, GA4, and Search Console readonly scopes become available to the ops scripts
 - [ ] Install or verify the optional local `launchd` schedule on machines that should run the daily digest automatically
@@ -35,6 +35,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - 2026-02-23: Implemented the "Fresh Start" first-time-client promo with server-side eligibility
 - 2026-03-12: Built `/admin/business` with mileage tracking, inventory management, and simple bookkeeping summaries/forms
 - 2026-03-12: Added runtime business-table bootstrap so `/admin/business` can initialize its own schema on first request in production
+- 2026-04-26: Consolidated root project guidance in `AGENTS.md` and renamed tracked assistant-specific notes to `.agents/`
 
 ## Tech Stack
 
@@ -42,7 +43,7 @@ LAC-owned brand/app; optimize for leverage and growth.
 - Database: Drizzle ORM + `postgres.js` over `DATABASE_URL`
 - Auth:
   - Admin: custom bcrypt + DB-backed sessions
-  - Client: Twilio Verify OTP
+  - Client: email OTP
   - Integrations/reporting: Google OAuth
 - Payments: Stripe Checkout + webhook reconciliation
 - Analytics and monitoring: PostHog, optional GA4/Search Console via Google reconnect, Sentry
@@ -78,8 +79,8 @@ LAC-owned brand/app; optimize for leverage and growth.
 
 ## Important Files
 
-- `.claude/agents/mrguy-ops-agent.md`
-- `.claude/action-plan.md`
+- `.agents/agents/mrguy-ops-agent.md`
+- `.agents/action-plan.md`
 - `docs/mrguy-ops-agent-spec.md`
 - `scripts/mrguy-ops-digest.mjs`
 - `scripts/run-ops-daily.sh`
