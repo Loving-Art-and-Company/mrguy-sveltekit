@@ -11,8 +11,7 @@ try {
       "contact" text NOT NULL,
       "sent_at" timestamp with time zone DEFAULT now() NOT NULL,
       "message_body" text NOT NULL,
-      "twilio_sid" text,
-      "status" text DEFAULT 'sent' NOT NULL,
+      "status" text DEFAULT 'draft' NOT NULL,
       "review_received" boolean DEFAULT false NOT NULL,
       "created_at" timestamp with time zone DEFAULT now() NOT NULL
     )

@@ -1,0 +1,150 @@
+name: Deploy Cloud Run Staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cloud-run-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy staging
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: '22'
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || 'us-east1' }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'mg-detail' }}
+      ARTIFACT_REGISTRY_REPOSITORY: ${{ vars.ARTIFACT_REGISTRY_REPOSITORY || 'cloud-run' }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME || 'mrguy-sveltekit' }}
+      SECRET_PREFIX: ${{ vars.SECRET_PREFIX || 'mg-detail-staging' }}
+      DB_POOL_MAX: ${{ vars.DB_POOL_MAX || '8' }}
+      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+      PUBLIC_POSTHOG_KEY: ${{ vars.PUBLIC_POSTHOG_KEY || '' }}
+      PUBLIC_POSTHOG_HOST: ${{ vars.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com' }}
+      PUBLIC_POSTHOG_SESSION_RECORDING: ${{ vars.PUBLIC_POSTHOG_SESSION_RECORDING || 'false' }}
+      CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+    steps:
+      - name: Check staging configuration
+        run: |
+          missing=0
+          for key in GCP_PROJECT_ID PUBLIC_BASE_URL CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT; do
+            if [ -z "${!key}" ]; then
+              echo "::error::$key is required for staging deploys."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build app
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Check required Secret Manager versions
+        run: |
+          missing=0
+          for key in DATABASE_URL CSRF_SECRET UPSTASH_REDIS_REST_URL UPSTASH_REDIS_REST_TOKEN RESEND_API_KEY; do
+            secret_name="${SECRET_PREFIX}-${key}"
+            if ! gcloud secrets versions list "$secret_name" \
+              --project "$GCP_PROJECT_ID" \
+              --filter='state=ENABLED' \
+              --limit=1 \
+              --format='value(name)' | grep -q .; then
+              echo "::error::${secret_name} needs an enabled secret version before staging deploy."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Build and push image
+        id: image
+        run: |
+          image_uri="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker build --tag "$image_uri" .
+          docker push "$image_uri"
+          echo "image_uri=$image_uri" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloud Run
+        run: |
+          secret_refs=(
+            "DATABASE_URL=${SECRET_PREFIX}-DATABASE_URL:latest"
+            "CSRF_SECRET=${SECRET_PREFIX}-CSRF_SECRET:latest"
+            "UPSTASH_REDIS_REST_URL=${SECRET_PREFIX}-UPSTASH_REDIS_REST_URL:latest"
+            "UPSTASH_REDIS_REST_TOKEN=${SECRET_PREFIX}-UPSTASH_REDIS_REST_TOKEN:latest"
+            "RESEND_API_KEY=${SECRET_PREFIX}-RESEND_API_KEY:latest"
+          )
+
+          for key in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
+            secret_name="${SECRET_PREFIX}-${key}"
+            if gcloud secrets versions list "$secret_name" \
+              --project "$GCP_PROJECT_ID" \
+              --filter='state=ENABLED' \
+              --limit=1 \
+              --format='value(name)' | grep -q .; then
+              secret_refs+=("${key}=${secret_name}:latest")
+            else
+              echo "::notice::${secret_name} has no enabled versions; skipping optional Stripe secret."
+            fi
+          done
+
+          secret_refs_csv="$(IFS=,; echo "${secret_refs[*]}")"
+
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --platform managed \
+            --image "${{ steps.image.outputs.image_uri }}" \
+            --allow-unauthenticated \
+            --service-account "$CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT" \
+            --set-env-vars "NODE_ENV=production,HOST=0.0.0.0,DB_POOL_MAX=${DB_POOL_MAX},PUBLIC_BASE_URL=${PUBLIC_BASE_URL}" \
+            --update-secrets "$secret_refs_csv"
+
+      - name: Smoke deployed service
+        run: |
+          service_url="$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format='value(status.url)')"
+          echo "Service URL: $service_url"
+          curl -fsS "$service_url/api/health"
+          curl -fsSI "$service_url/"

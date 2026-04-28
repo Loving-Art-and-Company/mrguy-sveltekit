@@ -2,56 +2,16 @@ import { getSql } from './db.mjs';
 import { chatCompletion } from './llm.mjs';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID?.trim();
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN?.trim();
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER?.trim();
 const REVIEW_LINK = process.env.GBP_REVIEW_LINK?.trim() ?? 'https://g.page/r/CblCJYB4IplSEAI/review';
-
-function isTwilioConfigured() {
-  return !!(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER);
-}
-
-async function sendTwilioSms(to, body) {
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-  const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      To: to,
-      From: TWILIO_PHONE_NUMBER,
-      Body: body,
-    }),
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    return {
-      ok: false,
-      status: 'failed',
-      reason: data.message ?? `Twilio error ${response.status}`,
-    };
-  }
-
-  return {
-    ok: true,
-    status: 'ok',
-    sid: data.sid,
-  };
-}
 
 function fallbackReviewSms({ clientName, serviceName, city }) {
   const name = clientName?.split(' ')[0] ?? 'there';
   return `Hey ${name}, hope you're loving the ${serviceName.toLowerCase()}! If you have a sec, a quick review means the world to us and helps other ${city} drivers find Mr. Guy. ${REVIEW_LINK}`;
 }
 
-async function generateReviewSms({ clientName, serviceName, city }) {
+async function generateReviewMessage({ clientName, serviceName, city }) {
   const system = `You are the voice of Mr. Guy Mobile Detail — friendly, casual, and local to South Florida.
-Write a SHORT SMS (under 300 characters) asking for a Google review.
+Write a short review request message asking for a Google review.
 Rules:
 - Use the customer's first name only
 - Mention the service they got
@@ -65,7 +25,7 @@ Service: ${serviceName}
 City: ${city ?? 'West Broward'}
 Review link: ${REVIEW_LINK}
 
-Write the SMS now.`;
+Write the review request now.`;
 
   const result = await chatCompletion({ system, user, model: 'gemini-2.0-flash', temperature: 0.6 });
   if (!result.ok) return result;
@@ -134,14 +94,14 @@ export async function runReviewHarvester() {
       const firstName = row.clientName?.split(' ')[0] ?? 'there';
       const city = 'West Broward'; // Could be inferred from notes/address in future
 
-      let smsResult = await generateReviewSms({
+      let messageResult = await generateReviewMessage({
         clientName: firstName,
         serviceName: row.serviceName,
         city,
       });
 
-      if (!smsResult.ok) {
-        smsResult = {
+      if (!messageResult.ok) {
+        messageResult = {
           ok: true,
           status: 'fallback',
           text: fallbackReviewSms({ clientName: firstName, serviceName: row.serviceName, city }),
@@ -150,36 +110,23 @@ export async function runReviewHarvester() {
         llmUsed = true;
       }
 
-      let twilioResult = { ok: false, status: 'dry_run', reason: 'Twilio not configured' };
-      if (isTwilioConfigured()) {
-        twilioResult = await sendTwilioSms(phone, smsResult.text);
-      }
-
       await sql`
         INSERT INTO marketing_review_requests (
           booking_id,
           brand_id,
           contact,
           message_body,
-          twilio_sid,
           status
         ) VALUES (
           ${row.booking_id},
           ${MRGUY_BRAND_ID},
           ${phone},
-          ${smsResult.text},
-          ${twilioResult.ok ? twilioResult.sid : null},
-          ${twilioResult.ok ? 'sent' : 'draft'}
+          ${messageResult.text},
+          ${'draft'}
         )
       `;
 
-      if (twilioResult.ok) {
-        sent.push({ bookingId: row.booking_id, phone });
-      } else if (twilioResult.status === 'dry_run') {
-        sent.push({ bookingId: row.booking_id, phone, mode: 'draft_logged' });
-      } else {
-        errors.push({ bookingId: row.booking_id, reason: twilioResult.reason });
-      }
+      sent.push({ bookingId: row.booking_id, phone, mode: 'draft_logged' });
     }
 
     if (sent.length > 0) {

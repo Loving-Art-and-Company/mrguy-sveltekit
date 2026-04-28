@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import type { CaptureResult, Properties } from 'posthog-js';
 
 export type AnalyticsPrimitive = string | number | boolean | null | undefined;
 export type AnalyticsProps = Record<string, AnalyticsPrimitive>;
@@ -13,6 +14,35 @@ type InitOptions = {
 let initialized = false;
 const ATTRIBUTION_STORAGE_KEY = 'mrguy_analytics_attribution_v1';
 const ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+const PRIVATE_PROPERTY_KEYS = [
+  'email',
+  'phone',
+  'name',
+  'address',
+  'street',
+  'zip',
+  'message',
+  'instructions',
+  'token',
+] as const;
+
+const POSTHOG_PROPERTY_DENYLIST = PRIVATE_PROPERTY_KEYS.filter((key) => key !== 'token');
+
+const isPrivatePropertyKey = (key: string): boolean => {
+  const lowerKey = key.toLowerCase();
+
+  return (
+    lowerKey === 'name' ||
+    lowerKey.includes('email') ||
+    lowerKey.includes('phone') ||
+    lowerKey.includes('address') ||
+    lowerKey.includes('street') ||
+    lowerKey.includes('zip') ||
+    lowerKey.includes('message') ||
+    lowerKey.includes('instructions') ||
+    lowerKey.includes('token')
+  );
+};
 
 type AttrKey = (typeof ATTR_KEYS)[number];
 type AttributionPayload = Partial<Record<AttrKey, string>>;
@@ -28,11 +58,46 @@ const sanitizeProps = (props: AnalyticsProps): Record<string, string | number | 
   const sanitized: Record<string, string | number | boolean> = {};
   Object.entries(props).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
+    if (isPrivatePropertyKey(key)) {
+      sanitized[key] = '[REDACTED]';
+      return;
+    }
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      sanitized[key] = value;
+      sanitized[key] = typeof value === 'string' && value.includes('@') ? '[REDACTED]' : value;
     }
   });
   return sanitized;
+};
+
+const sanitizePostHogEventProperties = (
+  props: Properties = {},
+  projectToken: string
+): Properties => {
+  const sanitized: Properties = { ...props };
+
+  Object.entries(sanitized).forEach(([key, value]) => {
+    if (key === 'token' && value === projectToken) return;
+
+    if (isPrivatePropertyKey(key)) {
+      sanitized[key] = '[REDACTED]';
+      return;
+    }
+
+    if (typeof value === 'string' && value.includes('@')) {
+      sanitized[key] = '[REDACTED]';
+    }
+  });
+
+  return sanitized;
+};
+
+const sanitizeCaptureResult = (
+  event: CaptureResult | null,
+  projectToken: string
+): CaptureResult | null => {
+  if (!event) return event;
+  event.properties = sanitizePostHogEventProperties(event.properties || {}, projectToken);
+  return event;
 };
 
 const hasAttributionData = (attrs: AttributionPayload): boolean => {
@@ -138,13 +203,30 @@ const buildBaseProps = (): AnalyticsProps => {
 };
 
 export const initAnalytics = ({ key, host, disable, sessionRecording }: InitOptions) => {
-  if (initialized || disable) return;
-  if (!key) return;
+  const posthogKey = key?.trim();
+  const posthogHost = host?.trim() || 'https://us.i.posthog.com';
 
-  posthog.init(key, {
-    api_host: host || 'https://us.i.posthog.com',
-    autocapture: false,
+  if (initialized || disable) return;
+  if (!posthogKey) return;
+
+  posthog.init(posthogKey, {
+    api_host: posthogHost,
+    ui_host: 'https://us.posthog.com',
+    defaults: '2026-01-30',
+    autocapture: true,
     capture_pageview: false,
+    capture_pageleave: true,
+    capture_dead_clicks: true,
+    enable_heatmaps: true,
+    person_profiles: 'identified_only',
+    respect_dnt: true,
+    disable_session_recording: !sessionRecording,
+    property_denylist: POSTHOG_PROPERTY_DENYLIST,
+    session_recording: {
+      maskAllInputs: true,
+      maskTextSelector: '[data-private], .sensitive',
+    },
+    before_send: (event) => sanitizeCaptureResult(event, posthogKey),
   });
 
   const context = sanitizeProps(buildBaseProps());
@@ -156,16 +238,17 @@ export const initAnalytics = ({ key, host, disable, sessionRecording }: InitOpti
     posthog.startSessionRecording?.();
   }
   initialized = true;
+  trackPageview(window.location.href);
 };
 
 export const track = (eventName: string, props?: AnalyticsProps) => {
   if (!initialized) return;
   const payload = sanitizeProps({ ...buildBaseProps(), ...(props || {}) });
   if (Object.keys(payload).length > 0) {
-    posthog.capture(eventName, payload);
+    posthog.capture(eventName, payload, { send_instantly: true });
     return;
   }
-  posthog.capture(eventName);
+  posthog.capture(eventName, undefined, { send_instantly: true });
 };
 
 export const trackPageview = (url?: string) => {
@@ -174,9 +257,13 @@ export const trackPageview = (url?: string) => {
     ...buildBaseProps(),
     $current_url: url || (typeof window !== 'undefined' ? window.location.href : undefined),
   });
-  posthog.capture('$pageview', {
-    ...payload,
-  });
+  posthog.capture(
+    '$pageview',
+    {
+      ...payload,
+    },
+    { send_instantly: true }
+  );
 };
 
 export const identify = (distinctId: string, props?: AnalyticsProps) => {

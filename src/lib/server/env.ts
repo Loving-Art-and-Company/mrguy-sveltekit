@@ -16,6 +16,12 @@ const envSchema = z.object({
     .transform(sanitizeEnvValue)
     .pipe(z.string().startsWith('postgresql://', 'Must be a PostgreSQL connection string')),
 
+  DB_POOL_MAX: z
+    .string()
+    .default('8')
+    .transform((value) => Number.parseInt(value, 10))
+    .pipe(z.number().int().min(1).max(20)),
+
   CSRF_SECRET: z
     .string()
     .min(32, 'CSRF_SECRET must be at least 32 characters')

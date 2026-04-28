@@ -7,14 +7,14 @@ Powered by **Google Gemini 2.0 Flash** with high-quality template fallbacks if t
 ## Agents
 
 ### 1. Review Harvester (`review-harvester.mjs`)
-**Job:** Find completed bookings and send personalized SMS review requests.
+**Job:** Find completed bookings and draft personalized review requests.
 
 **Workflow:**
 1. Queries bookings with `status = 'completed'` from the last 7 days
 2. Skips anyone who already received a review request
-3. Generates a personalized SMS via Gemini (falls back to templates if AI is unavailable)
-4. Sends via Twilio (or logs as draft if Twilio is not configured)
-5. Records every send in `marketing_review_requests`
+3. Generates a personalized review-request draft via Gemini (falls back to templates if AI is unavailable)
+4. Logs the draft for human review
+5. Records every draft in `marketing_review_requests`
 
 **Run manually:**
 ```bash
@@ -23,9 +23,6 @@ npm run ops:marketing:reviews
 
 **Env required:**
 - `GEMINI_API_KEY` — for AI personalization via Google Gemini (optional, has template fallback)
-- `TWILIO_ACCOUNT_SID` — required to actually send SMS
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_PHONE_NUMBER`
 - `GBP_REVIEW_LINK` — direct link to Google review page (optional, has default)
 
 ---
@@ -66,15 +63,14 @@ Shows:
 ## Database Tables
 
 ### `marketing_review_requests`
-Tracks every SMS review request.
+Tracks every review request draft.
 
 | Column | Purpose |
 |--------|---------|
 | `booking_id` | Link to booking |
 | `contact` | Phone number |
-| `message_body` | Actual SMS text sent |
-| `twilio_sid` | Twilio message ID |
-| `status` | `sent` / `draft` |
+| `message_body` | Draft message text |
+| `status` | `draft` |
 | `review_received` | Set to `true` when a review comes in |
 
 ### `marketing_gbp_posts`
@@ -133,7 +129,7 @@ npm run ops:digest
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| 1 | Review Harvester (SMS) | ✅ Live |
+| 1 | Review Harvester (drafts) | ✅ Live |
 | 1 | GBP Bot (drafts) | ✅ Live |
 | 1 | Marketing digest | ✅ Live |
 | 2 | Auto-publish GBP posts via API | 📝 Next |
@@ -151,7 +147,7 @@ npm run ops:digest
    - Get your free key at: https://aistudio.google.com/app/apikey
    - Generous free tier — enough for months of operation
 
-2. **Add `GBP_REVIEW_LINK`** to `.env.local` so SMS messages route customers to your direct Google review URL.
+2. **Add `GBP_REVIEW_LINK`** to `.env.local` so review request drafts route customers to your direct Google review URL.
 
 ---
 
@@ -163,7 +159,7 @@ scripts/ops/marketing/
 ├── db.mjs                    # DB connection helper
 ├── llm.mjs                   # Gemini API client
 ├── setup-marketing-db.mjs    # Creates tables
-├── review-harvester.mjs      # Agent 1: SMS review requests
+├── review-harvester.mjs      # Agent 1: review request drafts
 ├── gbp-bot.mjs               # Agent 2: GBP post drafts
 └── marketing-digest.mjs      # Agent 3: Stats snapshot
 ```

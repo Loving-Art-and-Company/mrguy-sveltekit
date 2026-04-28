@@ -37,7 +37,7 @@
   // Form data
   let schedule = $state({ date: '', time: '' });
   let address = $state(createAddress('Weston'));
-  let contact = $state({ name: '', phone: '', email: '' });
+  let contact = $state({ name: '', phone: '', email: '', vehicle: '' });
 
   $effect(() => {
     if (!isOpen) {
@@ -140,6 +140,9 @@
       if (!contact.name || contact.name.length < 2) errors.name = 'Please enter your name';
       const phoneDigits = contact.phone.replace(/\D/g, '');
       if (phoneDigits.length < 10) errors.phone = 'Please enter a valid 10-digit phone number';
+      if (!contact.vehicle || contact.vehicle.trim().length < 3) {
+        errors.vehicle = 'Please enter the vehicle we will be detailing';
+      }
       if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) {
         errors.email = 'Please enter a valid email address';
       }
@@ -181,6 +184,7 @@
       quoted_price: displayPrice,
       promo_visible: showPromo,
       has_email: Boolean(contact.email),
+      has_vehicle: Boolean(contact.vehicle),
       step_index: currentStep + 1,
       step_name: stepNames[currentStep] || 'unknown',
     });
@@ -262,7 +266,7 @@
     showSuccess = false;
     schedule = { date: '', time: '' };
     address = createAddress(initialCity);
-    contact = { name: '', phone: '', email: '' };
+    contact = { name: '', phone: '', email: '', vehicle: '' };
     availabilityLoading = false;
     availabilityError = '';
     availableTimeSlots = [];
@@ -315,7 +319,7 @@
             <Check size={48} />
           </div>
           <h2>Booking Request Received!</h2>
-          <p>Pablo will review your selected time and text you once it’s confirmed.</p>
+          <p>Pablo will review your selected time and vehicle details, then text you once it’s confirmed.</p>
           <div class="countdown">Closing in {successCountdown}...</div>
         </div>
       {:else}
@@ -324,7 +328,7 @@
           <button class="close-btn" onclick={handleClose} aria-label="Close">
             <X size={24} />
           </button>
-          <h2 id="modal-title">Book Appointment</h2>
+          <h2 id="modal-title">Request Appointment</h2>
           <div class="step-indicator">Step {currentStep + 1} of 3</div>
         </header>
 
@@ -342,6 +346,7 @@
           <button class="edit-service-btn" onclick={handleEditServiceClick}>
             Change Service
           </button>
+          <p class="request-note">No payment today. Pick a preferred time and Pablo confirms by text.</p>
         </div>
 
         <!-- Steps Container -->
@@ -543,11 +548,11 @@
                     />
                     {#if errors.name}<span class="error">{errors.name}</span>{/if}
                   </label>
-                  
+
                   <label class="form-field">
                     <span class="form-label">Phone Number *</span>
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       value={contact.phone}
                       oninput={handlePhoneInput}
                       placeholder="(954) 555-1234"
@@ -556,12 +561,24 @@
                     />
                     {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
                   </label>
-                  
+
+                  <label class="form-field full-width">
+                    <span class="form-label">Vehicle *</span>
+                    <input
+                      type="text"
+                      bind:value={contact.vehicle}
+                      placeholder="2021 Tesla Model Y"
+                      autocomplete="off"
+                      class:error={errors.vehicle}
+                    />
+                    {#if errors.vehicle}<span class="error">{errors.vehicle}</span>{/if}
+                  </label>
+
                   <label class="form-field full-width">
                     <span class="form-label">Email (optional)</span>
-                    <input 
-                      type="email" 
-                      bind:value={contact.email} 
+                    <input
+                      type="email"
+                      bind:value={contact.email}
                       placeholder="you@email.com"
                       autocomplete="email"
                       class:error={errors.email}
@@ -583,10 +600,13 @@
                   <div class="summary-row light">
                     <span>{address.street}, {address.city} FL {address.zip}</span>
                   </div>
+                  <div class="summary-row light">
+                    <span>{contact.vehicle}</span>
+                  </div>
                 </div>
 
-                <p class="sms-note">
-                  Pablo will review this request, confirm the timing, and text you once it’s approved.
+                <p class="review-note">
+                  No payment is due now. Pablo will review the request and confirm the timing once it’s approved.
                 </p>
 
                 {#if errors.submit}
@@ -596,7 +616,7 @@
                 <button 
                   class="submit-btn" 
                   onclick={nextStep} 
-                  disabled={isSubmitting || !contact.name || !contact.phone}
+                  disabled={isSubmitting || !contact.name || !contact.phone || !contact.vehicle}
                 >
                   {#if isSubmitting}
                     Processing...
@@ -793,6 +813,13 @@
 
   .edit-service-btn:hover {
     color: var(--color-primary-hover);
+  }
+
+  .request-note {
+    margin: 0.5rem 0 0;
+    color: #0c4a6e;
+    font-size: 0.8rem;
+    font-weight: 600;
   }
 
   /* Steps */
@@ -1073,7 +1100,7 @@
     color: var(--color-primary);
   }
 
-  .sms-note {
+  .review-note {
     font-size: 0.8rem;
     color: #6b7280;
     text-align: center;

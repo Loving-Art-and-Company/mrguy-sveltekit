@@ -6,7 +6,7 @@
 
 <header class="header">
   <div class="header-content">
-    <a href="/" class="logo">
+    <a href="/" class="logo" aria-label={BUSINESS_INFO.name}>
       <img src="/logo/mrguylogo-full-square.png" alt="Mr. Guy Detail Logo" class="logo-img" />
       <span class="logo-text">{BUSINESS_INFO.name}</span>
     </a>

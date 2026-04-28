@@ -9,6 +9,25 @@ import { notifyError } from '$lib/server/email';
 import { MRGUY_CANONICAL_ORIGIN } from '$lib/constants/site';
 import crypto from 'node:crypto';
 
+const SECURITY_HEADERS = {
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  'X-DNS-Prefetch-Control': 'on',
+  'Content-Security-Policy':
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: ; connect-src 'self' https://www.google-analytics.com https://www.google.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.us.sentry.io https://*.ingest.sentry.io; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
+} as const;
+
+function applySecurityHeaders(response: Response) {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    response.headers.set(key, value);
+  }
+
+  return response;
+}
+
 /** CSRF: origin-based validation for API routes */
 function isValidOrigin(request: Request, url: URL): boolean {
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
@@ -35,6 +54,19 @@ const securityHandle: Handle = async ({ event, resolve }) => {
   // ── CSP nonce ───────────────────────────────────────────
   const nonce = crypto.randomBytes(16).toString('base64');
   event.locals.nonce = nonce;
+
+  const resolveWithSecurityHeaders = async () => {
+    const response = await resolve(event, {
+      transformPageChunk({ html }) {
+        return html.replace(/%sveltekit.nonce%/g, nonce);
+      },
+      filterSerializedResponseHeaders(name) {
+        return name === 'content-range';
+      },
+    });
+
+    return applySecurityHeaders(response);
+  };
 
   // ── CSRF (skip during prerendering — no cookies/secrets available) ──
   if (!building) {
@@ -89,7 +121,7 @@ const securityHandle: Handle = async ({ event, resolve }) => {
       if (event.locals.user) {
         throw redirect(303, '/admin');
       }
-      return resolve(event);
+      return resolveWithSecurityHeaders();
     }
 
     // All other admin routes require auth
@@ -123,14 +155,7 @@ const securityHandle: Handle = async ({ event, resolve }) => {
   }
 
   // ── Resolve with security headers ──────────────────────
-  return resolve(event, {
-    transformPageChunk({ html }) {
-      return html.replace(/%sveltekit.nonce%/g, nonce);
-    },
-    filterSerializedResponseHeaders(name) {
-      return name === 'content-range';
-    },
-  });
+  return resolveWithSecurityHeaders();
 };
 
 /** Send email notification for unhandled server errors and forward to Sentry */

@@ -4,7 +4,6 @@ import { SERVICE_PACKAGES } from '$lib/data/services';
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import { normalizePhone } from '$lib/server/phone';
 import { notifyOwnerOfBooking, sendCustomerConfirmation } from '$lib/server/email';
-import { notifyOwnerOfBookingSMS, sendCustomerConfirmationSMS } from '$lib/server/sms';
 import { createCalendarEvent } from '$lib/server/calendar';
 import { buildBookableTimeSlots, findConflictingHold, formatTimeLabel, isBookableDate } from '$lib/scheduling';
 import { bookings } from '$lib/server/schema';
@@ -151,7 +150,7 @@ export const actions = {
 				});
 			}
 
-			// Build notification payload (matches email/SMS function signatures)
+			// Build notification payload (matches email function signatures)
 			const notificationPayload = {
 				service: { id: pkg.id, name: pkg.name, price: finalPrice },
 				schedule: { date: data.date, time: data.time },
@@ -163,8 +162,6 @@ export const actions = {
 			Promise.allSettled([
 				notifyOwnerOfBooking(notificationPayload),
 				sendCustomerConfirmation(notificationPayload),
-				notifyOwnerOfBookingSMS(notificationPayload),
-				sendCustomerConfirmationSMS(notificationPayload),
 				createCalendarEvent({
 					id: bookingId,
 					service: { name: pkg.name, price: finalPrice },
@@ -173,7 +170,7 @@ export const actions = {
 					contact: { name: data.clientName, phone: cleanPhone, email: data.email || undefined },
 				}),
 			]).then((results) => {
-				const labels = ['owner email', 'customer email', 'owner SMS', 'customer SMS', 'calendar'];
+				const labels = ['owner email', 'customer email', 'calendar'];
 				results.forEach((r, i) => {
 					if (r.status === 'rejected') {
 						console.warn(`Failed to send ${labels[i]} notification for admin booking ${bookingId}`);

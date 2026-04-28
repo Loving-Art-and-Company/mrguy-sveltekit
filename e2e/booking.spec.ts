@@ -22,6 +22,7 @@ const MOCK_BOOKINGS = [
     name: 'John Smith',
     phone: '9541234567',
     email: `john+${RUN_ID}-1@example.invalid`,
+    vehicle: '2021 Toyota Camry',
     street: '123 Main Street',
     city: 'Weston',
     zip: '33326',
@@ -32,6 +33,7 @@ const MOCK_BOOKINGS = [
     name: 'Jane Doe',
     phone: '9549876543',
     email: `jane+${RUN_ID}-2@example.invalid`,
+    vehicle: '2020 Honda Odyssey',
     street: '456 Oak Avenue',
     city: 'Pembroke Pines',
     zip: '33024',
@@ -42,6 +44,7 @@ const MOCK_BOOKINGS = [
     name: 'Bob Johnson',
     phone: '9545551234',
     email: '', // No email - optional field
+    vehicle: '2023 Tesla Model Y',
     street: '789 Palm Drive',
     city: 'Miramar',
     zip: '33025',
@@ -52,6 +55,7 @@ const MOCK_BOOKINGS = [
     name: 'Alice Williams',
     phone: '9547778899',
     email: `alice+${RUN_ID}-4@example.invalid`,
+    vehicle: '2019 Lexus RX',
     street: '321 Cypress Lane',
     city: 'Davie',
     zip: '33314',
@@ -62,6 +66,7 @@ const MOCK_BOOKINGS = [
     name: 'Charlie Brown',
     phone: '9541112233',
     email: `charlie+${RUN_ID}-5@example.invalid`,
+    vehicle: '2018 Ford Explorer',
     street: '555 Birch Road',
     city: 'Plantation',
     zip: '33317',
@@ -72,6 +77,7 @@ const MOCK_BOOKINGS = [
     name: 'Diana Prince',
     phone: '9544445566',
     email: `diana+${RUN_ID}-6@example.invalid`,
+    vehicle: '2024 Tesla Model 3',
     street: '777 Maple Street',
     city: 'Sunrise',
     zip: '33313',
@@ -82,6 +88,7 @@ const MOCK_BOOKINGS = [
     name: 'Edward Norton',
     phone: '9546667788',
     email: '', // No email
+    vehicle: '2017 Toyota Corolla',
     street: '888 Pine Avenue',
     city: 'Hollywood',
     zip: '33020',
@@ -92,6 +99,7 @@ const MOCK_BOOKINGS = [
     name: 'Fiona Apple',
     phone: '9548889900',
     email: `fiona+${RUN_ID}-8@example.invalid`,
+    vehicle: '2022 Kia Telluride',
     street: '999 Cedar Court',
     city: 'Cooper City',
     zip: '33026',
@@ -102,6 +110,7 @@ const MOCK_BOOKINGS = [
     name: 'George Lucas',
     phone: '9541239876',
     email: `george+${RUN_ID}-9@example.invalid`,
+    vehicle: '2021 Ford F-150',
     street: '111 Sequoia Way',
     city: 'Southwest Ranches',
     zip: '33330',
@@ -112,6 +121,7 @@ const MOCK_BOOKINGS = [
     name: 'Hannah Montana',
     phone: '9549871234',
     email: `hannah+${RUN_ID}-10@example.invalid`,
+    vehicle: '2020 Nissan Rogue',
     street: '222 Redwood Blvd',
     city: 'Weston',
     zip: '33327',
@@ -280,6 +290,8 @@ test.describe('Booking Flow E2E Tests', () => {
     if (booking.email) {
       await page.locator('input[placeholder="you@email.com"]').fill(booking.email);
     }
+
+    await page.locator('input[placeholder="2021 Tesla Model Y"]').fill(booking.vehicle);
     
     // Submit booking
     const submitBtn = page.locator('.submit-btn');

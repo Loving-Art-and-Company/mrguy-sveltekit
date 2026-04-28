@@ -28,7 +28,7 @@
 | **Database** | Neon Postgres | Latest |
 | **Auth** | Email verification | Latest |
 | **Payments** | Stripe Checkout | Latest |
-| **Deployment** | Vercel | Latest |
+| **Deployment** | Vercel origin + planned Cloudflare front door | Latest |
 | **Validation** | Zod | 4.3+ |
 
 ## Quick Start
@@ -87,7 +87,7 @@ npm run dev
 
 ## Documentation
 
-- **Architecture & Commands:** [`CLAUDE.md`](./CLAUDE.md)
+- **Current Architecture & Context:** [`AGENTS.md`](./AGENTS.md), [`.context/backpack.md`](./.context/backpack.md), [`.context/decisions.md`](./.context/decisions.md)
 - **Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
 - **Security Policies:** [`SECURITY.md`](./SECURITY.md)
 - **Analytics Tracking Plan:** [`docs/tracking-plan.md`](./docs/tracking-plan.md)
@@ -101,7 +101,7 @@ mrguy-sveltekit/
 │   ├── lib/
 │   │   ├── components/    # Reusable UI components
 │   │   ├── stores/        # Svelte stores (if used)
-│   │   └── server/        # Database, email, SMS, lead sink
+│   │   └── server/        # Database, email, lead sink
 │   ├── routes/
 │   │   ├── +page.svelte   # Homepage
 │   │   ├── book/          # Booking flow
@@ -147,37 +147,21 @@ npm run test:watch       # Watch mode
 
 ## Deployment
 
-### Vercel (Automatic)
+### Vercel + Cloudflare
 
-```bash
-# Push to main branch
-git push origin main
+Production stays on Vercel. The Cloud Run migration was proven in staging, but production cutover is abandoned for now in favor of keeping Vercel as the origin and putting Cloudflare in front where useful.
 
-# Vercel auto-deploys
-# Check logs at vercel.com
-```
+See [`docs/platform/vercel-cloudflare-front-door.md`](./docs/platform/vercel-cloudflare-front-door.md) for the Cloudflare guardrails and DNS/cache rules.
 
-### Manual Deployment
+### Environment Variables
 
-```bash
-# Optional: verify Vercel auth + DNS before deploying
-npm run deploy:preflight
+Use Vercel environment variables for server-side secrets and project settings.
 
-# Build locally
-npm run build
+- All required app values are listed in `.env.example`.
+- `DATABASE_URL`, `CSRF_SECRET`, API keys, and webhook secrets stay server-only.
+- Stripe production must use live-mode keys and webhooks. Staging/test environments must use test-mode Stripe keys and webhooks.
 
-# Deploy
-vercel --prod
-```
-
-### Environment Variables (Production)
-
-Set in Vercel dashboard:
-- All variables from `.env.example`
-- Use production keys (not test keys)
-- Ensure `DATABASE_URL` is kept server-only
-
-**See `CLAUDE.md` for complete deployment checklist.**
+**See `AGENTS.md`, `.context/backpack.md`, and `docs/platform/vercel-cloudflare-front-door.md` for the current deployment context and checklist references.**
 
 ## Service Packages
 
@@ -332,7 +316,7 @@ OPS_RUN_HOUR=8 OPS_RUN_MINUTE=30 npm run ops:schedule:install
 
 ## Support
 
-- **Documentation:** `CLAUDE.md`, `AGENTS.md`, `SECURITY.md`
+- **Documentation:** `AGENTS.md`, `.context/backpack.md`, `.context/decisions.md`, `SECURITY.md`
 - **Issues:** Contact development team
 - **Production:** mrguydetail.com
 

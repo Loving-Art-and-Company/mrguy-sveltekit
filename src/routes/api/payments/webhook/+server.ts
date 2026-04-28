@@ -15,11 +15,6 @@ import {
   sendCustomerBookingRequestReceived,
   sendEmail,
 } from '$lib/server/email';
-import {
-  notifyOwnerOfBookingRequestSMS,
-  sendCustomerBookingRequestReceivedSMS,
-  sendSMS,
-} from '$lib/server/sms';
 import { bookingSchema, type BookingData } from '$lib/types/booking';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
@@ -235,21 +230,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   Promise.allSettled([
     notifyOwnerOfBookingRequest(notificationPayload),
     sendCustomerBookingRequestReceived(notificationPayload),
-    notifyOwnerOfBookingRequestSMS(notificationPayload),
-    sendCustomerBookingRequestReceivedSMS(notificationPayload),
   ]).then((results) => {
-    const [ownerEmail, customerEmailResult, ownerSMS, customerSMS] = results;
+    const [ownerEmail, customerEmailResult] = results;
     if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
       console.warn('Failed to send paid booking request email to owner');
     }
     if (customerEmailResult.status === 'rejected' || !customerEmailResult.value) {
       console.warn('Failed to send paid booking request email to customer');
-    }
-    if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
-      console.warn('Failed to send paid booking request SMS to owner');
-    }
-    if (customerSMS.status === 'rejected' || !customerSMS.value) {
-      console.warn('Failed to send paid booking request SMS to customer');
     }
   });
 }
@@ -376,9 +363,5 @@ async function handleCheckoutConflict(
           html: `<p>Your payment was automatically refunded because the requested appointment time was no longer available.</p><p>Please book again and choose another time, or reply to this email for help.</p>`,
         })
       : Promise.resolve(false),
-    sendSMS({
-      to: '9548044747',
-      message: `Auto-refunded a paid booking request because ${bookingData.schedule.date} ${bookingData.schedule.time} was no longer available. Session: ${session.id}`,
-    }),
   ]);
 }

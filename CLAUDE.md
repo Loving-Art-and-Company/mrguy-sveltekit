@@ -3,7 +3,7 @@
 ## Overview
 Mobile detailing booking platform. White-label SaaS architecture, first tenant: Mr. Guy Mobile Detail (South Florida, West Broward).
 
-**Stack**: SvelteKit + Neon Postgres + Stripe + Twilio Verify
+**Stack**: SvelteKit + Neon Postgres + Stripe
 
 **Target**: $10k monthly revenue. 5 service packages ($45--$2000). "Fresh Start" 25% off first booking.
 

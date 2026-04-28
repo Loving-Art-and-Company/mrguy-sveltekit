@@ -21,12 +21,11 @@ declare module '$env/static/private' {
 	export const STRIPE_SECRET_KEY: string;
 	export const STRIPE_WEBHOOK_SECRET: string;
 	export const DATABASE_URL: string;
+	export const DB_POOL_MAX: string;
 	export const CSRF_SECRET: string;
 	export const UPSTASH_REDIS_REST_URL: string;
 	export const UPSTASH_REDIS_REST_TOKEN: string;
 	export const RESEND_API_KEY: string;
-	export const TWILIO_ACCOUNT_SID: string;
-	export const TWILIO_AUTH_TOKEN: string;
 }
 
 declare module '$env/static/public' {

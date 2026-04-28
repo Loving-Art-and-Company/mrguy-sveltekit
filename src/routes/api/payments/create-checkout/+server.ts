@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { json, error, isHttpError } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { SERVICE_PACKAGES, getPromoPrice } from '$lib/data/services';
 import { env } from '$env/dynamic/private';
@@ -78,6 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
     return json({ sessionId: session.id, url: session.url });
   } catch (err) {
     console.error('Stripe checkout error:', err);
+    if (isHttpError(err)) throw err;
     if (err instanceof Stripe.errors.StripeError) {
       console.error('Stripe error detail:', err.message);
       throw error(400, 'Payment could not be processed. Please try again.');

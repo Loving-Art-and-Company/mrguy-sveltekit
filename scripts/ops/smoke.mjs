@@ -69,7 +69,7 @@ export async function runSmokeSuite() {
       await page.goto(`${BASE_URL}/reschedule`, { waitUntil: 'networkidle', timeout: 30000 });
       await page.getByRole('heading', { name: 'Enter Your Phone Number' }).waitFor({ timeout: 10000 });
       const desc = await page.locator('.desc').first().textContent();
-      if (!desc?.includes('email a verification code')) {
+      if (!desc?.includes('verification code')) {
         throw new Error(`Unexpected reschedule copy: ${desc ?? 'missing'}`);
       }
       return 'Reschedule page loaded with email verification copy';

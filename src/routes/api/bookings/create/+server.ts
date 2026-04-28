@@ -18,10 +18,6 @@ import {
   notifyOwnerOfBookingRequest,
   sendCustomerBookingRequestReceived,
 } from '$lib/server/email';
-import {
-  notifyOwnerOfBookingRequestSMS,
-  sendCustomerBookingRequestReceivedSMS,
-} from '$lib/server/sms';
 import { sendLeadToSink } from '$lib/server/leadSink';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
@@ -46,7 +42,8 @@ const bookingSchema = z.object({
   contact: z.object({
     name: z.string().min(2),
     phone: z.string().min(10),
-    email: z.string().email().optional().or(z.literal(''))
+    email: z.string().email().optional().or(z.literal('')),
+    vehicle: z.string().min(3).max(120)
   })
 });
 
@@ -104,7 +101,7 @@ export const POST: RequestHandler = async ({ request }) => {
       `Address: ${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
       booking.contact.email ? `Email: ${booking.contact.email}` : null,
       booking.address.instructions ? `Instructions: ${booking.address.instructions}` : null,
-      'Vehicle info pending',
+      `Vehicle: ${booking.contact.vehicle.trim()}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -177,11 +174,10 @@ export const POST: RequestHandler = async ({ request }) => {
       requestedDate: `${booking.schedule.date}T${booking.schedule.time}:00`,
       requestedLocation: `${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
       freeformNotes: notes,
-      missingFields: ['vehicle_details'],
+      missingFields: [],
       qualificationStatus: 'human_review',
       escalationReasons: [
         'booking_confirmation_requires_human',
-        'vehicle_details_pending',
       ],
       autoResponseSent: Boolean(booking.contact.email),
       autoResponseTemplateId: booking.contact.email ? BOOKING_ACK_TEMPLATE_ID : undefined,
@@ -202,28 +198,20 @@ export const POST: RequestHandler = async ({ request }) => {
       ],
     });
 
-    // Send email + SMS notifications + calendar sync (don't block on these)
+    // Send email notifications (don't block on these)
     const notificationPromises = [
       notifyOwnerOfBookingRequest(notificationPayload),
       sendCustomerBookingRequestReceived(notificationPayload),
-      notifyOwnerOfBookingRequestSMS(notificationPayload),
-      sendCustomerBookingRequestReceivedSMS(notificationPayload),
     ];
 
     // Fire and forget - don't wait for notifications to complete
     Promise.allSettled(notificationPromises).then(results => {
-      const [ownerEmail, customerEmail, ownerSMS, customerSMS] = results;
+      const [ownerEmail, customerEmail] = results;
       if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
         console.warn('Failed to notify owner of booking (email)');
       }
       if (customerEmail.status === 'rejected' || !customerEmail.value) {
         console.warn('Failed to send booking request email to customer');
-      }
-      if (ownerSMS.status === 'rejected' || !ownerSMS.value) {
-        console.warn('Failed to notify owner of booking (SMS)');
-      }
-      if (customerSMS.status === 'rejected' || !customerSMS.value) {
-        console.warn('Failed to send booking request SMS to customer');
       }
     });
 

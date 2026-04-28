@@ -2,6 +2,7 @@
   import '../app.css';
   import { page } from '$app/state';
   import { afterNavigate } from '$app/navigation';
+  import { onMount } from 'svelte';
   import Header from '$lib/components/Header.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import PWAInstaller from '$lib/components/PWAInstaller.svelte';
@@ -18,11 +19,21 @@
   const showChrome = $derived(!isStandalone && !isAdmin);
 
   const canonicalUrl = $derived(`${MRGUY_CANONICAL_ORIGIN}${page.url.pathname}`);
+  let lastTrackedPageviewUrl = '';
+
+  const trackUniquePageview = (url?: string) => {
+    if (!url || url === lastTrackedPageviewUrl) return;
+    lastTrackedPageviewUrl = url;
+    trackPageview(url);
+  };
+
+  onMount(() => {
+    trackUniquePageview(page.url.href);
+  });
 
   // Track pageviews on navigation (must be in component context)
   afterNavigate(({ to }) => {
-    if (!to?.url) return;
-    trackPageview(to.url.href);
+    trackUniquePageview(to?.url.href);
   });
 </script>
 
