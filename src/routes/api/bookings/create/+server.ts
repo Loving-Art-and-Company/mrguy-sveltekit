@@ -15,13 +15,15 @@ import {
   isBookableDate,
 } from '$lib/scheduling';
 import {
+  notifyError,
   notifyOwnerOfBookingRequest,
   sendCustomerBookingRequestReceived,
 } from '$lib/server/email';
-import { sendLeadToSink } from '$lib/server/leadSink';
+import { buildBookingLeadSinkPayload, reportBookingLeadToSink } from '$lib/server/bookingLead';
 
 const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
 const BOOKING_ACK_TEMPLATE_ID = 'mrguy-booking-request-received-v1';
+const BOOKING_CANARY_HEADER = 'x-mrguy-booking-canary';
 
 // Validation schema for modal booking
 const bookingSchema = z.object({
@@ -49,6 +51,7 @@ const bookingSchema = z.object({
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
+    const canaryProofRequested = hasValidCanaryToken(request);
     const rateLimit = await checkRateLimit(
       `rl:booking-create:${getClientIp(request)}`,
       6,
@@ -159,61 +162,57 @@ export const POST: RequestHandler = async ({ request }) => {
       service: { id: pkg.id, name: pkg.name, price: finalPrice },
     };
 
-    await sendLeadToSink({
-      schemaVersion: '2026-03-08',
-      brand: 'mrguy',
-      leadId: newBooking.id,
-      sourceChannel: 'booking_form',
+    const leadSinkPayload = buildBookingLeadSinkPayload({
+      bookingId: newBooking.id,
       sourceMessageId: newBooking.id,
       sourceThreadId: newBooking.id,
-      receivedAt: new Date().toISOString(),
       contactName: booking.contact.name,
       contactEmail: booking.contact.email || undefined,
       contactPhone: cleanPhone,
-      serviceType: pkg.name,
+      serviceName: pkg.name,
       requestedDate: `${booking.schedule.date}T${booking.schedule.time}:00`,
       requestedLocation: `${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.zip}`,
       freeformNotes: notes,
-      missingFields: [],
-      qualificationStatus: 'human_review',
-      escalationReasons: [
-        'booking_confirmation_requires_human',
-      ],
       autoResponseSent: Boolean(booking.contact.email),
-      autoResponseTemplateId: booking.contact.email ? BOOKING_ACK_TEMPLATE_ID : undefined,
-      humanOwner: 'Pablo',
-      auditEntries: [
-        {
-          at: new Date().toISOString(),
-          kind: 'lead_received',
-          note: 'Booking request created from website form',
-        },
-        ...(booking.contact.email
-          ? [{
-              at: new Date().toISOString(),
-              kind: 'auto_response_sent' as const,
-              templateId: BOOKING_ACK_TEMPLATE_ID,
-            }]
-          : []),
-      ],
+      auditNote: 'Booking request created from website form',
     });
 
-    // Send email notifications (don't block on these)
+    const leadSinkResult = await reportBookingLeadToSink(leadSinkPayload, {
+      bookingId: newBooking.id,
+      url: '/api/bookings/create',
+      method: 'POST',
+    });
+
+    // Send email notifications before returning so serverless runtimes do not
+    // terminate the function before the outbound requests complete.
     const notificationPromises = [
       notifyOwnerOfBookingRequest(notificationPayload),
       sendCustomerBookingRequestReceived(notificationPayload),
     ];
 
-    // Fire and forget - don't wait for notifications to complete
-    Promise.allSettled(notificationPromises).then(results => {
-      const [ownerEmail, customerEmail] = results;
-      if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
-        console.warn('Failed to notify owner of booking (email)');
-      }
-      if (customerEmail.status === 'rejected' || !customerEmail.value) {
-        console.warn('Failed to send booking request email to customer');
-      }
-    });
+    const [ownerEmail, customerEmail] = await Promise.allSettled(notificationPromises);
+    if (ownerEmail.status === 'rejected' || !ownerEmail.value) {
+      console.warn('Failed to notify owner of booking (email)');
+      notifyError({
+        message: `Owner booking email failed for booking ${newBooking.id}`,
+        url: '/api/bookings/create',
+        method: 'POST',
+        status: 502,
+      }).catch((notifyErr) => {
+        console.warn('[booking] failed to send owner email failure alert', notifyErr);
+      });
+    }
+    if (customerEmail.status === 'rejected' || !customerEmail.value) {
+      console.warn('Failed to send booking request email to customer');
+      notifyError({
+        message: `Customer booking request email failed for booking ${newBooking.id}`,
+        url: '/api/bookings/create',
+        method: 'POST',
+        status: 502,
+      }).catch((notifyErr) => {
+        console.warn('[booking] failed to send customer email failure alert', notifyErr);
+      });
+    }
 
     return json({
       success: true,
@@ -221,6 +220,18 @@ export const POST: RequestHandler = async ({ request }) => {
       message: 'Booking request received. Pablo will review and confirm your selected time.',
       promoApplied: firstTime,
       price: finalPrice,
+      ...(canaryProofRequested
+        ? {
+            canaryProof: {
+              leadSink: leadSinkResult,
+              ownerBookingRequestEmail:
+                ownerEmail.status === 'fulfilled' ? ownerEmail.value : false,
+              customerBookingRequestAcknowledgement:
+                customerEmail.status === 'fulfilled' ? customerEmail.value : false,
+              acknowledgementTemplateId: BOOKING_ACK_TEMPLATE_ID,
+            },
+          }
+        : {}),
     });
 
   } catch (err) {
@@ -236,4 +247,11 @@ function getClientIp(request: Request): string {
   const xff = request.headers.get('x-forwarded-for');
   const direct = request.headers.get('x-real-ip');
   return xff?.split(',')[0]?.trim() || direct || 'unknown';
+}
+
+function hasValidCanaryToken(request: Request): boolean {
+  const expectedToken = env.BOOKING_CANARY_SECRET;
+  if (!expectedToken) return false;
+
+  return request.headers.get(BOOKING_CANARY_HEADER) === expectedToken;
 }

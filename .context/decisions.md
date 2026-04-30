@@ -72,3 +72,10 @@ The legacy `.claude/decisions.md` file can remain as a mirror during migration, 
 **Rationale:** This preserves least privilege while allowing Cloud Build to perform the exact source-read and image-push operations required for container deployment.
 **Consequences:** Future projects should follow the same pattern only after observing the same failure mode, using each project's own build worker, source bucket, and Artifact Registry repository.
 **Status:** Active
+
+## 2026-04-30 - Production Booking Canary Must Be Explicitly Armed
+**Context:** The daily ops flow needs proof that production booking creation, database persistence, lead-sink delivery, and customer acknowledgement still work end to end.
+**Decision:** Add a standalone `ops:booking-canary` runner and optional daily digest integration gated by `RUN_PROD_BOOKING_CANARY=1`, `MRGUY_BOOKING_CANARY_SUBMIT=1`, and `BOOKING_CANARY_SECRET`.
+**Rationale:** Production booking proof is valuable, but it creates a real synthetic booking and sends real side effects, so it must not run during ordinary smoke checks or daily ops unless explicitly armed.
+**Consequences:** The canary writes compact JSON/Markdown proof artifacts under `output/ops/`, and production must have the same `BOOKING_CANARY_SECRET` configured for the booking API to expose private proof metadata.
+**Status:** Active

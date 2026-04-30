@@ -11,6 +11,7 @@
     "deploy:preflight": "bash scripts/vercel-preflight.sh",
     "gcp:setup:staging": "bash scripts/gcp/setup-cloud-run-platform.sh",
     "ops:bookings": "node scripts/ops/bookings.mjs",
+    "ops:booking-canary": "node scripts/ops/booking-canary.mjs",
     "ops:smoke": "node scripts/ops/smoke.mjs",
     "ops:inquiries": "node scripts/ops/inquiries.mjs",
     "ops:analytics": "node scripts/ops/analytics.mjs",

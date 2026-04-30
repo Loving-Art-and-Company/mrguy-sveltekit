@@ -43,6 +43,8 @@ MrGuy is live in production as a mobile-detailing booking platform with growing 
 - The admin business suite exists for mileage, inventory, and simple bookkeeping
 - Google-connected readonly ops scripts may remain degraded until scopes are reauthorized
 - 2026-04-26 proof sprint: the public booking modal now asks for the customer's vehicle before submission, stores it in booking notes, and no longer marks booking leads as missing vehicle details. This closes a real owner follow-up leak before using MrGuy as audit proof.
+- 2026-04-30 booking migration reconciliation: `web/mrguy-sveltekit` is the production source of truth for booking create, checkout, and Stripe webhook behavior. The old `web/mrguy-sveltekit-backoffice-suite` booking/payment endpoints are fenced with `410 Gone` responses and should not receive future booking-funnel fixes.
+- 2026-04-30 ops reliability: a guarded production booking canary now exists at `npm run ops:booking-canary` and can be included in `npm run ops:daily` with `RUN_PROD_BOOKING_CANARY=1`. It requires `MRGUY_BOOKING_CANARY_SUBMIT=1` plus `BOOKING_CANARY_SECRET`, creates one clearly tagged synthetic booking, and writes proof artifacts under `output/ops/`.
 
 ## Active Next Options
 
@@ -51,6 +53,7 @@ MrGuy is live in production as a mobile-detailing booking platform with growing 
 - C: Monitor booking, payment, and reschedule health in production while Cloudflare changes roll out
 - D: If Cloudflare proxying causes Vercel firewall, bot, cache, or latency issues, fall back to Cloudflare DNS-only
 - E: Continue the CTD/MrGuy proof loop by finding the next measurable booking or quote leak, fixing it, and capturing before/after proof for Loving Art outreach
+- F: Keep future booking-funnel fixes scoped to `web/mrguy-sveltekit`; use backoffice-suite only as historical reference unless a new migration plan explicitly reactivates it
 
 ## Notes
 

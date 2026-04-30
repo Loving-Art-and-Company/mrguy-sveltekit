@@ -8,10 +8,11 @@ import { getInquirySnapshot } from './ops/inquiries.mjs';
 import { getAnalyticsSnapshot } from './ops/analytics.mjs';
 import { getSeoSnapshot } from './ops/seo.mjs';
 import { getMarketingSnapshot } from './ops/marketing/marketing-digest.mjs';
+import { runProductionBookingCanary } from './ops/booking-canary.mjs';
 
 loadLocalEnv();
 
-function rankActions(smoke, bookings, marketing, sections) {
+function rankActions(smoke, bookings, marketing, bookingCanary, sections) {
   const actions = [];
 
   if (!smoke.ok) {
@@ -19,6 +20,14 @@ function rankActions(smoke, bookings, marketing, sections) {
       severity: 'critical',
       owner: 'Pablo',
       action: 'Review the failed production smoke checks immediately.',
+    });
+  }
+
+  if (bookingCanary && !bookingCanary.ok) {
+    actions.push({
+      severity: 'critical',
+      owner: 'Pablo',
+      action: 'Review the failed production booking canary proof artifact.',
     });
   }
 
@@ -51,8 +60,11 @@ function rankActions(smoke, bookings, marketing, sections) {
   return actions.slice(0, 6);
 }
 
-function toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, actions }) {
+function toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, bookingCanary, actions }) {
   const smokeLines = smoke.checks.map((check) => `- ${check.name}: ${check.status} - ${check.detail}`).join('\n');
+  const canaryLines = bookingCanary
+    ? bookingCanary.proofPoints.map((check) => `- ${check.name}: ${check.status} - ${check.detail}`).join('\n')
+    : '- skipped - set RUN_PROD_BOOKING_CANARY=1 and MRGUY_BOOKING_CANARY_SUBMIT=1 to run';
   const actionLines = actions.map((item) => `- [${item.severity}] ${item.owner}: ${item.action}`).join('\n');
   const awaitingResponseLines = bookings.awaitingResponse.slice(0, 5).map((item) =>
     `- ${item.id}: ${item.client_name} • ${item.service_name} • ${item.date} ${item.time ?? 'TBD'}`
@@ -86,6 +98,8 @@ Generated: ${new Date().toISOString()}
 ## Site Health
 - Overall smoke status: ${smoke.ok ? 'healthy' : 'failed'}
 ${smokeLines}
+- Production booking canary: ${bookingCanary ? (bookingCanary.ok ? 'passed' : 'failed') : 'skipped'}
+${canaryLines}
 
 ## Lead / Booking Queue
 ### Needs Response Now
@@ -138,17 +152,18 @@ ${actionLines}
 `;
 }
 
-const [smoke, bookings, inquiries, analytics, seo, marketing] = await Promise.all([
+const [smoke, bookings, inquiries, analytics, seo, marketing, bookingCanary] = await Promise.all([
   runSmokeSuite(),
   getBookingOpsSnapshot(),
   getInquirySnapshot(),
   getAnalyticsSnapshot(),
   getSeoSnapshot(),
   getMarketingSnapshot(),
+  process.env.RUN_PROD_BOOKING_CANARY === '1' ? runProductionBookingCanary() : Promise.resolve(null),
 ]);
 
-const actions = rankActions(smoke, bookings, marketing, [inquiries, analytics, seo]);
-const markdown = toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, actions });
+const actions = rankActions(smoke, bookings, marketing, bookingCanary, [inquiries, analytics, seo]);
+const markdown = toMarkdown({ smoke, bookings, inquiries, analytics, seo, marketing, bookingCanary, actions });
 
 const outputDir = path.join(process.cwd(), 'output', 'ops');
 fs.mkdirSync(outputDir, { recursive: true });
@@ -162,7 +177,8 @@ fs.writeFileSync(archivePath, markdown);
 const shouldAlert = process.env.SEND_ALERTS === '1' && (
   !smoke.ok ||
   [bookings, inquiries, analytics, seo].some((section) => (section.actions ?? []).some((item) => item.severity === 'high')) ||
-  bookings.actions.some((item) => item.severity === 'high')
+  bookings.actions.some((item) => item.severity === 'high') ||
+  (bookingCanary && !bookingCanary.ok)
 );
 let alertResult = { delivered: false, reason: 'not_requested' };
 
@@ -185,6 +201,7 @@ const result = {
   inquiries,
   analytics,
   seo,
+  bookingCanary,
   actions,
   alertResult,
 };

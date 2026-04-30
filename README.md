@@ -252,6 +252,9 @@ These are the first implementation layer for the MrGuy ops agent:
 # Read booking queue state from production data
 npm run ops:bookings
 
+# Submit one guarded synthetic production booking and write proof artifacts
+MRGUY_BOOKING_CANARY_SUBMIT=1 npm run ops:booking-canary
+
 # Run safe production smoke without creating bookings or sending reschedule codes
 npm run ops:smoke
 
@@ -280,6 +283,12 @@ SEND_ALERTS=1
 
 # Override target environment
 BASE_URL=https://mrguydetail.com
+
+# Guarded production booking canary
+RUN_PROD_BOOKING_CANARY=1
+MRGUY_BOOKING_CANARY_SUBMIT=1
+BOOKING_CANARY_SECRET=shared-secret-configured-in-production
+MRGUY_BOOKING_CANARY_EMAIL=monitored-canary-inbox@example.com
 
 # Google-backed reporting
 GOOGLE_ANALYTICS_PROPERTY_ID=123456789
