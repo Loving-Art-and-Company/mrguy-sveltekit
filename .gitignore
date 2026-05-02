@@ -24,3 +24,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .env*.local
 LOVING_ART_GLOBAL.md
+
+# Test output
+playwright-report/
+test-results/
