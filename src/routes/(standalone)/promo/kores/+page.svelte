@@ -38,6 +38,20 @@
   let submitting = $state(false);
   let success = $state(false);
   let error = $state('');
+  let showStickyCta = $state(false);
+
+  $effect(() => {
+    const onScroll = () => {
+      showStickyCta = window.scrollY > 300;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  });
+
+  function scrollToForm() {
+    const el = document.getElementById('redemption-form');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }
 
   function toggleUpgrade(id: string) {
     if (selectedUpgrades.includes(id)) {
@@ -113,7 +127,7 @@
 
   <!-- Hero Image -->
   <section class="hero-image">
-    <img src="/images/process/step-2-wash.webp" alt="Professional car detailing in progress" />
+    <img src="/images/process/step-2-wash.webp" alt="Professional car detailing in progress" loading="lazy" decoding="async" />
   </section>
 
   <!-- What's Included -->
@@ -166,8 +180,16 @@
     </div>
   </section>
 
+  <!-- Quick mobile CTA -->
+  <div class="mobile-quick-cta">
+    <button class="quick-cta-btn" onclick={scrollToForm}>
+      Claim My Free Wash
+      <ArrowRight size={18} />
+    </button>
+  </div>
+
   <!-- Redemption Form -->
-  <section class="redemption-section">
+  <section id="redemption-form" class="redemption-section">
     {#if success}
       <!-- Success State -->
       <div class="success-message">
@@ -281,6 +303,16 @@
 
   <!-- Red Bar -->
   <div class="red-bar"></div>
+
+  <!-- Sticky mobile CTA -->
+  {#if showStickyCta}
+    <div class="sticky-cta" aria-hidden="true">
+      <button class="sticky-cta-btn" onclick={scrollToForm}>
+        Claim My Free Wash
+        <ArrowRight size={18} />
+      </button>
+    </div>
+  {/if}
 </main>
 
 <style>
@@ -760,6 +792,59 @@
     margin-top: 2rem;
   }
 
+  /* Quick mobile CTA */
+  .mobile-quick-cta {
+    display: none;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 1.5rem 1.5rem;
+  }
+
+  .quick-cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: #c41e3a;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Sticky mobile CTA */
+  .sticky-cta {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid #e5e5e5;
+    z-index: 100;
+  }
+
+  .sticky-cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: #c41e3a;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
   /* Responsive */
   @media (max-width: 640px) {
     .hero {
@@ -785,6 +870,15 @@
 
     .form-group.full-width {
       grid-column: 1;
+    }
+
+    .mobile-quick-cta,
+    .sticky-cta {
+      display: block;
+    }
+
+    .red-bar {
+      margin-bottom: 4rem;
     }
   }
 </style>

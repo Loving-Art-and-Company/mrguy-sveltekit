@@ -2,6 +2,14 @@
 
 > Mobile car detailing booking platform for West Broward, South Florida
 
+## Booking Funnel Status
+
+This backoffice-suite copy is not the production booking source of truth. Booking
+create, checkout, and Stripe webhook work belongs in `web/mrguy-sveltekit`.
+
+The booking/payment API endpoints in this directory intentionally return `410
+Gone` to fence off stale Twilio/SMS-era logic.
+
 ## Overview
 
 **Mr. Guy Mobile Detail** is a SvelteKit-based booking platform for mobile car detailing services. Customers can book appointments, make payments via Stripe, and reschedule via email verification.
@@ -87,7 +95,7 @@ npm run dev
 
 ## Documentation
 
-- **Architecture & Commands:** [`CLAUDE.md`](./CLAUDE.md)
+- **Current Architecture & Context:** [`AGENTS.md`](./AGENTS.md)
 - **Code Guidelines:** [`AGENTS.md`](./AGENTS.md) + `~/AGENTS.md`
 - **Security Policies:** [`SECURITY.md`](./SECURITY.md)
 - **Analytics Tracking Plan:** [`docs/tracking-plan.md`](./docs/tracking-plan.md)
@@ -177,7 +185,7 @@ Set in Vercel dashboard:
 - Use production keys (not test keys)
 - Ensure `DATABASE_URL` is kept server-only
 
-**See `CLAUDE.md` for complete deployment checklist.**
+**See `AGENTS.md` for the current deployment checklist and workflow references.**
 
 ## Service Packages
 
@@ -332,7 +340,7 @@ OPS_RUN_HOUR=8 OPS_RUN_MINUTE=30 npm run ops:schedule:install
 
 ## Support
 
-- **Documentation:** `CLAUDE.md`, `AGENTS.md`, `SECURITY.md`
+- **Documentation:** `AGENTS.md`, `SECURITY.md`
 - **Issues:** Contact development team
 - **Production:** mrguydetail.com
 
