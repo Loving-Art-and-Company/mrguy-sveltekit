@@ -1,5 +1,9 @@
 import * as bookingRepo from '$lib/repositories/bookingRepo';
 import type { BookingRow } from '$lib/repositories/bookingRepo';
+import { MRGUY_BRAND_ID } from '$lib/server/brand';
+import { db } from '$lib/server/db';
+import { bookings } from '$lib/server/schema';
+import { and, eq, gte, lte, sql, desc } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
 type Period = 'week' | 'month' | 'year';
@@ -81,66 +85,88 @@ function calculatePercentChange(current: number, previous: number): number {
 	return Math.round(((current - previous) / previous) * 100);
 }
 
-function aggregateByService(bookings: BookingRow[]): ServiceBreakdown[] {
-	const serviceMap = new Map<string, { revenue: number; count: number }>();
+async function aggregateByService(
+	brandId: string,
+	startDate: string,
+	endDate: string
+): Promise<ServiceBreakdown[]> {
+	const results = await db
+		.select({
+			serviceName: bookings.serviceName,
+			revenue: sql<number>`coalesce(sum(${bookings.price}), 0)`.as('revenue'),
+			count: sql<number>`count(*)`.as('count')
+		})
+		.from(bookings)
+		.where(
+			and(
+				eq(bookings.brandId, brandId),
+				eq(bookings.paymentStatus, 'paid'),
+				gte(bookings.date, startDate),
+				lte(bookings.date, endDate)
+			)
+		)
+		.groupBy(bookings.serviceName)
+		.orderBy(desc(sql`revenue`));
 
-	for (const booking of bookings) {
-		const existing = serviceMap.get(booking.serviceName) || { revenue: 0, count: 0 };
-		existing.revenue += booking.price;
-		existing.count += 1;
-		serviceMap.set(booking.serviceName, existing);
-	}
+	const totalRevenue = results.reduce((sum, r) => sum + Number(r.revenue), 0);
 
-	const totalRevenue = bookings.reduce((sum, b) => sum + b.price, 0);
-
-	return Array.from(serviceMap.entries())
-		.map(([serviceName, data]) => ({
-			serviceName,
-			revenue: data.revenue,
-			count: data.count,
-			percentage: totalRevenue > 0 ? Math.round((data.revenue / totalRevenue) * 100) : 0,
-		}))
-		.sort((a, b) => b.revenue - a.revenue);
+	return results.map((row) => ({
+		serviceName: row.serviceName,
+		revenue: Number(row.revenue),
+		count: Number(row.count),
+		percentage: totalRevenue > 0 ? Math.round((Number(row.revenue) / totalRevenue) * 100) : 0
+	}));
 }
 
-function aggregateByTime(bookings: BookingRow[], period: Period): TimeDataPoint[] {
-	const grouped = new Map<string, number>();
+async function aggregateByTime(
+	brandId: string,
+	startDate: string,
+	endDate: string,
+	period: Period
+): Promise<TimeDataPoint[]> {
+	let groupBy: ReturnType<typeof sql>;
 
-	for (const booking of bookings) {
-		let key: string;
-		const date = new Date(booking.date);
-
-		if (period === 'week') {
-			key = booking.date;
-		} else if (period === 'month') {
-			const dayOfWeek = date.getDay();
-			const monday = new Date(date);
-			monday.setDate(date.getDate() - ((dayOfWeek + 6) % 7));
-			key = monday.toISOString().split('T')[0];
-		} else {
-			key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-		}
-
-		grouped.set(key, (grouped.get(key) || 0) + booking.price);
+	if (period === 'week') {
+		groupBy = sql`${bookings.date}`;
+	} else if (period === 'month') {
+		groupBy = sql`date_trunc('week', ${bookings.date}::date)`;
+	} else {
+		groupBy = sql`to_char(${bookings.date}::date, 'YYYY-MM')`;
 	}
 
-	return Array.from(grouped.entries())
-		.map(([date, revenue]) => {
-			let label: string;
-			if (period === 'week') {
-				const d = new Date(date);
-				label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-			} else if (period === 'month') {
-				const d = new Date(date);
-				label = `Week of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-			} else {
-				const [year, month] = date.split('-');
-				const d = new Date(parseInt(year), parseInt(month) - 1);
-				label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-			}
-			return { label, revenue, date };
+	const rawResults = await db
+		.select({
+			dateKey: groupBy.as('date_key'),
+			revenue: sql<number>`coalesce(sum(${bookings.price}), 0)`.as('revenue')
 		})
-		.sort((a, b) => a.date.localeCompare(b.date));
+		.from(bookings)
+		.where(
+			and(
+				eq(bookings.brandId, brandId),
+				eq(bookings.paymentStatus, 'paid'),
+				gte(bookings.date, startDate),
+				lte(bookings.date, endDate)
+			)
+		)
+		.groupBy(groupBy)
+		.orderBy(groupBy);
+
+	return rawResults.map((row) => {
+		const date = String(row.dateKey);
+		let label: string;
+		if (period === 'week') {
+			const d = new Date(date);
+			label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+		} else if (period === 'month') {
+			const d = new Date(date);
+			label = `Week of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+		} else {
+			const [year, month] = date.split('-');
+			const d = new Date(parseInt(year), parseInt(month) - 1);
+			label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+		}
+		return { label, revenue: Number(row.revenue), date };
+	});
 }
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -153,11 +179,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	const currentRange = getPeriodRange(period);
 	const previousRange = getPreviousPeriodRange(period);
 
-	// Parallel fetch: current period, previous period, and recent paid bookings
-	const [current, previous, recent] = await Promise.all([
+	const [current, previous, recent, serviceBreakdown, timeData] = await Promise.all([
 		bookingRepo.listPaidInRange(currentRange.start, currentRange.end),
 		bookingRepo.listPaidInRange(previousRange.start, previousRange.end),
 		bookingRepo.listRecentPaid(10),
+		aggregateByService(MRGUY_BRAND_ID, currentRange.start, currentRange.end),
+		aggregateByTime(MRGUY_BRAND_ID, currentRange.start, currentRange.end, period)
 	]);
 
 	const totalRevenue = current.reduce((sum, b) => sum + b.price, 0);
@@ -166,9 +193,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const previousCount = previous.length;
 	const averageValue = bookingCount > 0 ? Math.round(totalRevenue / bookingCount) : 0;
 
-	const serviceBreakdown = aggregateByService(current);
 	const topService = serviceBreakdown.length > 0 ? serviceBreakdown[0].serviceName : null;
-	const timeData = aggregateByTime(current, period);
 
 	const revenueData: RevenueData = {
 		period,
