@@ -26,7 +26,7 @@ const sendCampaignSchema = z.object({
 
 export const load: PageServerLoad = async () => {
 	const [crmRecords, unsubscribedEmails, recentCampaigns, recentUnsubscribes] = await Promise.all([
-		crmRepo.listForCrm(),
+		crmRepo.listForCrm({ limit: 5000 }),
 		crmCampaignRepo.listUnsubscribedEmails(),
 		crmCampaignRepo.listRecentCampaignSends(),
 		crmCampaignRepo.listRecentUnsubscribes()
@@ -111,7 +111,7 @@ export const actions = {
 		}
 
 		const [crmRecords, unsubscribedEmails] = await Promise.all([
-			crmRepo.listForCrm(),
+			crmRepo.listForCrm({ limit: 5000 }),
 			crmCampaignRepo.listUnsubscribedEmails()
 		]);
 		const contacts = buildCrmContacts(crmRecords);

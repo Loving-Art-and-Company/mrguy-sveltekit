@@ -151,6 +151,7 @@ export const bookings = pgTable(
     index('idx_bookings_date').on(t.date),
     index('idx_bookings_status').on(t.status),
     index('idx_bookings_contact').on(t.contact),
+    index('idx_bookings_brand_date').on(t.brandId, t.date),
   ]
 );
 
@@ -169,7 +170,10 @@ export const clientProfiles = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index('idx_client_profiles_phone').on(t.phone)]
+  (t) => [
+    index('idx_client_profiles_phone').on(t.phone),
+    index('idx_client_profiles_brand_id').on(t.brandId),
+  ]
 );
 
 // ============================================================
