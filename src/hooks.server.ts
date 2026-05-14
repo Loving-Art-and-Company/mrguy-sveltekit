@@ -6,6 +6,7 @@ import { verifySession, invalidateSession, SESSION_COOKIE, isAdmin } from '$lib/
 import { issueToken, requireCsrf } from '$lib/server/csrf';
 import { checkRateLimit } from '$lib/server/rateLimit';
 import { notifyError } from '$lib/server/email';
+import { sendErrorToSink } from '$lib/server/errorSink';
 import { MRGUY_CANONICAL_ORIGIN } from '$lib/constants/site';
 import crypto from 'node:crypto';
 
@@ -152,6 +153,14 @@ const customHandleError: HandleServerError = async ({ error, event, status, mess
   }).catch((notifyErr) => {
     console.warn('[handleError] Failed to send error notification:', notifyErr);
   });
+
+  sendErrorToSink({
+    message: err.message || message,
+    status,
+    path: event.url.pathname,
+    method: event.request.method,
+    stack: err.stack,
+  }).catch(() => {});
 
   return { message };
 };
