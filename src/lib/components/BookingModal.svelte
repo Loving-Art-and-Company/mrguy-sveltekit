@@ -325,7 +325,7 @@
       {:else}
         <!-- Header -->
         <header class="modal-header">
-          <button class="close-btn" onclick={handleClose} aria-label="Close">
+          <button type="button" class="close-btn" onclick={handleClose} aria-label="Close">
             <X size={24} />
           </button>
           <h2 id="modal-title">Request Appointment</h2>
@@ -343,7 +343,7 @@
               <li>{item}</li>
             {/each}
           </ul>
-          <button class="edit-service-btn" onclick={handleEditServiceClick}>
+          <button type="button" class="edit-service-btn" onclick={handleEditServiceClick}>
             Change Service
           </button>
           <p class="request-note">No payment today. Pick a preferred time and Pablo confirms by text.</p>
@@ -419,9 +419,10 @@
                   </fieldset>
                 {/if}
 
-                <button 
-                  class="continue-btn" 
-                  onclick={nextStep} 
+                <button
+                  type="button"
+                  class="continue-btn"
+                  onclick={nextStep}
                   disabled={!schedule.date || !schedule.time}
                 >
                   Continue
@@ -513,9 +514,10 @@
                   </label>
                 </div>
 
-                <button 
-                  class="continue-btn" 
-                  onclick={nextStep} 
+                <button
+                  type="button"
+                  class="continue-btn"
+                  onclick={nextStep}
                   disabled={!address.street || !address.city || !address.zip}
                 >
                   Continue
@@ -615,9 +617,10 @@
                   <div class="submit-error">{errors.submit}</div>
                 {/if}
 
-                <button 
-                  class="submit-btn" 
-                  onclick={nextStep} 
+                <button
+                  type="button"
+                  class="submit-btn"
+                  onclick={nextStep}
                   disabled={isSubmitting || !contact.name || !contact.phone || !contact.vehicle}
                 >
                   {#if isSubmitting}
