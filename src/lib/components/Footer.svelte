@@ -27,8 +27,7 @@
             {#each socialLinks as social}
               <a
                 href={social.href}
-                target="_blank"
-                rel="noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 class="footer-social-link"
                 aria-label={`Follow Mr. Guy on ${social.label}`}
                 onclick={() =>
@@ -104,8 +103,7 @@
               <ExternalLink size={14} />
               <a
                 href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 onclick={() => track('cta_clicked', { cta_type: 'social_link', location: 'footer', platform: link.id })}
               >
                 {link.label}

@@ -111,8 +111,7 @@
 				{#each docs as doc}
 					<a
 						href={doc.webViewLink}
-						target="_blank"
-						rel="noopener"
+						target="_blank" rel="noopener noreferrer"
 						class="doc-card"
 					>
 						<div class="doc-icon">📄</div>

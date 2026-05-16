@@ -111,8 +111,7 @@
 				{#each sheets as sheet}
 					<a
 						href={sheet.webViewLink}
-						target="_blank"
-						rel="noopener"
+						target="_blank" rel="noopener noreferrer"
 						class="sheet-card"
 					>
 						<div class="sheet-icon">📗</div>
