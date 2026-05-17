@@ -33,6 +33,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:booking": "playwright test booking.spec.ts",
+    "test:e2e:staging": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://staging.mrguydetail.com npx playwright test",
     "test:e2e:prod": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com playwright test",
     "test:e2e:prod:headed": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com playwright test --headed",
     "test:booking:prod": "PLAYWRIGHT_SKIP_WEBSERVER=1 BASE_URL=https://mrguydetail.com playwright test e2e/booking.spec.ts",
