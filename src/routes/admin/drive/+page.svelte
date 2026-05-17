@@ -107,7 +107,7 @@
 					<p class="connected-as">Connected as {$googleUser.email}</p>
 				{/if}
 			</div>
-			<button class="refresh-btn" onclick={() => loadFiles()} disabled={loading}>
+			<button type="button" class="refresh-btn" onclick={() => loadFiles()} disabled={loading}>
 				{loading ? 'Loading...' : 'Refresh'}
 			</button>
 		</div>
@@ -115,7 +115,7 @@
 		{#if error}
 			<div class="error-message">
 				<p>{error}</p>
-				<button onclick={() => loadFiles()}>Try Again</button>
+				<button type="button" onclick={() => loadFiles()}>Try Again</button>
 			</div>
 		{:else if loading && files.length === 0}
 			<div class="loading">
@@ -157,7 +157,7 @@
 
 			{#if nextPageToken}
 				<div class="load-more">
-					<button onclick={() => loadFiles(nextPageToken)} disabled={loading}>
+					<button type="button" onclick={() => loadFiles(nextPageToken)} disabled={loading}>
 						{loading ? 'Loading...' : 'Load More'}
 					</button>
 				</div>

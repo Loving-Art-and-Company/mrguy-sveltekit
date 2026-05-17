@@ -141,17 +141,17 @@
 	<!-- Month Navigation Header -->
 	<header class="calendar-header">
 		<div class="nav-controls">
-			<button class="nav-btn" onclick={prevMonth} aria-label="Previous month">
+			<button type="button" class="nav-btn" onclick={prevMonth} aria-label="Previous month">
 				<span class="arrow">‹</span>
 			</button>
 			<h2 class="month-title">
 				{monthNames[currentMonthNum - 1]} {currentYear}
 			</h2>
-			<button class="nav-btn" onclick={nextMonth} aria-label="Next month">
+			<button type="button" class="nav-btn" onclick={nextMonth} aria-label="Next month">
 				<span class="arrow">›</span>
 			</button>
 		</div>
-		<button class="today-btn" onclick={goToToday}>Today</button>
+		<button type="button" class="today-btn" onclick={goToToday}>Today</button>
 	</header>
 
 	<!-- Calendar Grid -->

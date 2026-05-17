@@ -206,7 +206,7 @@
 	<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
 		<a href={data.returnTo} style="display:inline-flex;align-items:center;gap:0.375rem;color:#6b7280;text-decoration:none;font-size:0.875rem;">&#8592; Back to Bookings</a>
 		{#if !editing}
-				<button onclick={startEdit} style="padding:0.5rem 1.25rem;background:#1a1a2e;color:white;border:none;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;cursor:pointer;">Edit Booking</button>
+				<button type="button" onclick={startEdit} style="padding:0.5rem 1.25rem;background:#1a1a2e;color:white;border:none;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;cursor:pointer;">Edit Booking</button>
 		{/if}
 		<form method="POST" action="?/delete" onsubmit={handleDelete} style="margin-left:0.5rem;">
 			<input type="hidden" name="returnTo" value={data.returnTo} />
