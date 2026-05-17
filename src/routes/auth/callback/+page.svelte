@@ -19,6 +19,10 @@
 	});
 </script>
 
+<svelte:head>
+	<meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
 	<div class="text-center">
 		<div class="mb-4">

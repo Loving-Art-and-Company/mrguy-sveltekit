@@ -134,6 +134,7 @@
 
 <svelte:head>
 	<title>Calendar - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="calendar-page">

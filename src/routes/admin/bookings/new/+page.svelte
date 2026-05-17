@@ -94,6 +94,7 @@
 
 <svelte:head>
 	<title>Add Booking - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div style="max-width: 720px;">

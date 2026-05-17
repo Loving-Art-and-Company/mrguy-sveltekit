@@ -198,6 +198,7 @@
 
 <svelte:head>
 	<title>Booking {booking.id} - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div style="max-width:900px;">

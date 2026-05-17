@@ -43,6 +43,7 @@
 
 <svelte:head>
 	<title>CRM - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="crm-page">

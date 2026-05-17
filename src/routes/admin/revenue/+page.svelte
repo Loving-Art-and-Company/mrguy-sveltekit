@@ -39,6 +39,10 @@
 	);
 </script>
 
+<svelte:head>
+	<meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <div class="revenue-dashboard">
 	<!-- Period Selector -->
 	<div class="period-selector">
