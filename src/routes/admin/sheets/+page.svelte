@@ -47,6 +47,7 @@
 
 <svelte:head>
 	<title>Google Sheets - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="sheets-page">

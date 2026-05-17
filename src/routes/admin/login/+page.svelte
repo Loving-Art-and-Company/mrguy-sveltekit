@@ -7,6 +7,7 @@
 
 <svelte:head>
   <title>Admin Login - Mr. Guy Detail</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <main class="login-container">

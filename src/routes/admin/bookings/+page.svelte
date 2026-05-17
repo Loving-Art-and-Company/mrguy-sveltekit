@@ -244,6 +244,7 @@
 
 <svelte:head>
 	<title>Bookings - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="bookings-page">

@@ -89,6 +89,7 @@
 
 <svelte:head>
   <title>Business - Mr. Guy Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="business-page">

@@ -66,6 +66,7 @@
 
 <svelte:head>
 	<title>Google Drive - Mr. Guy Admin</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="drive-page">
