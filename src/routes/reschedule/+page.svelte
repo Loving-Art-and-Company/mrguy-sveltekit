@@ -290,6 +290,7 @@
 
 <svelte:head>
   <title>Reschedule | {BUSINESS_INFO.name}</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <main>

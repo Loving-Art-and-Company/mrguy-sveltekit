@@ -9,6 +9,7 @@
 
 <svelte:head>
   <title>Booking Request Received | {BUSINESS_INFO.name}</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <main>
