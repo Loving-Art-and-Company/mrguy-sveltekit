@@ -91,6 +91,15 @@
   <title>Free Car Wash | KoRes Realty x Mr. Guy Mobile Detail</title>
   <meta name="description" content="Wishing you a wonderful New Year! Enjoy a complimentary car wash from Mr. Guy Mobile Detail." />
   <meta name="theme-color" content="#ffffff" />
+  <meta property="og:title" content="Free Car Wash | KoRes Realty x Mr. Guy Mobile Detail" />
+  <meta property="og:description" content="Wishing you a wonderful New Year! Enjoy a complimentary car wash from Mr. Guy Mobile Detail." />
+  <meta property="og:image" content="/logo/kores-realty.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://mrguydetail.com/promo/kores" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Free Car Wash | KoRes Realty x Mr. Guy Mobile Detail" />
+  <meta name="twitter:description" content="Wishing you a wonderful New Year! Enjoy a complimentary car wash from Mr. Guy Mobile Detail." />
+  <meta name="twitter:image" content="/logo/kores-realty.jpg" />
   <style>
     body {
       margin: 0 !important;
