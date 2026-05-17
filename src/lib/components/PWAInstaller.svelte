@@ -101,8 +101,8 @@
 				<p class="install-description">Book 50% faster with our app</p>
 			</div>
 			<div class="install-actions">
-			<button class="install-btn" onclick={handleInstall}>Install</button>
-			<button class="dismiss-btn" onclick={dismissBanner} aria-label="Dismiss install prompt">
+			<button type="button" class="install-btn" onclick={handleInstall}>Install</button>
+			<button type="button" class="dismiss-btn" onclick={dismissBanner} aria-label="Dismiss install prompt">
 					✕
 				</button>
 			</div>

@@ -81,7 +81,7 @@
           {/each}
         </ul>
 
-        <button class="select-btn" onclick={() => handleSelect(pkg)}>
+        <button type="button" class="select-btn" onclick={() => handleSelect(pkg)}>
           Book Now →
         </button>
       </article>
@@ -175,7 +175,7 @@
           {/each}
         </ul>
 
-        <button class="select-btn" onclick={() => handleSelect(pkg)}>
+        <button type="button" class="select-btn" onclick={() => handleSelect(pkg)}>
           Book Now →
         </button>
       </article>
