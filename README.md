@@ -206,6 +206,24 @@ npm run test
 npm run test:watch
 ```
 
+### Staging E2E (no DATABASE_URL needed)
+
+Run the full Playwright suite against the staging environment without a local dev server or database:
+
+```bash
+npm run test:e2e:staging
+```
+
+This sets `BASE_URL=https://staging.mrguydetail.com` and `PLAYWRIGHT_SKIP_WEBSERVER=1`, so no `DATABASE_URL` or `npm run dev` is required.
+
+### Local E2E (requires DATABASE_URL)
+
+Running against `localhost` starts the dev server automatically, which requires `DATABASE_URL` in your environment:
+
+```bash
+npm run test:e2e
+```
+
 ### Production E2E
 
 Production Playwright runs skip the local dev server automatically.
