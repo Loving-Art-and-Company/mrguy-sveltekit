@@ -1,8 +1,7 @@
 import { db } from '$lib/server/db';
 import { bookings } from '$lib/server/schema';
 import { desc, eq } from 'drizzle-orm';
-
-const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
+import { MRGUY_BRAND_ID } from '$lib/server/brand';
 
 export interface CrmBookingRecord {
 	id: string;
@@ -18,7 +17,15 @@ export interface CrmBookingRecord {
 	createdAt: Date | null;
 }
 
-export async function listForCrm(): Promise<CrmBookingRecord[]> {
+export interface CrmListOptions {
+	limit?: number;
+	offset?: number;
+}
+
+export async function listForCrm(options: CrmListOptions = {}): Promise<CrmBookingRecord[]> {
+	const limit = options.limit ?? 1000;
+	const offset = options.offset ?? 0;
+
 	return db
 		.select({
 			id: bookings.id,
@@ -35,5 +42,7 @@ export async function listForCrm(): Promise<CrmBookingRecord[]> {
 		})
 		.from(bookings)
 		.where(eq(bookings.brandId, MRGUY_BRAND_ID))
-		.orderBy(desc(bookings.date), desc(bookings.createdAt));
+		.orderBy(desc(bookings.date), desc(bookings.createdAt))
+		.limit(limit)
+		.offset(offset);
 }

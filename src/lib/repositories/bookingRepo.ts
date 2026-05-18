@@ -5,8 +5,7 @@ import { db } from '$lib/server/db';
 import { bookings } from '$lib/server/schema';
 import { eq, and, gte, lte, or, ilike, desc, asc, sql, count, inArray, ne } from 'drizzle-orm';
 import { BLOCKING_BOOKING_STATUSES, type ScheduleHold } from '$lib/scheduling';
-
-const MRGUY_BRAND_ID = '074ccc70-e8b5-4284-907b-82571f4a2e45';
+import { MRGUY_BRAND_ID } from '$lib/server/brand';
 
 export type BookingRow = typeof bookings.$inferSelect;
 export type BookingInsert = typeof bookings.$inferInsert;
@@ -64,38 +63,47 @@ export async function countPending(): Promise<number> {
 }
 
 /** List bookings with optional filters */
-export async function list(filters: {
-  status?: string | null;
-  from?: string | null;
-  to?: string | null;
-  search?: string | null;
-}): Promise<BookingRow[]> {
-  const conditions = [eq(bookings.brandId, MRGUY_BRAND_ID)];
+export async function list(
+	filters: {
+		status?: string | null;
+		from?: string | null;
+		to?: string | null;
+		search?: string | null;
+		limit?: number;
+		offset?: number;
+	}
+): Promise<BookingRow[]> {
+	const conditions = [eq(bookings.brandId, MRGUY_BRAND_ID)];
 
-  if (filters.status && filters.status !== 'all') {
-    conditions.push(eq(bookings.status, filters.status));
-  }
-  if (filters.from) {
-    conditions.push(gte(bookings.date, filters.from));
-  }
-  if (filters.to) {
-    conditions.push(lte(bookings.date, filters.to));
-  }
-  if (filters.search) {
-    const searchPattern = `%${filters.search}%`;
-    conditions.push(
-      or(
-        ilike(bookings.clientName, searchPattern),
-        ilike(bookings.contact, searchPattern)
-      )!
-    );
-  }
+	if (filters.status && filters.status !== 'all') {
+		conditions.push(eq(bookings.status, filters.status));
+	}
+	if (filters.from) {
+		conditions.push(gte(bookings.date, filters.from));
+	}
+	if (filters.to) {
+		conditions.push(lte(bookings.date, filters.to));
+	}
+	if (filters.search) {
+		const searchPattern = `%${filters.search}%`;
+		conditions.push(
+			or(
+				ilike(bookings.clientName, searchPattern),
+				ilike(bookings.contact, searchPattern)
+			)!
+		);
+	}
 
-  return db
-    .select()
-    .from(bookings)
-    .where(and(...conditions))
-    .orderBy(desc(bookings.date), desc(bookings.time));
+	const limit = filters.limit ?? 100;
+	const offset = filters.offset ?? 0;
+
+	return db
+		.select()
+		.from(bookings)
+		.where(and(...conditions))
+		.orderBy(desc(bookings.date), desc(bookings.time))
+		.limit(limit)
+		.offset(offset);
 }
 
 /** List bookings for a month (calendar view) */
